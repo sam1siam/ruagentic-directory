@@ -12,6 +12,8 @@ Configure custom SMTP with the verified Resend sending domain before opening reg
 
 ## Stripe
 
+Use the separate RUAGENTIC Stripe account (formerly Superway) in Vertex Innovation Collective. Do not use AstroFabric's account or credentials. The application key needs Checkout Sessions write access and Payment Intents, Prices, and Products read access. Connected-account permissions and all other resource permissions stay disabled.
+
 Create one product, RUAGENTIC directory listing, and a **non-recurring US$49.99** price. Put its exact price ID in `STRIPE_PRICE_ID`. Configure the public business name, support email, website, terms URL, and receipt delivery before enabling live charges.
 
 Register `https://ruagentic.com/api/webhooks/stripe` for:
@@ -25,6 +27,8 @@ Register `https://ruagentic.com/api/webhooks/stripe` for:
 
 Use the endpoint’s matching live signing secret. Test mode keys and signatures must remain separate. The browser never establishes payment status. Fulfillment validates the retrieved session, line item, price, amount, currency, mode, revision, and internal attempt ID, then commits publication and email together.
 
+Sessions and PaymentIntents carry `app=ruagentic-directory` metadata. Ignore unrelated signed checkout events. For refunds and disputes, retrieve the original PaymentIntent to identify directory payments before writing revocations; disputes do not inherit that metadata. Provider lookup failures must retry. Checkout uses RUAGENTIC branding and its own terms link.
+
 Interrupted creation reuses the persisted attempt’s Stripe idempotency key and stable request parameters. If the key’s safe retry window has passed without a stored provider session, reconcile that attempt with Stripe before authorizing another charge. Never mark an ambiguous payment failed solely because the browser lost its response.
 
 A refunded or disputed payment is durably recorded even if its webhook precedes the success event. Affected paid listings are hidden. Resolve legitimate disputes and restore listings through a reviewed database operation; a dispute outcome does not automatically restore a removed page.
@@ -32,6 +36,8 @@ A refunded or disputed payment is durably recorded even if its webhook precedes 
 ## Resend
 
 Verify `mail.ruagentic.com`. `RESEND_FROM` identifies the sender; `SUPPORT_EMAIL` must be a monitored inbox. Use a sending-only domain-scoped API key. Confirmation messages are queued in the publication transaction and attempted after the response. The daily cron retries outstanding jobs; manually invoke the protected cron after fixing a provider outage if quicker recovery is needed.
+
+The intended support address is `hello@ruagentic.com`, using Spaceship's free forwarding to the owner's selected existing inbox. Preserve Spaceship's root receiving MX records alongside Resend's sending records on the `mail` subdomain. Set `SUPPORT_EMAIL` after receiving is verified; confirmation messages use it as Reply-To. Forwarding is an address for receiving mail, not a standalone mailbox or an SMTP account.
 
 The email outbox stores the exact provider request and stable idempotency key. Workers use expiring leases and fencing tokens. Attempts stop before the provider’s 24-hour deduplication window expires. Rows marked `uncertain` require provider reconciliation; do not reset them blindly to pending. Publication remains live if email is delayed.
 

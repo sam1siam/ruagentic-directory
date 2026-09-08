@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   verifiedCheckout,
+  isDirectoryMetadata,
+  paymentIntentId,
   type CheckoutEvidence,
 } from '../lib/payment-policy.ts';
 
@@ -26,7 +28,12 @@ const session: CheckoutEvidence = {
   amount_total: 4999,
   livemode: true,
   client_reference_id: 'submission-1',
-  metadata: { attempt_id: 'attempt-1', revision: '7' },
+  metadata: {
+    app: 'ruagentic-directory',
+    submission_id: 'submission-1',
+    attempt_id: 'attempt-1',
+    revision: '7',
+  },
   payment_intent: 'pi_expected',
 };
 
@@ -87,10 +94,12 @@ await test('checkout evidence for another submission, attempt, revision, or sess
     { client_reference_id: null },
     { metadata: null },
     { metadata: {} },
-    { metadata: { attempt_id: 'attempt-other', revision: '7' } },
-    { metadata: { attempt_id: 'attempt-1', revision: '6' } },
-    { metadata: { attempt_id: 'attempt-1', revision: '07' } },
-    { metadata: { attempt_id: 'attempt-1' } },
+    { metadata: { ...session.metadata, app: 'another-product' } },
+    { metadata: { ...session.metadata, submission_id: 'submission-other' } },
+    { metadata: { ...session.metadata, attempt_id: 'attempt-other' } },
+    { metadata: { ...session.metadata, revision: '6' } },
+    { metadata: { ...session.metadata, revision: '07' } },
+    { metadata: { ...session.metadata, revision: '' } },
   ];
   for (const change of rejected)
     assert.equal(
@@ -111,6 +120,32 @@ await test('checkout evidence for another submission, attempt, revision, or sess
     verifiedCheckout(session, { ...attempt, revision: 8 }, expected, items),
     false,
   );
+});
+
+await test('payment events are classified by the original directory payment metadata', () => {
+  assert.equal(isDirectoryMetadata({ app: 'ruagentic-directory' }), true);
+  for (const metadata of [
+    null,
+    undefined,
+    {},
+    [],
+    'ruagentic-directory',
+    { app: 'superway' },
+    { app: true },
+  ])
+    assert.equal(isDirectoryMetadata(metadata), false);
+  assert.equal(paymentIntentId('pi_123'), 'pi_123');
+  assert.equal(paymentIntentId({ id: 'pi_123' }), 'pi_123');
+  for (const reference of [
+    null,
+    {},
+    [],
+    'pi_',
+    'ch_123',
+    { id: 'cs_123' },
+    { id: 123 },
+  ])
+    assert.equal(paymentIntentId(reference), null);
 });
 
 await test('one payment for the configured listing price is required, even when the checkout total matches', () => {

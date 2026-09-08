@@ -4,7 +4,12 @@ import { adminClient } from '../supabase/server';
 import { appUrl, HttpError } from './http';
 import { ownedSubmission, revisionInput, databaseError } from './submissions';
 import { listingPrice } from '../listing';
-import { verifiedCheckout } from '../payment-policy';
+import {
+  verifiedCheckout,
+  directoryPaymentApp,
+  isDirectoryMetadata,
+  stripeKeyIsLive,
+} from '../payment-policy';
 export function stripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key || !process.env.STRIPE_PRICE_ID)
@@ -70,6 +75,7 @@ export async function startCheckout(owner: string, input: unknown) {
       'The previous checkout needs reconciliation. Contact support before trying another payment.',
     );
   const metadata = {
+    app: directoryPaymentApp,
     attempt_id: attempt.id,
     submission_id: id,
     revision: String(attempt.revision),
@@ -84,7 +90,16 @@ export async function startCheckout(owner: string, input: unknown) {
       metadata,
       payment_intent_data: { metadata },
       consent_collection: { terms_of_service: 'required' },
+      branding_settings: {
+        display_name: 'RUAGENTIC',
+        background_color: '#0b0d0f',
+        button_color: '#bcf36c',
+      },
       custom_text: {
+        terms_of_service_acceptance: {
+          message:
+            'I agree to the [RUAGENTIC Terms](https://ruagentic.com/terms).',
+        },
         submit: {
           message:
             'One-time US$49.99 directory listing for ' +
@@ -117,7 +132,11 @@ export async function fulfill(
     session = await service.checkout.sessions.retrieve(sessionId),
     db = adminClient();
   const attemptId = session.metadata?.attempt_id;
-  if (!attemptId || !z.uuid().safeParse(attemptId).success)
+  if (
+    !isDirectoryMetadata(session.metadata) ||
+    !attemptId ||
+    !z.uuid().safeParse(attemptId).success
+  )
     throw new HttpError(400, 'Unknown checkout.');
   const { data: attempt, error } = await db
     .from('checkout_attempts')
@@ -134,9 +153,7 @@ export async function fulfill(
     attempt,
     {
       priceId: process.env.STRIPE_PRICE_ID!,
-      live:
-        process.env.STRIPE_SECRET_KEY!.startsWith('sk_live_') ||
-        process.env.STRIPE_SECRET_KEY!.startsWith('rk_live_'),
+      live: stripeKeyIsLive(process.env.STRIPE_SECRET_KEY),
       sessionId,
     },
     lines.data.map((line) => ({

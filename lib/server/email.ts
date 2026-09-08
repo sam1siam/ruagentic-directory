@@ -13,6 +13,9 @@ export async function deliverEmails() {
     try {
       const providerRequest = job.provider_request ?? {
         from: process.env.RESEND_FROM,
+        ...(process.env.SUPPORT_EMAIL
+          ? { reply_to: process.env.SUPPORT_EMAIL }
+          : {}),
         to: job.recipient,
         ...confirmationEmail(job.payload),
       };

@@ -9,6 +9,28 @@ export type CheckoutEvidence = {
   metadata: Record<string, string> | null;
   payment_intent: unknown;
 };
+export const directoryPaymentApp = 'ruagentic-directory';
+export function isDirectoryMetadata(metadata: unknown) {
+  return (
+    metadata !== null &&
+    typeof metadata === 'object' &&
+    !Array.isArray(metadata) &&
+    (metadata as Record<string, unknown>).app === directoryPaymentApp
+  );
+}
+export function paymentIntentId(reference: unknown) {
+  const id =
+    typeof reference === 'string'
+      ? reference
+      : reference !== null &&
+          typeof reference === 'object' &&
+          !Array.isArray(reference)
+        ? (reference as { id?: unknown }).id
+        : null;
+  return typeof id === 'string' && /^pi_[A-Za-z0-9]+$/.test(id) ? id : null;
+}
+export const stripeKeyIsLive = (key: string | undefined) =>
+  /^(sk|rk)_live_/.test(key ?? '');
 export function verifiedCheckout(
   session: CheckoutEvidence,
   attempt: {
@@ -32,7 +54,9 @@ export function verifiedCheckout(
     session.currency === 'usd' &&
     session.amount_total === 4999 &&
     session.livemode === expected.live &&
+    isDirectoryMetadata(session.metadata) &&
     session.client_reference_id === attempt.submission_id &&
+    session.metadata?.submission_id === attempt.submission_id &&
     session.metadata?.attempt_id === attempt.id &&
     session.metadata?.revision === String(attempt.revision) &&
     (!attempt.stripe_session_id ||

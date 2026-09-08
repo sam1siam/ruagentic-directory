@@ -4,6 +4,11 @@ import { stripe, fulfill } from '@/lib/server/payments';
 import { adminClient } from '@/lib/supabase/server';
 import { deliverEmails } from '@/lib/server/email';
 import { boundedBody, BodyLimitError } from '@/lib/bounded-body';
+import {
+  isDirectoryMetadata,
+  paymentIntentId,
+  stripeKeyIsLive,
+} from '@/lib/payment-policy';
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
   if (!process.env.STRIPE_WEBHOOK_SECRET)
@@ -23,12 +28,16 @@ export async function POST(request: Request) {
       return new Response('Payload too large', { status: 413 });
     return new Response('Invalid signature', { status: 400 });
   }
+  if (event.livemode !== stripeKeyIsLive(process.env.STRIPE_SECRET_KEY))
+    return Response.json({ received: true, ignored: true });
   try {
     if (
       event.type === 'checkout.session.completed' ||
       event.type === 'checkout.session.async_payment_succeeded'
     ) {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (!isDirectoryMetadata(session.metadata))
+        return Response.json({ received: true, ignored: true });
       await fulfill(session.id, event.id, event.type);
       after(() => deliverEmails().then(() => {}));
     } else if (
@@ -36,6 +45,8 @@ export async function POST(request: Request) {
       event.type === 'checkout.session.async_payment_failed'
     ) {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (!isDirectoryMetadata(session.metadata))
+        return Response.json({ received: true, ignored: true });
       const { error } = await adminClient()
         .from('checkout_attempts')
         .update({
@@ -50,11 +61,19 @@ export async function POST(request: Request) {
       event.type === 'charge.dispute.created'
     ) {
       const object = event.data.object as Stripe.Charge | Stripe.Dispute;
-      const payment = object.payment_intent;
+      const payment = paymentIntentId(object.payment_intent);
       if (
-        typeof payment === 'string' &&
+        payment &&
         (event.type !== 'charge.refunded' || (object as Stripe.Charge).refunded)
       ) {
+        // Disputes do not inherit the payment's metadata. Verify the original
+        // PaymentIntent before recording revocation, including early events.
+        const intent = await stripe().paymentIntents.retrieve(payment);
+        if (
+          !isDirectoryMetadata(intent.metadata) ||
+          intent.livemode !== event.livemode
+        )
+          return Response.json({ received: true, ignored: true });
         const { error } = await adminClient().rpc('revoke_payment', {
           p_payment: payment,
           p_state: event.type === 'charge.refunded' ? 'refunded' : 'disputed',
