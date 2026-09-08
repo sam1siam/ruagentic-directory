@@ -1364,7 +1364,7 @@ kbd {
 }
 .catalog-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-columns: minmax(0, 1fr) clamp(400px, 31.25vw, 480px);
   gap: 40px;
   padding: 56px 0 40px;
   align-items: start;
@@ -1375,13 +1375,13 @@ kbd {
 }
 .decode-headline {
   margin: 0 0 20px;
-  font-size: 62px;
+  font-size: clamp(62px, 4.84vw, 84px);
   line-height: 1;
   font-weight: 600;
   letter-spacing: -0.035em;
   color: var(--text);
-  min-height: 124px;
-  max-width: 760px;
+  min-height: 2em;
+  max-width: 12.26em;
 }
 .decode-button {
   display: grid;
@@ -1406,9 +1406,9 @@ kbd {
 .hero-copy > p {
   margin: 0 0 30px;
   color: var(--dim);
-  max-width: 520px;
+  max-width: 32.5em;
   line-height: 1.6;
-  font-size: 16px;
+  font-size: clamp(16px, 1.25vw, 19px);
 }
 .catalog-search {
   position: relative;
@@ -1416,7 +1416,7 @@ kbd {
   align-items: center;
   gap: 14px;
   width: 100%;
-  max-width: 720px;
+  max-width: clamp(720px, 56.25vw, 900px);
   padding: 16px 18px;
   text-align: left;
   color: var(--faint);
@@ -1676,7 +1676,7 @@ kbd {
 }
 .listing-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 14px;
 }
 .empty-state {
@@ -1707,11 +1707,11 @@ kbd {
   margin: 0 auto;
   padding: 56px var(--site-gutter) 48px;
 }
-.content-page.narrow {
+.content-page.narrow > :not(.confirmation-card) {
   max-width: 880px;
 }
 .content-page h1 {
-  font-size: 54px;
+  font-size: clamp(54px, 4.22vw, 72px);
   line-height: 1;
   letter-spacing: -0.035em;
   margin: 0 0 14px;
@@ -1768,8 +1768,11 @@ kbd {
 .field {
   min-width: 0;
 }
-.prose-page {
+.prose-page > :not(.actions):not(.setup-code) {
   max-width: 860px;
+}
+.prose-page > .setup-code {
+  max-width: 1040px;
 }
 .prose-page > p,
 .prose-page li {
@@ -1920,7 +1923,7 @@ kbd {
 }
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 14px;
 }
 .collection-card {
@@ -2031,7 +2034,6 @@ kbd {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  max-width: 1040px;
 }
 .pricing-card {
   display: flex;
@@ -2158,7 +2160,6 @@ kbd {
 }
 .pricing-page > section {
   margin-top: 48px;
-  max-width: 1040px;
 }
 
 /* ---------------------------------------------------------------- auth */
@@ -3230,7 +3231,7 @@ kbd {
 }
 .related-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 14px;
 }
 .related-grid > a {
