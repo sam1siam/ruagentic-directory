@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { catalog } from '@/lib/server/catalog';
+import { directoryStats } from '@/lib/server/stats';
+import { collections, collectionHref, inCollection } from '@/lib/collections';
 import { CornerBrackets } from '@/components/design-interactions';
 export const metadata = {
   title: 'Collections',
@@ -9,115 +10,62 @@ export const metadata = {
     'Explore MCP servers and agentic tools by workflow, from coding and research to data and automation.',
 };
 export default async function Page() {
-  const items = await catalog();
-  const collections = [
-    {
-      name: 'Build with AI',
-      category: 'Developer tools',
-      description:
-        'Development tools, code search, and connections for your coding agent.',
-    },
-    {
-      name: 'Connect your data',
-      category: 'Data & intelligence',
-      description:
-        'Bring databases and business information into your agent workflows.',
-    },
-    {
-      name: 'Research and discover',
-      category: 'Search & research',
-      description:
-        'Search tools and information sources for better informed agents.',
-    },
-    {
-      name: 'Automate the work',
-      category: 'Automation',
-      description:
-        'Build multi-step workflows and connect your everyday systems.',
-    },
-    {
-      name: 'Choose your client',
-      kind: 'client',
-      description:
-        'Find a home for MCP connections on your desktop, editor, or terminal.',
-    },
-    {
-      name: 'Run your infrastructure',
-      category: 'Infrastructure',
-      description:
-        'Connect cloud services, deployments, and operational tools.',
-    },
-  ];
+  const [items, stats] = await Promise.all([catalog(), directoryStats()]);
+  const age = stats.updatedDays;
   return (
     <main className="content-page collections-page">
-      <div className="page-heading collections-heading">
+      <div className="collections-heading">
         <div>
           <h1>Start with a collection.</h1>
-          <p>
+          <p className="lead">
             Useful ways into the ecosystem, organized around what you want to
             do.
           </p>
         </div>
-        <dl className="collection-stats">
+        <dl className="stat-grid">
           <div>
-            <dt>COLLECTIONS</dt>
-            <dd>{collections.length}</dd>
+            <dt>TOOLS</dt>
+            <dd>{stats.total}</dd>
           </div>
           <div>
-            <dt>TOOLS INDEXED</dt>
-            <dd>{items.length}</dd>
-          </div>
-          <div>
-            <dt>PROJECT TYPES</dt>
+            <dt>TYPES</dt>
             <dd>{new Set(items.map((item) => item.kind)).size}</dd>
+          </div>
+          <div>
+            <dt>UPDATED</dt>
+            <dd>{age === null ? '—' : age === 0 ? 'today' : age + 'd'}</dd>
           </div>
         </dl>
       </div>
       <div className="collection-grid">
-        {collections.map((c) => (
-          <Link
-            className="collection-card"
-            key={c.name}
-            href={
-              '/?' +
-              (c.kind
-                ? 'kind=' + c.kind
-                : 'category=' + encodeURIComponent(c.category!))
-            }
-          >
-            <span className="card-glow" aria-hidden="true" />
-            <CornerBrackets />
-            <div className="collection-top">
-              <span>
-                {
-                  items.filter((p) =>
-                    c.kind ? p.kind === c.kind : p.category === c.category,
-                  ).length
-                }{' '}
-                TOOLS
-              </span>
-            </div>
-            <h2>{c.name}</h2>
-            <p>{c.description}</p>
-            <div className="collection-bottom">
-              <div className="collection-members">
-                {items
-                  .filter((p) =>
-                    c.kind ? p.kind === c.kind : p.category === c.category,
-                  )
-                  .slice(0, 3)
-                  .map((p) => (
+        {collections.map((c) => {
+          const members = items.filter((item) => inCollection(c, item));
+          return (
+            <Link
+              className="collection-card glass"
+              key={c.name}
+              href={collectionHref(c)}
+            >
+              <span className="card-glow" aria-hidden="true" />
+              <CornerBrackets small diagonal />
+              <div className="collection-top">
+                <span>{members.length} TOOLS</span>
+              </div>
+              <h2>{c.name}</h2>
+              <p>{c.description}</p>
+              <div className="collection-bottom">
+                <div className="collection-members" aria-hidden="true">
+                  {members.slice(0, 3).map((p) => (
                     <i key={p.slug} title={p.name}>
                       {p.name.slice(0, 2).toUpperCase()}
                     </i>
                   ))}
+                </div>
+                <span className="collection-open">OPEN →</span>
               </div>
-              <span>
-                OPEN <ArrowRight size={15} />
-              </span>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </main>
   );

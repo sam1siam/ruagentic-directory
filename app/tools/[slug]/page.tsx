@@ -79,7 +79,7 @@ export default async function Page({
       <div className="detail-hero">
         <span className="project-monogram large">{item.name.slice(0, 2)}</span>
         <div>
-          <span className="eyebrow">
+          <span className="type-label">
             {item.kind === 'server'
               ? 'MCP SERVER'
               : item.kind === 'client'
@@ -160,7 +160,7 @@ export default async function Page({
             </div>
             {item.endpoint && (
               <div className="endpoint">
-                <span className="eyebrow">REMOTE ENDPOINT</span>
+                <span className="label">REMOTE ENDPOINT</span>
                 <code>{item.endpoint}</code>
                 <small>
                   Use this URL in a compatible client. Follow the provider’s
@@ -266,7 +266,7 @@ export default async function Page({
               </div>
             ))}
           </dl>
-          <div className="sidebar-guide">
+          <div className="sidebar-guide glass">
             <Link2 size={21} />
             <strong>Building something agentic?</strong>
             <p>Give your project a place in the directory.</p>

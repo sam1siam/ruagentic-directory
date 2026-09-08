@@ -1,20 +1,32 @@
 import Link from 'next/link';
-import { Check, ArrowUpRight } from 'lucide-react';
 import PricingOptions from '@/components/pricing-options';
 export const metadata = {
-  title: 'Listing options',
+  title: 'List your project',
   description:
     'Publish your project with a one-time US$49.99 listing or a free listing with verified Agentic JSON, TXT and README files.',
 };
+const freeFeatures = [
+  'Public listing page and permanent URL',
+  'Category and search discovery',
+  'Documentation and connection details',
+  'Edit from your account',
+  'Confirmation email after publication',
+];
+const paidFeatures = [
+  'Everything in the free listing',
+  'No Agentic file requirement',
+  'No recurring directory subscription',
+  'Updates for the same project included',
+  'Payment receipt from Stripe',
+];
 export default function Page() {
   return (
     <main className="content-page pricing-page">
       <div className="page-heading">
-        <span className="eyebrow">ONE DIRECTORY. TWO WAYS IN.</span>
         <h1>Get your project discovered.</h1>
-        <p>
+        <p className="lead">
           Choose a one-time listing or publish for free with Agentic files. Both
-          options give your project the same useful listing page.
+          options give your project the same listing page.
         </p>
       </div>
       <PricingOptions
@@ -25,31 +37,19 @@ export default function Page() {
               US$0<small>per listing</small>
             </div>
             <p>Publish your Agentic files and pass the publication checker.</p>
-            <ul>
-              {[
-                'Public listing page and permanent URL',
-                'Category and search discovery',
-                'Documentation and connection details',
-                'Edit from your account',
-                'Confirmation email after publication',
-              ].map((t) => (
+            <ul className="plan-list">
+              {freeFeatures.map((t) => (
                 <li key={t}>
-                  <Check size={17} />
+                  <i className="check-tile" aria-hidden="true">
+                    ✓
+                  </i>
                   {t}
                 </li>
               ))}
             </ul>
             <Link className="button primary" href="/submit">
-              Run checker & list free
-              <ArrowUpRight size={16} />
+              Run checker &amp; list free →
             </Link>
-            <p>
-              Requires matching agentic.json, agentic.txt, and README links for
-              your project.{' '}
-              <a className="text-link" href="https://ruagentic.org/generate/">
-                Generate your files ↗
-              </a>
-            </p>
           </>
         }
         paid={
@@ -59,37 +59,37 @@ export default function Page() {
               US$49.99<small>once</small>
             </div>
             <p>Complete your listing and pay securely with Stripe.</p>
-            <ul>
-              {[
-                'Everything in the free listing',
-                'No Agentic file requirement',
-                'No recurring directory subscription',
-                'Updates for the same project included',
-                'Payment receipt from Stripe',
-              ].map((t) => (
+            <ul className="plan-list">
+              {paidFeatures.map((t) => (
                 <li key={t}>
-                  <Check size={17} />
+                  <i className="check-tile" aria-hidden="true">
+                    ✓
+                  </i>
                   {t}
                 </li>
               ))}
             </ul>
             <Link className="button secondary" href="/submit?plan=paid">
-              Start your listing
-              <ArrowUpRight size={16} />
+              Start your listing →
             </Link>
-            <p>
-              Payment covers directory publication. Listings follow our{' '}
-              <Link className="text-link" href="/guidelines">
-                guidelines
-              </Link>
-              .
-            </p>
           </>
         }
       />
       <section>
         <h2>Good to know</h2>
         <div className="faq-list">
+          <details>
+            <summary>What does the free checker require?</summary>
+            <p>
+              Matching agentic.json, agentic.txt, and README links published for
+              your project. The checker explains missing files and specific
+              fixes; a partial result needs to be resolved before free
+              publication.{' '}
+              <a href="https://ruagentic.org/generate/">
+                Generate your files at ruagentic.org ↗
+              </a>
+            </p>
+          </details>
           <details>
             <summary>
               Does ruagentic.org charge for its generator or convention?
@@ -101,20 +101,12 @@ export default function Page() {
             </p>
           </details>
           <details>
-            <summary>What does the free checker require?</summary>
-            <p>
-              Your project’s JSON profile, matching TXT index, and public README
-              links must all pass. The form explains missing files and specific
-              fixes. A partial result needs to be resolved before free
-              publication.
-            </p>
-          </details>
-          <details>
             <summary>Does payment affect ranking or verification?</summary>
             <p>
               Payment establishes listing eligibility. It does not purchase a
               search position, security assessment, ownership check, or Agentic
-              audit result.
+              audit result. Listings follow the{' '}
+              <Link href="/guidelines">listing guidelines</Link>.
             </p>
           </details>
           <details>
@@ -131,6 +123,13 @@ export default function Page() {
               Yes. Provide its public raw Markdown URL during the file check.
               Your JSON and TXT files need to be published on your project
               website.
+            </p>
+          </details>
+          <details>
+            <summary>What about refunds?</summary>
+            <p>
+              Duplicate or undeliverable paid listings are resolved through
+              support. See the <Link href="/terms">terms</Link> for details.
             </p>
           </details>
         </div>

@@ -4,7 +4,6 @@ export default function Page() {
   return (
     <main className="content-page">
       <div className="page-heading">
-        <span className="eyebrow">WE CAN HELP</span>
         <h1>Contact RUAGENTIC.</h1>
         <p>
           Get help with your listing, report a correction, or ask about the

@@ -1,21 +1,24 @@
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { Instrument_Sans, JetBrains_Mono } from 'next/font/google';
 import { SiteHeader, SiteFooter } from '@/components/site-shell';
 import {
   DesignInteractions,
   LightField,
 } from '@/components/design-interactions';
+import { directoryStats } from '@/lib/server/stats';
 import './globals.css';
-import './directory.css';
 import './hud.css';
 const sans = Instrument_Sans({
-  variable: '--font-geist-sans',
+  variable: '--font-ui',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 const mono = JetBrains_Mono({
-  variable: '--font-geist-mono',
+  variable: '--font-code',
   subsets: ['latin'],
+  weight: ['400', '500', '600'],
   display: 'swap',
 });
 export const metadata: Metadata = {
@@ -27,24 +30,27 @@ export const metadata: Metadata = {
   description:
     'Discover MCP servers, clients, and agentic AI products. Compare capabilities, find connection details, and submit your project with a paid or verified free listing.',
 };
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Stats come from the live directory at request time, never from a build-time snapshot.
+  await connection();
+  const stats = await directoryStats();
   return (
     <html lang="en" className="dark">
       <body className={sans.variable + ' ' + mono.variable}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <SiteHeader />
+        <SiteHeader stats={stats} />
         <DesignInteractions />
         <div id="main">
           <LightField />
           {children}
         </div>
-        <SiteFooter />
+        <SiteFooter stats={stats} />
       </body>
     </html>
   );

@@ -1,7 +1,10 @@
 export default function Loading() {
   return (
     <main className="content-page" aria-busy="true">
-      <output>Loading RUAGENTIC…</output>
+      <output className="loading-state">
+        <i className="live-dot" aria-hidden="true" />
+        Loading RUAGENTIC…
+      </output>
     </main>
   );
 }

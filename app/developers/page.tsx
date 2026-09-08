@@ -3,7 +3,6 @@ export const metadata = { title: 'Developer documentation' };
 export default function Page() {
   return (
     <main className="content-page prose-page">
-      <span className="eyebrow">BUILD WITH THE DIRECTORY</span>
       <h1>Public discovery API.</h1>
       <p>
         Read public listings, search for a capability, and link people to the

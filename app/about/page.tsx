@@ -7,7 +7,6 @@ export const metadata = {
 export default function Page() {
   return (
     <main className="content-page prose-page">
-      <span className="eyebrow">ABOUT RUAGENTIC</span>
       <h1>Find the right connection for your agents.</h1>
       <p>
         RUAGENTIC is the official Agentic directory for agentic AI MCP servers

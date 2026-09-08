@@ -3,7 +3,6 @@ export const metadata = { title: 'Terms of service' };
 export default function Page() {
   return (
     <main className="content-page prose-page">
-      <span className="eyebrow">USING THE DIRECTORY</span>
       <h1>Terms of service.</h1>
       <p>
         Effective September 8, 2026. These terms apply to the RUAGENTIC

@@ -1,12 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, GitBranch, Mail, LoaderCircle } from 'lucide-react';
+import { GitBranch, Mail, LoaderCircle } from 'lucide-react';
 import { browserClient } from '@/lib/supabase/browser';
 import { safeNext } from '@/lib/listing';
 import { authRedirect } from '@/lib/auth-navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { CornerBrackets } from '@/components/design-interactions';
 type Mode = 'magic' | 'login' | 'register' | 'forgot' | 'confirm';
 export default function AuthForm({
@@ -135,18 +133,30 @@ export default function AuthForm({
     }
   }
   const title = reset
-    ? 'Choose a new password'
+    ? 'Choose a new password.'
     : mode === 'register'
-      ? 'Create your account'
+      ? 'Create your account.'
       : mode === 'forgot'
-        ? 'Reset your password'
+        ? 'Reset your password.'
         : mode === 'confirm'
-          ? 'Confirm your email'
+          ? 'Confirm your email.'
           : mode === 'magic'
             ? 'Sign in with a link.'
             : 'Welcome back.';
+  const action = reset
+    ? 'Update password →'
+    : mode === 'magic'
+      ? 'Send magic link →'
+      : mode === 'login'
+        ? 'Authenticate →'
+        : mode === 'register'
+          ? 'Create account →'
+          : mode === 'forgot'
+            ? 'Send reset link →'
+            : 'Resend confirmation →';
+  const disabled = Boolean(busy) || !available;
   return (
-    <div className="auth-card glass-panel">
+    <div className="auth-card glass">
       <CornerBrackets />
       <h1>{title}</h1>
       <p>
@@ -157,30 +167,38 @@ export default function AuthForm({
             : 'Sign in to save tools and manage your projects.'}
       </p>
       {!available && (
-        <div className="notice warning" role="alert">
-          Sign-in is temporarily unavailable. Please try again shortly.
+        <div className="notice amber" role="alert">
+          <span aria-hidden="true">⚠</span>
+          <span>
+            NOTICE · account setup is still being completed. Return shortly.
+          </span>
         </div>
       )}
-      <form onSubmit={submit} className="stack-form">
+      <form onSubmit={submit} className="auth-form">
         {!reset && (
-          <label htmlFor="auth-email">
-            <span className="input-label">Email address</span>
-            <Input
-              required
-              type="email"
-              id="auth-email"
-              autoComplete="email"
-              maxLength={254}
-              disabled={Boolean(busy)}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-            />
-          </label>
+          <div className="field">
+            <label htmlFor="auth-email" className="input-label">
+              Email address
+            </label>
+            <div className="input-shell">
+              <i aria-hidden="true">&gt;</i>
+              <input
+                required
+                type="email"
+                id="auth-email"
+                autoComplete="email"
+                maxLength={254}
+                disabled={disabled}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+              />
+            </div>
+          </div>
         )}
         {(reset || mode === 'login' || mode === 'register') && (
-          <div className="auth-password">
-            <div className="password-label-row">
+          <div className="field">
+            <div className="field-row">
               <label htmlFor="auth-password" className="input-label">
                 Password
               </label>
@@ -195,19 +213,25 @@ export default function AuthForm({
                 </button>
               )}
             </div>
-            <Input
-              id="auth-password"
-              required
-              type="password"
-              minLength={mode === 'register' || reset ? 12 : 1}
-              maxLength={128}
-              autoComplete={
-                !reset && mode === 'login' ? 'current-password' : 'new-password'
-              }
-              disabled={Boolean(busy)}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="input-shell">
+              <i aria-hidden="true">&gt;</i>
+              <input
+                id="auth-password"
+                required
+                type="password"
+                minLength={mode === 'register' || reset ? 12 : 1}
+                maxLength={128}
+                autoComplete={
+                  !reset && mode === 'login'
+                    ? 'current-password'
+                    : 'new-password'
+                }
+                disabled={disabled}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+              />
+            </div>
             {(reset || mode === 'register') && (
               <small>At least 12 characters.</small>
             )}
@@ -224,50 +248,69 @@ export default function AuthForm({
             {message}
           </output>
         )}
-        <Button type="submit" disabled={Boolean(busy) || !available}>
-          {busy === 'email' && <LoaderCircle className="spin" />}
-          {reset
-            ? 'Update password'
-            : mode === 'magic'
-              ? 'Send me a magic link'
-              : mode === 'login'
-                ? 'Authenticate'
-                : mode === 'register'
-                  ? 'Create account'
-                  : mode === 'forgot'
-                    ? 'Send reset link'
-                    : 'Resend confirmation'}
-          <ArrowRight size={16} />
-        </Button>
+        <button type="submit" className="button primary" disabled={disabled}>
+          {busy === 'email' && <LoaderCircle className="spin" size={16} />}
+          {action}
+        </button>
       </form>
       {!reset && (
         <>
-          <div className="auth-divider">OR</div>
+          <div className="auth-divider" aria-hidden="true">
+            OR
+          </div>
           <div className="auth-providers">
-            <Button
-              className="auth-provider"
-              variant="outline"
-              disabled={Boolean(busy) || !available}
-              onClick={github}
-            >
+            <button type="button" disabled={disabled} onClick={github}>
               {busy === 'github' ? (
-                <LoaderCircle className="spin" size={17} />
+                <LoaderCircle className="spin" size={16} />
               ) : (
-                <GitBranch size={17} />
-              )}{' '}
+                <GitBranch size={16} />
+              )}
               Continue with GitHub
-            </Button>
-            <Button
-              className="auth-provider"
-              variant="outline"
-              disabled={Boolean(busy) || !available}
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
               onClick={() => change(mode === 'magic' ? 'login' : 'magic')}
             >
-              <Mail size={17} />
-              {mode === 'magic' ? 'Password' : 'Magic link'}
-            </Button>
+              <Mail size={16} />
+              {mode === 'magic' ? 'Use a password' : 'Magic link'}
+            </button>
           </div>
         </>
+      )}
+      {reset ? (
+        <div className="auth-links">
+          <Link href="/dashboard">Go to your dashboard →</Link>
+        </div>
+      ) : (
+        <div className="auth-links">
+          {mode === 'login' ? (
+            <button
+              type="button"
+              disabled={Boolean(busy)}
+              onClick={() => change('register')}
+            >
+              Create an account
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={Boolean(busy)}
+              onClick={() => change('login')}
+            >
+              Use a password
+            </button>
+          )}
+          {mode !== 'confirm' && (
+            <button
+              type="button"
+              disabled={Boolean(busy)}
+              onClick={() => change('confirm')}
+            >
+              Resend confirmation
+            </button>
+          )}
+        </div>
       )}
       {!reset && (
         <p className="auth-terms">
@@ -275,34 +318,6 @@ export default function AuthForm({
           continuing, you agree to the <Link href="/terms">Terms</Link> and{' '}
           <Link href="/privacy">Privacy Policy</Link>.
         </p>
-      )}
-      {reset ? (
-        <Link href="/dashboard" className="text-link">
-          Go to your dashboard →
-        </Link>
-      ) : (
-        <div className="auth-switch">
-          {mode !== 'login' && (
-            <button disabled={Boolean(busy)} onClick={() => change('login')}>
-              Use a password
-            </button>
-          )}
-          {mode === 'login' && (
-            <>
-              <button
-                disabled={Boolean(busy)}
-                onClick={() => change('register')}
-              >
-                Create an account
-              </button>
-            </>
-          )}
-          {(mode === 'register' || mode === 'login' || mode === 'magic') && (
-            <button disabled={Boolean(busy)} onClick={() => change('confirm')}>
-              Resend confirmation
-            </button>
-          )}
-        </div>
       )}
     </div>
   );

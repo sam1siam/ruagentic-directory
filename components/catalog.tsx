@@ -1,31 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-import Link from 'next/link';
-
 import { flushSync } from 'react-dom';
-
+import { Search, SlidersHorizontal, Tag } from 'lucide-react';
 import { registerDirectoryFilter, browserModelContext } from '@/lib/webmcp';
-
 import {
-  Search,
-  ArrowUpRight,
-  Server,
-  Monitor,
-  Workflow,
-  SlidersHorizontal,
-  FileJson,
-} from 'lucide-react';
-
-import {
+  CheckerDemo,
   CornerBrackets,
   DecodeHeadline,
+  useShortcutLabel,
 } from '@/components/design-interactions';
-
-import { Button } from '@/components/ui/button';
-
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ToolCard from '@/components/tool-card';
 
 export type CatalogListing = {
@@ -51,6 +35,18 @@ const categories = [
   'Finance',
   'Automation',
 ];
+const chips = [
+  ['Developer tools', 'Developer tools'],
+  ['Data & intelligence', 'Data & intelligence'],
+  ['Automation', 'Automation'],
+  ['Search', 'Search & research'],
+] as const;
+const kinds = [
+  ['all', 'All tools'],
+  ['server', 'MCP servers'],
+  ['client', 'Clients'],
+  ['product', 'Agentic products'],
+] as const;
 
 export default function Catalog({
   listings,
@@ -63,6 +59,7 @@ export default function Catalog({
     [kind, setKind] = useState(initial.kind ?? 'all'),
     [category, setCategory] = useState(initial.category ?? 'All categories'),
     [sort, setSort] = useState('name');
+  const shortcut = useShortcutLabel();
 
   useEffect(
     () =>
@@ -116,143 +113,104 @@ export default function Catalog({
           <div className="hero-copy">
             <DecodeHeadline />
             <p>
-              Discover MCP servers, clients, and AI products. Find the
-              capabilities, documentation, and connections for your next
-              workflow.
+              MCP servers, clients and agentic products with checked Agentic
+              files, documentation and connection details.
             </p>
             <button
               type="button"
-              className="catalog-search glass-panel"
+              className="catalog-search glass"
               onClick={() =>
                 window.dispatchEvent(new Event('directory:search'))
               }
               aria-label="Search tools, capabilities, or use cases"
             >
-              <CornerBrackets />
-              <Search size={20} />
+              <CornerBrackets small />
+              <Search size={18} aria-hidden="true" />
               <span>Search tools, capabilities, or use cases…</span>
-              <kbd>Ctrl K</kbd>
+              <kbd>{shortcut}</kbd>
             </button>
-            <div className="popular-searches">
-              {[
-                'Developer tools',
-                'Data & intelligence',
-                'Automation',
-                'Search & research',
-              ].map((item) => (
+            <div className="category-chips">
+              {chips.map(([label, value]) => (
                 <button
-                  aria-pressed={category === item}
-                  key={item}
+                  type="button"
+                  aria-pressed={category === value}
+                  key={value}
                   onClick={() =>
-                    setCategory(category === item ? 'All categories' : item)
+                    setCategory(category === value ? 'All categories' : value)
                   }
                 >
-                  {item}
-                  <ArrowUpRight size={12} />
+                  {label}
                 </button>
               ))}
             </div>
           </div>
-          <aside className="publication-panel glass-panel amber-panel">
-            <CornerBrackets />
-            <div className="panel-title">
-              <FileJson size={17} />
-              <h2>Publication checker</h2>
-              <span>FREE PATH</span>
-            </div>
-            <p>Five checks for your three Agentic files.</p>
-            <ul>
-              {[
-                'Public JSON profile',
-                'Valid profile structure',
-                'Matching agentic.txt',
-                'Public README.md',
-                'README references',
-              ].map((label, index) => (
-                <li key={label}>
-                  <span className="check-number">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <strong>{label}</strong>
-                  <span>REQUIRED</span>
-                </li>
-              ))}
-            </ul>
-            <p className="checker-caption">
-              Your files are checked when you submit.
-            </p>
-            <Link className="button secondary" href="/submit">
-              Check your project <ArrowUpRight size={15} />
-            </Link>
-            <a className="panel-help" href="https://ruagentic.org/generate/">
-              Need the files? Generate them ↗
-            </a>
-          </aside>
+          <CheckerDemo />
         </section>
         <div className="catalog-tabs">
-          <Tabs value={kind} onValueChange={(value) => setKind(String(value))}>
-            <TabsList variant="line">
-              <TabsTrigger value="all">All tools</TabsTrigger>
-              <TabsTrigger value="server">
-                <Server size={15} />
-                MCP servers
-              </TabsTrigger>
-              <TabsTrigger value="client">
-                <Monitor size={15} />
-                Clients
-              </TabsTrigger>
-              <TabsTrigger value="product">
-                <Workflow size={15} />
-                Agentic products
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <span className="catalog-count">{filtered.length} tools</span>
-        </div>
-        <div className="catalog-section-heading">
-          <h2 className="sr-only">
-            {query
-              ? 'Search results'
-              : category === 'All categories'
-                ? 'Explore the ecosystem'
-                : category}
-          </h2>
-          <div className="catalog-filters">
-            <label className="catalog-inline-filter">
-              <Search size={14} />
+          <fieldset className="tab-row">
+            <legend className="sr-only">Project type</legend>
+            {kinds.map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={kind === value}
+                onClick={() => setKind(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </fieldset>
+          <div className="catalog-controls">
+            <label>
+              <Search size={12} aria-hidden="true" />
+              <span className="sr-only">Filter displayed tools</span>
               <input
                 type="search"
-                aria-label="Filter displayed tools"
-                placeholder="Filter tools…"
+                placeholder="FILTER"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </label>
-            <label className="sort-control">
+            <label>
+              <Tag size={12} aria-hidden="true" />
               <span className="sr-only">Category</span>
               <select
-                aria-label="Filter by category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
                 {categories.map((item) => (
-                  <option key={item}>{item}</option>
+                  <option key={item}>
+                    {item === 'All categories' ? 'Category · all' : item}
+                  </option>
                 ))}
               </select>
+              <span className="select-caret" aria-hidden="true">
+                ▾
+              </span>
             </label>
-            <label className="sort-control">
-              <SlidersHorizontal size={14} />
-              <select
-                aria-label="Sort listings"
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                <option value="name">Name A–Z</option>
-                <option value="kind">Project type</option>
+            <label>
+              <SlidersHorizontal size={12} aria-hidden="true" />
+              <span className="sr-only">Sort listings</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                <option value="name">Sort · name ↓</option>
+                <option value="kind">Sort · type ↓</option>
               </select>
+              <span className="select-caret" aria-hidden="true">
+                ▾
+              </span>
             </label>
+            <span className="catalog-count">
+              <b>{String(filtered.length).padStart(2, '0')}</b> TOOLS
+            </span>
           </div>
         </div>
+        <h2 className="sr-only">
+          {query
+            ? 'Search results'
+            : category === 'All categories'
+              ? 'All tools'
+              : category}
+        </h2>
         <div className="listing-grid">
           {filtered.map((item) => (
             <ToolCard
@@ -271,8 +229,9 @@ export default function Catalog({
             <Search size={28} />
             <h2>No matches yet</h2>
             <p>Try a broader search or another category.</p>
-            <Button
-              variant="outline"
+            <button
+              type="button"
+              className="button"
               onClick={() => {
                 setQuery('');
                 setKind('all');
@@ -280,7 +239,7 @@ export default function Catalog({
               }}
             >
               Reset filters
-            </Button>
+            </button>
           </div>
         )}
       </main>

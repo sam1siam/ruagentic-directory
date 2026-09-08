@@ -31,7 +31,6 @@ export default function Dashboard({
     <main className="content-page dashboard-page">
       <div className="page-heading heading-row">
         <div>
-          <span className="eyebrow">YOUR WORKSPACE</span>
           <h1>Your projects.</h1>
           <p>{email}</p>
         </div>

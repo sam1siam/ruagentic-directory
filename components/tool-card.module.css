@@ -48,7 +48,7 @@
   border: 1px solid rgba(92, 225, 230, 0.35);
   background: rgba(92, 225, 230, 0.06);
   font:
-    400 12px/normal var(--font-geist-mono),
+    400 12px/normal var(--font-code),
     monospace;
   color: #5ce1e6;
 }
@@ -56,7 +56,7 @@
   border: 1px solid rgba(255, 176, 32, 0.3);
   padding: 3px 7px;
   font:
-    400 9.5px/normal var(--font-geist-mono),
+    400 9.5px/normal var(--font-code),
     monospace;
   letter-spacing: 0.16em;
   color: #ffb020;
@@ -66,7 +66,7 @@
   position: relative;
   margin: 0 0 6px;
   font:
-    600 16px/normal var(--font-geist-sans),
+    600 16px/normal var(--font-ui),
     sans-serif;
   letter-spacing: normal;
   color: #f2f8fc;
@@ -78,7 +78,7 @@
   min-height: 40px;
   margin: 0;
   font:
-    400 13px/1.5 var(--font-geist-sans),
+    400 13px/1.5 var(--font-ui),
     sans-serif;
   color: #8fa6b6;
   overflow-wrap: anywhere;
@@ -93,7 +93,7 @@
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   font:
-    400 10.5px/normal var(--font-geist-mono),
+    400 10.5px/normal var(--font-code),
     monospace;
   letter-spacing: 0.08em;
   color: #5f7a8a;

@@ -3,7 +3,6 @@ export const metadata = { title: 'Privacy policy' };
 export default function Page() {
   return (
     <main className="content-page prose-page">
-      <span className="eyebrow">YOUR INFORMATION</span>
       <h1>Privacy policy.</h1>
       <p>
         Effective September 8, 2026. This policy describes how the RUAGENTIC

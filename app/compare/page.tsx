@@ -13,7 +13,6 @@ export default async function Page({
   return (
     <main className="content-page">
       <div className="page-heading">
-        <span className="eyebrow">SIDE BY SIDE</span>
         <h1>Compare your next connection.</h1>
         <p>
           Published facts in one place. Check each project’s documentation for

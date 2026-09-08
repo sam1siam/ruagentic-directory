@@ -2,7 +2,6 @@ export const metadata = { title: 'Listing guidelines' };
 export default function Page() {
   return (
     <main className="content-page prose-page">
-      <span className="eyebrow">PUBLISH WITH CONFIDENCE</span>
       <h1>Listing guidelines.</h1>
       <p>
         We welcome MCP servers, MCP clients, and products built for AI agents.

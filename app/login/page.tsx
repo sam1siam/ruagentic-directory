@@ -1,5 +1,7 @@
 import AuthForm from '@/components/auth-form';
+import { SessionLog, NetworkRail } from '@/components/auth-rails';
 import { configured, userClient } from '@/lib/supabase/server';
+import { directoryStats } from '@/lib/server/stats';
 import { redirect } from 'next/navigation';
 import { safeNext } from '@/lib/listing';
 export const metadata = {
@@ -16,10 +18,11 @@ export default async function Page({
     const { data } = await (await userClient()).auth.getUser();
     if (data.user) redirect(safeNext(p.next ?? null));
   }
+  const stats = await directoryStats();
   return (
     <main className="auth-page">
       {p.error && (
-        <p className="notice error">
+        <p className="notice error" role="alert">
           {p.error === 'oauth-cancelled'
             ? 'GitHub sign-in was cancelled. You can try again or use an email link.'
             : p.error === 'oauth'
@@ -30,25 +33,9 @@ export default async function Page({
         </p>
       )}
       <div className="auth-frame">
-        <aside className="auth-rail">
-          <div>
-            <strong>DISCOVER</strong>Servers, clients, and products in one
-            place.
-          </div>
-          <div>
-            <strong>CONNECT</strong>Find documentation and setup instructions.
-          </div>
-        </aside>
+        <SessionLog ready={configured()} />
         <AuthForm next={safeNext(p.next ?? null)} available={configured()} />
-        <aside className="auth-rail">
-          <div>
-            <strong>YOUR ACCOUNT</strong>Save tools and manage your listings.
-          </div>
-          <div>
-            <strong>ONE DIRECTORY</strong>Publish with Agentic files or a
-            one-time listing payment.
-          </div>
-        </aside>
+        <NetworkRail stats={stats} />
       </div>
     </main>
   );
