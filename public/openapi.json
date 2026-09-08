@@ -31,11 +31,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "server",
-                "client",
-                "product"
-              ]
+              "enum": ["server", "client", "product"]
             }
           },
           {
@@ -76,11 +72,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "version",
-                    "total",
-                    "listings"
-                  ],
+                  "required": ["version", "total", "listings"],
                   "properties": {
                     "version": {
                       "type": "string"
@@ -89,10 +81,7 @@
                       "type": "integer"
                     },
                     "nextOffset": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     },
                     "listings": {
                       "type": "array",
@@ -171,11 +160,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "server",
-              "client",
-              "product"
-            ]
+            "enum": ["server", "client", "product"]
           },
           "summary": {
             "type": "string"

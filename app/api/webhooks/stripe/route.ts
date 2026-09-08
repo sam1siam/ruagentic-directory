@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { stripe, fulfill } from '@/lib/server/payments';
 import { adminClient } from '@/lib/supabase/server';
 import { deliverEmails } from '@/lib/server/email';
+import { recordAdOrder, syncAdSubscription } from '@/lib/server/ads';
+import { isAdMetadata } from '@/lib/advertising';
 import { boundedBody, BodyLimitError } from '@/lib/bounded-body';
 import {
   isDirectoryMetadata,
@@ -36,6 +38,13 @@ export async function POST(request: Request) {
       event.type === 'checkout.session.async_payment_succeeded'
     ) {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (isAdMetadata(session.metadata)) {
+        // Sponsorships: re-read the session from Stripe, never trust the event body.
+        await recordAdOrder(
+          await stripe().checkout.sessions.retrieve(session.id),
+        );
+        return Response.json({ received: true, sponsorship: true });
+      }
       if (!isDirectoryMetadata(session.metadata))
         return Response.json({ received: true, ignored: true });
       await fulfill(session.id, event.id, event.type);
@@ -56,6 +65,14 @@ export async function POST(request: Request) {
         .eq('stripe_session_id', session.id)
         .in('state', ['creating', 'open']);
       if (error) throw error;
+    } else if (
+      event.type === 'customer.subscription.updated' ||
+      event.type === 'customer.subscription.deleted'
+    ) {
+      const subscription = event.data.object as Stripe.Subscription;
+      if (!isAdMetadata(subscription.metadata))
+        return Response.json({ received: true, ignored: true });
+      await syncAdSubscription(subscription);
     } else if (
       event.type === 'charge.refunded' ||
       event.type === 'charge.dispute.created'

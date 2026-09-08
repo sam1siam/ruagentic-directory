@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import { catalog, listingBySlug } from '@/lib/server/catalog';
 import ListingActions from '@/components/listing-actions';
+import { SponsorTile } from '@/components/sponsor';
+import { activeSponsors } from '@/lib/server/sponsors';
+import { pickSponsor } from '@/lib/advertising';
 import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 export async function generateMetadata({
@@ -44,6 +47,10 @@ export default async function Page({
   const related = (await catalog())
     .filter((p) => p.slug !== item.slug && p.category === item.category)
     .slice(0, 3);
+  const sponsor = pickSponsor(
+    'detail',
+    (await activeSponsors()).filter((s) => !s.house),
+  );
   const remotes = (item.remotes ?? []) as {
     type?: string;
     url?: string;
@@ -266,6 +273,7 @@ export default async function Page({
               </div>
             ))}
           </dl>
+          {sponsor && <SponsorTile sponsor={sponsor} />}
           <div className="sidebar-guide glass">
             <Link2 size={21} />
             <strong>Building something agentic?</strong>

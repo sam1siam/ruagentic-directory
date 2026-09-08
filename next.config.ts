@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
+      { source: '/collections', destination: '/categories', permanent: true },
+      {
+        source: '/collections/:path*',
+        destination: '/categories',
+        permanent: true,
+      },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.ruagentic.com' }],

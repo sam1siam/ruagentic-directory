@@ -6,7 +6,12 @@ import {
 const base = process.env.CHECK_BASE ?? 'http://localhost:3207';
 const paths = [
   '/',
-  '/collections',
+  '/servers',
+  '/clients',
+  '/products',
+  '/categories',
+  '/categories/developer-tools',
+  '/advertise',
   '/compare',
   '/pricing',
   '/about',
@@ -31,7 +36,7 @@ for (const path of paths) {
 }
 const list = await (await fetch(base + '/api/v1/listings?limit=2')).json();
 assert.equal(list.listings.length, 2);
-assert.ok(list.total >= 31);
+assert.ok(list.total >= 160, 'bundled catalog must be served in full');
 assert.equal(list.nextOffset, 2);
 const first = list.listings[0];
 for (const method of ['GET', 'HEAD']) {
@@ -84,6 +89,19 @@ assert.equal(
   404,
   'unknown listings must be real 404s, not streamed 200s',
 );
+assert.equal(
+  (await fetch(base + '/categories/not-a-real-category')).status,
+  404,
+  'unknown categories must be real 404s, not streamed 200s',
+);
+{
+  const moved = await fetch(base + '/collections', { redirect: 'manual' });
+  assert.equal(moved.status, 308);
+  assert.equal(
+    new URL(moved.headers.get('location')!, base).pathname,
+    '/categories',
+  );
+}
 {
   const gated = await fetch(base + '/dashboard', { redirect: 'manual' });
   assert.ok(
@@ -109,8 +127,19 @@ const forbidden = await fetch(base + '/api/submissions', {
   body: '{}',
 });
 assert.equal(forbidden.status, 403);
-const cron = await fetch(base + '/api/cron/email');
-assert.equal(cron.status, 401);
+for (const job of ['email', 'seed']) {
+  const cron = await fetch(base + '/api/cron/' + job);
+  assert.equal(cron.status, 401, 'cron ' + job + ' must require the secret');
+}
+const foreignAd = await fetch(base + '/api/advertise/checkout', {
+  method: 'POST',
+  headers: {
+    Origin: 'https://other.example',
+    'Content-Type': 'application/json',
+  },
+  body: '{}',
+});
+assert.equal(foreignAd.status, 403, 'sponsor checkout must be same-origin');
 const webhook = await fetch(base + '/api/webhooks/stripe', {
   method: 'POST',
   body: '{}',
@@ -144,7 +173,7 @@ try {
   await mcp.close();
 }
 console.log(
-  'PASS public pages, search/pagination, listing detail, error routes, unauthenticated boundaries, cron protection, unsigned webhooks, and official MCP client discovery/search.',
+  'PASS public pages, category and kind routes, search/pagination, listing detail, error routes, unauthenticated boundaries, cron protection, unsigned webhooks, and official MCP client discovery/search.',
 );
 console.log(
   'Authenticated publishing, actual Stripe payments, email delivery, DNS and browser WebMCP require separately configured integration checks.',

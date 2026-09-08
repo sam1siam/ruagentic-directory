@@ -7,8 +7,10 @@ import { Dialog } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
 import { Menu, Search, X } from 'lucide-react';
 import { browserClient } from '@/lib/supabase/browser';
-import { collections, collectionHref } from '@/lib/collections';
+import { categories, categoryHref, kinds } from '@/lib/categories';
 import type { DirectoryStats } from '@/lib/server/stats';
+import type { Sponsor } from '@/lib/advertising';
+import { SponsorBar } from '@/components/sponsor';
 import {
   CornerBrackets,
   LightField,
@@ -19,13 +21,21 @@ import {
 
 const navigation = [
   ['Discover', '/'],
-  ['Collections', '/collections'],
+  ['Servers', '/servers'],
+  ['Clients', '/clients'],
+  ['Products', '/products'],
+  ['Categories', '/categories'],
+  ['Advertise', '/advertise'],
   ['List your project', '/pricing'],
 ] as const;
 const actions = [
   ['Submit a project', '/submit', 'PUBLISH'],
   ['List your project', '/pricing', 'PRICING'],
-  ['Browse collections', '/collections', 'CURATED'],
+  ['Advertise', '/advertise', 'SPONSOR'],
+  ['All MCP servers', '/servers', 'BROWSE'],
+  ['All clients', '/clients', 'BROWSE'],
+  ['All agentic products', '/products', 'BROWSE'],
+  ['Browse categories', '/categories', 'BROWSE'],
   ['Compare tools', '/compare', 'SIDE BY SIDE'],
   ['Your dashboard', '/dashboard', 'ACCOUNT'],
   ['Developer API & MCP', '/developers', 'API'],
@@ -48,7 +58,13 @@ function useAccountState() {
   return signedIn;
 }
 
-export function SiteHeader({ stats }: { stats: DirectoryStats }) {
+export function SiteHeader({
+  stats,
+  sponsor,
+}: {
+  stats: DirectoryStats;
+  sponsor: Sponsor;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -76,8 +92,13 @@ export function SiteHeader({ stats }: { stats: DirectoryStats }) {
     setMenuPath(pathname);
     setMenu(false);
   }
+  const current = (href: string) =>
+    href === '/'
+      ? pathname === '/'
+      : pathname === href || pathname.startsWith(href + '/');
   return (
     <>
+      <SponsorBar sponsor={sponsor} />
       <div className="telemetry-strip" aria-label="Directory telemetry">
         <span className="telemetry-live">
           <i className="live-dot" aria-hidden="true" />
@@ -135,12 +156,14 @@ export function SiteHeader({ stats }: { stats: DirectoryStats }) {
                 <Link
                   key={href}
                   href={href}
-                  aria-current={pathname === href ? 'page' : undefined}
+                  aria-current={current(href) ? 'page' : undefined}
                 >
                   {label}
                 </Link>
               ))}
-              <a href="https://ruagentic.org">The convention ↗</a>
+              <a href="https://ruagentic.org" className="nav-convention">
+                The convention ↗
+              </a>
             </nav>
             <div className="header-actions">
               <button
@@ -222,7 +245,7 @@ function CommandPalette({
       setFailed(false);
       try {
         const response = await fetch(
-          '/api/v1/listings?limit=4&q=' + encodeURIComponent(query),
+          '/api/v1/listings?limit=5&q=' + encodeURIComponent(query),
           { signal: controller.signal },
         );
         if (!response.ok) throw new Error('Search unavailable');
@@ -252,14 +275,14 @@ function CommandPalette({
         hint: t.category,
         href: '/tools/' + t.slug,
       })),
-      ...collections
+      ...categories
         .filter((c) => !q || c.name.toLowerCase().includes(q))
         .map((c) => ({
-          id: 'collection:' + c.name,
-          kind: 'COLLECTION',
+          id: 'category:' + c.slug,
+          kind: 'CATEGORY',
           label: c.name,
-          hint: 'kind' in c ? 'Clients' : c.category,
-          href: collectionHref(c),
+          hint: 'CATEGORY PAGE',
+          href: categoryHref(c),
         })),
       ...(q
         ? [
@@ -301,7 +324,7 @@ function CommandPalette({
           <CornerBrackets />
           <Dialog.Title className="sr-only">Search the directory</Dialog.Title>
           <Dialog.Description className="sr-only">
-            Type to find a tool, collection or action. Use the arrow keys and
+            Type to find a tool, category or action. Use the arrow keys and
             Enter to open a result.
           </Dialog.Description>
           <Command shouldFilter={false} loop label="Search the directory">
@@ -311,7 +334,7 @@ function CommandPalette({
                 ref={input}
                 value={query}
                 onValueChange={setQuery}
-                placeholder="Search tools, collections, commands…"
+                placeholder="Search tools, categories, commands…"
               />
               <kbd>ESC</kbd>
             </div>
@@ -325,7 +348,7 @@ function CommandPalette({
                 </p>
               )}
               <Command.Empty className="palette-empty">
-                No matching tools, collections or actions.
+                No matching tools, categories or actions.
               </Command.Empty>
               {rows.map((row) => (
                 <Command.Item
@@ -367,6 +390,7 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
         <nav className="footer-links" aria-label="Footer">
           <Link href="/about">About</Link>
           <Link href="/guidelines">Guidelines</Link>
+          <Link href="/advertise">Advertise</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <a href="https://ruagentic.org">The convention ↗</a>
@@ -417,14 +441,18 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
         <div className="footer-column">
           <h2>Directory</h2>
           <Link href="/">Discover</Link>
-          <Link href="/collections">Collections</Link>
-          <Link href="/?kind=server">MCP servers</Link>
-          <Link href="/?kind=client">MCP clients</Link>
-          <Link href="/?kind=product">Agentic products</Link>
+          {kinds.map((k) => (
+            <Link key={k.slug} href={'/' + k.slug}>
+              {k.name}
+            </Link>
+          ))}
+          <Link href="/categories">Categories</Link>
+          <Link href="/compare">Compare tools</Link>
         </div>
         <div className="footer-column">
           <h2>Publish</h2>
           <Link href="/pricing">List your project</Link>
+          <Link href="/advertise">Advertise</Link>
           <Link href="/guidelines">Listing guidelines</Link>
           <a href="https://ruagentic.org/audit/">Publication checker ↗</a>
           <a href="https://ruagentic.org">The convention ↗</a>

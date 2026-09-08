@@ -7,8 +7,11 @@ import {
   LightField,
 } from '@/components/design-interactions';
 import { directoryStats } from '@/lib/server/stats';
+import { activeSponsors } from '@/lib/server/sponsors';
+import { houseSponsor, pickSponsor } from '@/lib/advertising';
 import './globals.css';
 import './hud.css';
+import './browse.css';
 const sans = Instrument_Sans({
   variable: '--font-ui',
   subsets: ['latin'],
@@ -35,16 +38,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Stats come from the live directory at request time, never from a build-time snapshot.
+  // Stats and sponsors come from the live directory at request time, never from a build snapshot.
   await connection();
-  const stats = await directoryStats();
+  const [stats, sponsors] = await Promise.all([
+    directoryStats(),
+    activeSponsors(),
+  ]);
+  const bar = pickSponsor('bar', sponsors) ?? houseSponsor;
   return (
     <html lang="en" className="dark">
       <body className={sans.variable + ' ' + mono.variable}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <SiteHeader stats={stats} />
+        <SiteHeader stats={stats} sponsor={bar} />
         <DesignInteractions />
         <div id="main">
           <LightField />

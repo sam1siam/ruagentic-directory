@@ -1,25 +1,36 @@
 export const dynamic = 'force-dynamic';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { catalog } from '@/lib/server/catalog';
 import { directoryStats } from '@/lib/server/stats';
-import { collections, collectionHref, inCollection } from '@/lib/collections';
+import { categories, categoryHref } from '@/lib/categories';
 import { CornerBrackets } from '@/components/design-interactions';
+import { CategoryCardsSkeleton } from '@/components/skeletons';
 export const metadata = {
-  title: 'Collections',
+  title: 'Categories',
   description:
-    'Explore MCP servers and agentic tools by workflow, from coding and research to data and automation.',
+    'Browse MCP servers, clients and agentic products by category, from developer tools and data to automation and finance.',
 };
-export default async function Page() {
+/** The skeleton lives inside the page rather than in a loading file so it
+ *  never wraps the category child routes, whose unknown slugs must 404. */
+export default function Page() {
+  return (
+    <Suspense fallback={<CategoryCardsSkeleton />}>
+      <CategoryIndex />
+    </Suspense>
+  );
+}
+async function CategoryIndex() {
   const [items, stats] = await Promise.all([catalog(), directoryStats()]);
   const age = stats.updatedDays;
   return (
     <main className="content-page collections-page">
       <div className="collections-heading">
         <div>
-          <h1>Start with a collection.</h1>
+          <h1>Browse by category.</h1>
           <p className="lead">
-            Useful ways into the ecosystem, organized around what you want to
-            do.
+            Every listing sits in one of nine categories. Open one to filter it
+            further by type, search and sort.
           </p>
         </div>
         <dl className="stat-grid">
@@ -28,8 +39,8 @@ export default async function Page() {
             <dd>{stats.total}</dd>
           </div>
           <div>
-            <dt>TYPES</dt>
-            <dd>{new Set(items.map((item) => item.kind)).size}</dd>
+            <dt>CATEGORIES</dt>
+            <dd>{categories.length}</dd>
           </div>
           <div>
             <dt>UPDATED</dt>
@@ -38,13 +49,13 @@ export default async function Page() {
         </dl>
       </div>
       <div className="collection-grid">
-        {collections.map((c) => {
-          const members = items.filter((item) => inCollection(c, item));
+        {categories.map((c) => {
+          const members = items.filter((item) => item.category === c.name);
           return (
             <Link
               className="collection-card glass"
-              key={c.name}
-              href={collectionHref(c)}
+              key={c.slug}
+              href={categoryHref(c)}
             >
               <span className="card-glow" aria-hidden="true" />
               <CornerBrackets small diagonal />

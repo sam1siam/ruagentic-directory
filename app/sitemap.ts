@@ -1,11 +1,17 @@
 export const dynamic = 'force-dynamic';
 import type { MetadataRoute } from 'next';
 import { catalog } from '@/lib/server/catalog';
+import { categories } from '@/lib/categories';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...[
       '',
-      '/collections',
+      '/servers',
+      '/clients',
+      '/products',
+      '/categories',
+      ...categories.map((c) => '/categories/' + c.slug),
+      '/advertise',
       '/pricing',
       '/about',
       '/guidelines',

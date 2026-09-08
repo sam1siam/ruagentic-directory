@@ -70,6 +70,18 @@ Reset subject: `Reset your RUAGENTIC password`
 
 Confirmation links are single-use. Opening a link displays an explicit confirmation button; GET and HEAD do not consume the token. The button posts to the same-origin confirmation route before creating a session. Keep `Referrer-Policy: strict-origin` on this form: it strips token-bearing paths while retaining the Origin header needed for form validation. Include scanner-prefetch behavior in account-email validation. See [Supabase's email-prefetching guidance](https://supabase.com/docs/guides/auth/auth-email-templates#email-prefetching).
 
+## Sponsorships
+
+`/advertise` sells three monthly placements through Stripe Checkout in subscription mode: Platinum (US$1,299, site-wide bar plus listing and detail slots), Gold (US$699, listing and detail slots) and Silver (US$399, detail slots). Create three recurring monthly prices in the RUAGENTIC Stripe account and put their ids in `STRIPE_AD_PRICE_PLATINUM`, `STRIPE_AD_PRICE_GOLD` and `STRIPE_AD_PRICE_SILVER`. Until they are set, the page renders but checkout answers 503 with a contact prompt.
+
+Add `customer.subscription.updated` and `customer.subscription.deleted` to the webhook endpoint so lapsed or cancelled sponsors stop showing; `checkout.session.completed` already covers activation. Apply `supabase/migrations/202609080003_ad_orders.sql`; the `ad_orders` table is written only by the webhook and the thank-you page reconciliation and read to render sponsor slots. Sponsor checkouts carry `metadata.app=ruagentic-ads` and are ignored by the listing payment code. When no paid Platinum sponsor is active the bar shows the house sponsor defined in `lib/advertising.ts`; card and tile slots stay empty rather than showing house content.
+
+Sponsorship never affects ordering, source labels or Agentic checks, and every placement is labelled as sponsored.
+
+## Catalog
+
+`data/catalog.json` bundles source-labelled listings. The public catalog merges database rows with bundled entries the database has not stored yet, and the hourly `/api/cron/seed` cron inserts those rows (never touching existing ones) so bookmarks and reports can reference them.
+
 ## Stripe
 
 Use the separate RUAGENTIC Stripe account (formerly Superway) in Vertex Innovation Collective. Do not use AstroFabric's account or credentials. The application key needs Checkout Sessions write access and Payment Intents, Prices, and Products read access. Connected-account permissions and all other resource permissions stay disabled.

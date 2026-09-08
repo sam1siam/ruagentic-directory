@@ -5,13 +5,15 @@
 ## Discover
 - [Directory](https://ruagentic.com/): Search projects by name, capability, type, and category.
 - [Public API](https://ruagentic.com/developers): Read-only listing search and project details.
-- [Collections](https://ruagentic.com/collections): Browse by workflow.
+- [MCP servers](https://ruagentic.com/servers), [Clients](https://ruagentic.com/clients), [Agentic products](https://ruagentic.com/products): Browse by type with sidebar filters.
+- [Categories](https://ruagentic.com/categories): Nine categories, each with its own page.
 - [Agentic JSON](https://ruagentic.com/agentic.json): Machine-readable site profile.
 - [Agentic TXT](https://ruagentic.com/agentic.txt): Text index of the profile.
 
 ## Publish
 - [Submit](https://ruagentic.com/submit): Sign in with GitHub or an email link, autofill and review project details from a public URL, then choose a one-time US$49.99 listing or verified free publication.
 - [Listing options](https://ruagentic.com/pricing): Paid and free requirements.
+- [Advertise](https://ruagentic.com/advertise): Monthly Platinum, Gold and Silver sponsor placements, labelled as sponsored and separate from rankings and checks.
 - [Guidelines](https://ruagentic.com/guidelines): Accurate information, public links, no credentials.
 
 ## Agentic convention

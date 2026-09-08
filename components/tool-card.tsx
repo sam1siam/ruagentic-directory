@@ -22,9 +22,12 @@ export default function ToolCard({
   const sourceLabel =
     source === 'Official MCP Registry'
       ? 'MCP REGISTRY'
-      : source === 'Publisher documentation'
+      : source === 'Publisher documentation' ||
+          source === 'Publisher repository'
         ? 'PUBLISHER'
-        : source;
+        : source === 'User submission'
+          ? 'SUBMITTED'
+          : source;
   const content = (
     <>
       <span className={styles.glow} aria-hidden="true" />
