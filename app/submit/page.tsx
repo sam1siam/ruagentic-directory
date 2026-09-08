@@ -9,7 +9,7 @@ export const metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; plan?: string }>;
 }) {
   const p = await searchParams;
   if (!configured())
@@ -22,7 +22,20 @@ export default async function Page({
   if (!data.user)
     redirect(
       '/login?next=' +
-        encodeURIComponent('/submit' + (p.id ? '?id=' + p.id : '')),
+        encodeURIComponent(
+          '/submit' +
+            (p.id
+              ? '?id=' + encodeURIComponent(p.id)
+              : p.plan === 'paid'
+                ? '?plan=paid'
+                : ''),
+        ),
     );
-  return <SubmissionForm id={p.id} email={data.user.email ?? ''} />;
+  return (
+    <SubmissionForm
+      id={p.id}
+      email={data.user.email ?? ''}
+      initialPlan={p.plan === 'paid' ? 'payment' : 'agentic'}
+    />
+  );
 }

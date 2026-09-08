@@ -14,18 +14,41 @@ Set the minimum password length to 12 characters, matching the signup and reset 
 
 Use these Supabase email templates with Site URL `https://ruagentic.com`. They use the existing token-hash confirmation route so opening an email on another device does not require the original browser's PKCE verifier. Keep email link tracking disabled. Test actual email receipt, confirmation, and recovery after configuring the domain.
 
+GitHub uses the separate **RUAGENTIC Directory** OAuth application owned by `sam1siam`, configured only in this directory's Supabase GitHub provider. Homepage: `https://ruagentic.com`. GitHub callback: `https://efvjfubdvfrzexawpoqb.supabase.co/auth/v1/callback`. Keep wildcard callbacks, device flow, and email-optional authentication disabled. The app requests no additional GitHub scopes. GitHub login identifies an account; it does not verify repository ownership.
+
+Supabase redirect allowlist: `https://ruagentic.com/auth/callback`, `https://ruagentic.com/auth/confirm`, `https://ruagentic.com/reset-password`, `https://ruagentic.com/submit**`, `https://ruagentic.com/dashboard**`, and `https://ruagentic.com/auth/callback**`. The final three preserve query parameters. The application independently limits continuation to dashboard, submission, or password reset paths on the canonical origin.
+
+Magic links use `signInWithOtp` with account creation enabled. Email redirects contain the final page, while GitHub uses the PKCE callback. Both templates below are required: new/unconfirmed email users receive signup confirmation, and returning users receive the magic-link email. HTTPS sessions use Secure cookies with SameSite=Lax. Never switch OAuth cookies to SameSite=Strict.
+
 Signup subject: `Confirm your RUAGENTIC email address`
 
 ```html
-<h2>Confirm your email address</h2>
-<p>Confirm this email address to finish creating your RUAGENTIC account.</p>
+<h2>Welcome to RUAGENTIC</h2>
+<p>Confirm your email address to save tools and manage your listings.</p>
 <p>
   <a
-    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/dashboard"
-    >Confirm email address</a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next={{ .RedirectTo }}"
+    >Continue to RUAGENTIC</a
   >
 </p>
-<p>If you did not create this account, you can ignore this email.</p>
+<p>If you did not request this account, you can ignore this email.</p>
+```
+
+Magic-link subject: `Your RUAGENTIC sign-in link`
+
+```html
+<h2>Sign in to RUAGENTIC</h2>
+<p>
+  Continue using the secure link below. It expires in one hour and can be used
+  once.
+</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next={{ .RedirectTo }}"
+    >Continue to RUAGENTIC</a
+  >
+</p>
+<p>If you did not request this link, you can ignore this email.</p>
 ```
 
 Reset subject: `Reset your RUAGENTIC password`
@@ -93,3 +116,13 @@ Account deletion requests require checking retention obligations and removing th
 ## Validation scope
 
 Local SQL/RLS/concurrency tests can run in an isolated, labeled PostgreSQL container. They do not prove Supabase Auth email delivery, live Stripe activation, Resend delivery, DNS, or browser behavior. WebMCP has a feature-detected browser integration; record a real supported-context check before claiming browser tool verification.
+
+## Submission autofill
+
+`POST /api/import` requires a confirmed account, same-origin request, and an account-based rate limit. It returns suggestions, field-level source URLs, read/failure observations, and missing details. It does not publish a listing or grant ownership/file eligibility.
+
+The importer makes at most six credential-free HTTPS GET requests, two concurrently, within 24 seconds. The first website read can use 512 KiB and the other reads 96 KiB each (992 KiB maximum). DNS resolution rejects every nonpublic address and pins the connection; redirects require the final public URL, and no remote tools or installation commands are executed. Public pages, JSON-LD, GitHub metadata and READMEs, linked docs, llms.txt, OpenAPI, and Agentic profiles can supply suggestions. An inaccessible optional document does not discard successful metadata. Authentication and pricing remain unspecified unless the submitter supplies them.
+
+Imported values remain editable. Re-import preserves touched fields, including deliberately cleared fields, and presents individual alternatives. Applying a suggestion invalidates the previous audit and consent. An open checkout locks editing and re-import. The preview displays Saved only after persistence and Passed only for the current, unexpired server audit.
+
+Before release, test new and returning magic-link users, cross-device email confirmation, expired/replayed links, GitHub success/cancellation/back navigation, sign-out, and persistence of the selected paid/free option through authentication. The automated suite verifies return URL restrictions, scanner GET/HEAD behavior, explicit POST, callback failure paths, source handling, import budgets, and edit preservation; real provider completion is a separate check.

@@ -1,5 +1,5 @@
 import { boundedBody, BodyLimitError } from './bounded-body.ts';
-import { safeNext } from './listing.ts';
+import { emailNext } from './auth-navigation.ts';
 
 type ConfirmationType = 'signup' | 'recovery' | 'email_change' | 'email';
 type Confirmation = {
@@ -21,7 +21,7 @@ const privateHeaders = {
     "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
 };
 
-function parse(params: URLSearchParams): Confirmation | null {
+function parse(params: URLSearchParams, origin: string): Confirmation | null {
   if (
     ['token_hash', 'type', 'next'].some((key) => params.getAll(key).length > 1)
   )
@@ -35,7 +35,9 @@ function parse(params: URLSearchParams): Confirmation | null {
     token_hash: token,
     type: type as ConfirmationType,
     next:
-      type === 'recovery' ? '/reset-password' : safeNext(params.get('next')),
+      type === 'recovery'
+        ? '/reset-password'
+        : emailNext(params.get('next'), origin),
   };
 }
 
@@ -53,7 +55,7 @@ function page(title: string, content: string, status = 200) {
     `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title} · RUAGENTIC</title><style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b0c0e;color:#f4f4f5;font:16px/1.6 system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}main{width:min(100%,480px);padding:32px;border:1px solid #303238;border-radius:16px;background:#121316}.brand{font-weight:750;letter-spacing:.08em;font-size:13px;color:#b8bdc8}h1{font-size:28px;line-height:1.2;margin:24px 0 16px}p{color:#b8bdc8;margin:16px 0}form{margin-top:24px}button{width:100%;padding:14px 20px;border:0;border-radius:8px;background:#f4f4f5;color:#111;font:inherit;font-weight:650;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #9ea9ff;outline-offset:4px}a{color:#f4f4f5}.back{display:inline-block;margin-top:24px}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#05080c;color:#f2f8fc;font:16px/1.6 system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}main{width:min(100%,480px);padding:32px;border:1px solid #294451;border-radius:0;background:linear-gradient(135deg,#19232a,#0b151c)}.brand{font-weight:750;letter-spacing:.08em;font-size:13px;color:#8fa6b6}h1{font-size:28px;line-height:1.2;margin:24px 0 16px}p{color:#8fa6b6;margin:16px 0}form{margin-top:24px}button{width:100%;padding:14px 20px;border:0;border-radius:0;background:#5ce1e6;color:#04141a;font:inherit;font-weight:650;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #5ce1e6;outline-offset:4px}a{color:#f2f8fc}.back{display:inline-block;margin-top:24px}
 </style></head><body><main><div class="brand">RUAGENTIC</div><h1>${title}</h1>${content}<a class="back" href="/login">Back to sign in</a></main></body></html>`,
     {
       status,
@@ -80,7 +82,7 @@ function retry(
 ) {
   const query = new URLSearchParams({
     error: 'link',
-    next: type === 'recovery' ? '/reset-password' : safeNext(next),
+    next: type === 'recovery' ? '/reset-password' : emailNext(next, origin),
   });
   return redirect(origin, '/login?' + query, status);
 }
@@ -93,20 +95,20 @@ export async function handleConfirmation(
 ) {
   if (request.method === 'GET' || request.method === 'HEAD') {
     const params = new URL(request.url).searchParams;
-    const input = parse(params);
+    const input = parse(params, origin);
     if (!input)
       return retry(origin, params.get('type'), 307, params.get('next'));
     const title =
       input.type === 'recovery'
         ? 'Reset your password'
-        : 'Confirm your email address';
+        : 'Continue to RUAGENTIC';
     const label =
       input.type === 'recovery'
         ? 'Continue to reset password'
-        : 'Confirm email address';
+        : 'Continue to RUAGENTIC';
     const response = page(
       title,
-      `<p>${input.type === 'recovery' ? 'Continue to choose a new password for your RUAGENTIC account.' : 'Confirm this email address to continue to your RUAGENTIC account.'}</p>
+      `<p>${input.type === 'recovery' ? 'Continue to choose a new password for your RUAGENTIC account.' : 'Use this secure link to continue to your RUAGENTIC account.'}</p>
 <form method="post" action="/auth/confirm">
 <input type="hidden" name="token_hash" value="${escape(input.token_hash)}">
 <input type="hidden" name="type" value="${escape(input.type)}">
@@ -152,7 +154,7 @@ export async function handleConfirmation(
       error instanceof BodyLimitError ? 413 : 400,
     );
   }
-  const input = parse(params);
+  const input = parse(params, origin);
   if (!input) return retry(origin, params.get('type'), 303, params.get('next'));
   try {
     const valid = await verify({

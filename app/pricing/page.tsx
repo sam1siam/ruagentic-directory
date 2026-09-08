@@ -71,7 +71,7 @@ export default function Page() {
               </li>
             ))}
           </ul>
-          <Link className="button secondary" href="/submit">
+          <Link className="button secondary" href="/submit?plan=paid">
             Start your listing
             <ArrowUpRight size={16} />
           </Link>

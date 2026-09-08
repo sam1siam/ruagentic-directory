@@ -15,6 +15,12 @@ export async function userClient() {
     key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error('Account services are unavailable.');
   return createServerClient(url, key, {
+    cookieOptions: {
+      sameSite: 'lax',
+      secure:
+        !process.env.APP_URL?.startsWith('http://localhost') &&
+        !process.env.APP_URL?.startsWith('http://127.0.0.1'),
+    },
     cookies: {
       getAll: () => jar.getAll(),
       setAll(values) {

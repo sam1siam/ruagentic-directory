@@ -10,7 +10,7 @@
 - [Agentic TXT](https://ruagentic.com/agentic.txt): Text index of the profile.
 
 ## Publish
-- [Submit](https://ruagentic.com/submit): Sign in, add project details, then choose a one-time US$49.99 listing or verified free publication.
+- [Submit](https://ruagentic.com/submit): Sign in with GitHub or an email link, autofill and review project details from a public URL, then choose a one-time US$49.99 listing or verified free publication.
 - [Listing options](https://ruagentic.com/pricing): Paid and free requirements.
 - [Guidelines](https://ruagentic.com/guidelines): Accurate information, public links, no credentials.
 

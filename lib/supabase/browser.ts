@@ -6,5 +6,11 @@ export function browserClient() {
     throw new Error(
       'Account services are being configured. Please try again shortly.',
     );
-  return createBrowserClient(url, key);
+  return createBrowserClient(url, key, {
+    cookieOptions: {
+      sameSite: 'lax',
+      secure:
+        typeof window === 'undefined' || window.location.protocol === 'https:',
+    },
+  });
 }

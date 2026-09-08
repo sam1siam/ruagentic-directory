@@ -6,7 +6,13 @@ import { cleanUrl } from '../listing.ts';
 export const publicAddress = (address: string) =>
   ipaddr.isValid(address) && ipaddr.process(address).range() === 'unicast';
 /** Resolve every address, reject mixed private/public DNS, pin the connection and never forward credentials. */
-export async function readPublic(value: string, limit = 262144) {
+export async function readPublic(
+  value: string,
+  limit = 262144,
+  deadline = Date.now() + 13000,
+) {
+  if (Date.now() >= deadline)
+    throw new Error('The import time limit was reached.');
   const url = new URL(cleanUrl(value)),
     hostname = url.hostname.replace(/^\[|\]$/g, '');
   const addresses = ipaddr.isValid(hostname)
@@ -21,7 +27,7 @@ export async function readPublic(value: string, limit = 262144) {
         new Promise<never>((_, reject) => {
           const t = setTimeout(
             () => reject(new Error('DNS lookup timed out.')),
-            5000,
+            Math.max(1, Math.min(5000, deadline - Date.now())),
           );
           t.unref();
         }),
@@ -100,7 +106,7 @@ export async function readPublic(value: string, limit = 262144) {
     );
     const timer = setTimeout(
       () => req.destroy(new Error('The page took too long to respond.')),
-      8000,
+      Math.max(1, Math.min(8000, deadline - Date.now())),
     );
     req.on('close', () => clearTimeout(timer));
     req.on('error', reject);

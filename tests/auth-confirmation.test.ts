@@ -46,7 +46,7 @@ await test('email scanner GET and HEAD never consume a confirmation token', asyn
       assert.match(html, /<form method="post" action="\/auth\/confirm">/);
       assert.match(
         html,
-        /<button type="submit">Confirm email address<\/button>/,
+        /<button type="submit">Continue to RUAGENTIC<\/button>/,
       );
       assert.doesNotMatch(html, /<script|http-equiv="refresh"|onload=/);
     } else assert.equal(html, '');

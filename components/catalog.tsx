@@ -16,8 +16,9 @@ import {
   Workflow,
   ArrowRight,
   SlidersHorizontal,
-  Globe,
-  Braces,
+  FileJson,
+  FileText,
+  BookOpen,
 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -109,79 +110,105 @@ export default function Catalog({
 
   return (
     <div className="directory-shell">
-      <aside className="directory-sidebar">
-        <p className="nav-caption">EXPLORE THE DIRECTORY</p>
-        <Link className="side-link selected" href="/">
-          <Globe size={17} />
-          All tools<span>↗</span>
-        </Link>
-        <Link className="side-link" href="/?kind=server">
-          <Server size={17} />
-          MCP servers
-        </Link>
-        <Link className="side-link" href="/?kind=client">
-          <Monitor size={17} />
-          MCP clients
-        </Link>
-        <Link className="side-link" href="/?kind=product">
-          <Workflow size={17} />
-          Agentic products
-        </Link>
-        <p className="nav-caption category-caption">BROWSE BY CATEGORY</p>
-        {categories.map((item) => (
-          <button
-            className={'category-link ' + (category === item ? 'active' : '')}
-            key={item}
-            onClick={() => setCategory(item)}
-          >
-            {item}
-          </button>
-        ))}
-        <div className="sidebar-guide">
-          <Braces size={22} />
-          <strong>Make your project agent-readable.</strong>
-          <p>Publish your Agentic files and qualify for a free listing.</p>
-          <a href="https://ruagentic.org/generate/">
-            Generate your files <ArrowUpRight size={14} />
-          </a>
-        </div>
-      </aside>
       <main className="catalog-main">
-        <div className="catalog-intro">
-          <span className="overline">
-            <span className="live-dot" /> THE AGENTIC TOOL DIRECTORY
+        <section className="catalog-hero">
+          <div className="hero-copy">
+            <h1>
+              Mission control for the <span>agentic stack.</span>
+            </h1>
+            <p>
+              Discover MCP servers, clients, and AI products. Find the
+              capabilities, documentation, and connections for your next
+              workflow.
+            </p>
+            <div className="catalog-search">
+              <Search size={20} />
+              <Input
+                aria-label="Search tools"
+                placeholder="Search tools, capabilities, or use cases…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <ArrowRight size={20} />
+            </div>
+            <div className="popular-searches">
+              {['Developer tools', 'Data & intelligence', 'Automation'].map(
+                (item) => (
+                  <button
+                    aria-pressed={category === item}
+                    key={item}
+                    onClick={() =>
+                      setCategory(category === item ? 'All categories' : item)
+                    }
+                  >
+                    {item}
+                    <ArrowUpRight size={12} />
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
+          <aside className="publication-panel glass-panel amber-panel">
+            <div className="panel-title">
+              <FileJson size={17} />
+              <h2>Publication checker</h2>
+              <span>FREE PATH</span>
+            </div>
+            <p>
+              Give agents a clear way in. Publish three files, then check them
+              as you submit.
+            </p>
+            <ul>
+              {[
+                {
+                  icon: FileJson,
+                  file: 'agentic.json',
+                  detail: 'Your machine-readable profile',
+                },
+                {
+                  icon: FileText,
+                  file: 'agentic.txt',
+                  detail: 'A matching text index',
+                },
+                {
+                  icon: BookOpen,
+                  file: 'README.md',
+                  detail: 'Project context and Agentic links',
+                },
+              ].map(({ icon: Icon, file, detail }) => (
+                <li key={file}>
+                  <Icon size={17} />
+                  <div>
+                    <strong>{file}</strong>
+                    <small>{detail}</small>
+                  </div>
+                  <span>REQUIRED</span>
+                </li>
+              ))}
+            </ul>
+            <Link className="button secondary" href="/submit">
+              Check your project <ArrowUpRight size={15} />
+            </Link>
+            <a className="panel-help" href="https://ruagentic.org/generate/">
+              Need the files? Generate them ↗
+            </a>
+          </aside>
+        </section>
+        <div className="catalog-metrics" aria-label="Directory counts">
+          <span>
+            <b>{listings.length}</b> tools in the directory
           </span>
-          <h1>
-            Find the tools.
-            <br />
-            <span>Build what’s next.</span>
-          </h1>
-          <p>
-            MCP servers, clients, and agentic products.
-            <br className="desktop-break" /> One place to discover what belongs
-            in your workflow.
-          </p>
-        </div>
-        <div className="catalog-search">
-          <Search size={21} />
-          <Input
-            aria-label="Search tools"
-            placeholder="Search tools, capabilities, or use cases…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <kbd>⌕</kbd>
-        </div>
-        <div className="popular-searches">
-          <span>Explore</span>
-          {['Developer tools', 'Data & intelligence', 'Automation'].map(
-            (item) => (
-              <button key={item} onClick={() => setCategory(item)}>
-                {item}
-                <ArrowUpRight size={12} />
-              </button>
-            ),
-          )}
+          <span>
+            <b>{listings.filter((x) => x.kind === 'server').length}</b> MCP
+            servers
+          </span>
+          <span>
+            <b>{listings.filter((x) => x.kind === 'client').length}</b> clients
+          </span>
+          <span>
+            <b>{listings.filter((x) => x.kind === 'product').length}</b>{' '}
+            products
+          </span>
         </div>
         <div className="catalog-tabs">
           <Tabs value={kind} onValueChange={(value) => setKind(String(value))}>
@@ -211,17 +238,31 @@ export default function Catalog({
                 ? 'Explore the ecosystem'
                 : category}
           </h2>
-          <label className="sort-control">
-            <SlidersHorizontal size={14} />
-            <select
-              aria-label="Sort listings"
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-            >
-              <option value="name">Name A–Z</option>
-              <option value="kind">Project type</option>
-            </select>
-          </label>
+          <div className="catalog-filters">
+            <label className="sort-control">
+              <span className="sr-only">Category</span>
+              <select
+                aria-label="Filter by category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                {categories.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label className="sort-control">
+              <SlidersHorizontal size={14} />
+              <select
+                aria-label="Sort listings"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                <option value="name">Name A–Z</option>
+                <option value="kind">Project type</option>
+              </select>
+            </label>
+          </div>
         </div>
         <div className="listing-grid">
           {filtered.map((item) => (
@@ -279,7 +320,6 @@ export default function Catalog({
         )}
         <section className="catalog-publish">
           <div>
-            <span className="overline">BUILT SOMETHING USEFUL?</span>
             <h2>Put it in front of the right agents.</h2>
             <p>
               Submit your project in a few steps. Pay once, or publish your

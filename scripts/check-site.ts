@@ -54,10 +54,13 @@ for (const path of [
   '/auth/callback?next=https%3A%2F%2Fother.example',
 ]) {
   const response = await fetch(base + path, { redirect: 'manual' });
-  assert.equal(response.status, 307);
+  assert.equal(response.status, path.startsWith('/auth/callback') ? 303 : 307);
   const destination = new URL(response.headers.get('location')!);
   assert.equal(destination.pathname, '/login');
-  assert.equal(destination.searchParams.get('error'), 'link');
+  assert.equal(
+    destination.searchParams.get('error'),
+    path.startsWith('/auth/callback') ? 'oauth' : 'link',
+  );
   assert.equal(
     destination.searchParams.get('next'),
     path.includes('recovery')

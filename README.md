@@ -6,9 +6,9 @@ The directory lives at **https://ruagentic.com**. The free file convention, gene
 
 ## Features
 
-- Search, categories, collections, detailed project pages, and side-by-side comparisons.
-- Supabase registration, email confirmation, password reset, saved tools, and a listing dashboard.
-- Guided submission from a public repository, homepage, documentation page, or MCP endpoint.
+- Responsive discovery, categories, collections, detailed project pages, side-by-side comparisons, and a keyboard-accessible Ctrl/Cmd+K search palette.
+- GitHub sign-in, passwordless email links, password accounts and recovery, saved tools, and a listing dashboard.
+- Four-step submission with URL autofill from public websites, repositories, documentation, OpenAPI, Agentic profiles, and READMEs. Suggestions show their sources and preserve manual edits.
 - A one-time US$49.99 Stripe listing or free publication after server-verified Agentic JSON, TXT, and README checks.
 - Revision-bound publication, immutable snapshots, durable payment fulfillment, refund handling, and a transactional confirmation-email outbox.
 - Public discovery API, read-only MCP server, and browser directory filtering where WebMCP is supported.

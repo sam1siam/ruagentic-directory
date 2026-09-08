@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { z } from 'zod';
 import {
@@ -27,6 +27,12 @@ import {
   type ListingInput,
 } from '@/lib/listing';
 import { api } from '@/lib/client-api';
+import {
+  mergeSuggestions,
+  fieldNames,
+  type ImportField,
+  type ImportResult,
+} from '@/lib/project-import';
 type Audit = {
   id: string;
   eligible: boolean;
@@ -72,18 +78,20 @@ const steps = [
 export default function SubmissionForm({
   id,
   email,
+  initialPlan = 'agentic',
 }: {
   id?: string;
   email: string;
+  initialPlan?: 'agentic' | 'payment';
 }) {
   const [step, setStep] = useState(id ? 2 : 1),
     [listing, setListing] = useState<ListingInput>({ ...emptyListing }),
     [saved, setSaved] = useState<Saved | null>(null),
     [sourceType, setSourceType] = useState<
       'homepage' | 'repository' | 'endpoint'
-    >('repository'),
+    >('homepage'),
     [url, setUrl] = useState(''),
-    [path, setPath] = useState<'agentic' | 'payment'>('agentic'),
+    [path, setPath] = useState<'agentic' | 'payment'>(initialPlan),
     [audit, setAudit] = useState<Audit | null>(null),
     [paid, setPaid] = useState<string | null>(null),
     [checkoutOpen, setCheckoutOpen] = useState(false),
@@ -94,6 +102,10 @@ export default function SubmissionForm({
     [consent, setConsent] = useState(false),
     [published, setPublished] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const touched = useRef<ImportField[]>([]);
+  const [imported, setImported] = useState<ImportResult | null>(null);
+  const [preserved, setPreserved] = useState<ImportField[]>([]);
+  const busyRef = useRef(false);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(timer);
@@ -108,6 +120,7 @@ export default function SubmissionForm({
       .then((data) => {
         if (!active) return;
         setListing(data.submission.payload);
+        touched.current = Object.keys(data.submission.payload) as ImportField[];
         setSaved(data.submission);
         setAudit(data.audit);
         setPaid(
@@ -148,13 +161,15 @@ export default function SubmissionForm({
     key: K,
     value: ListingInput[K],
   ) {
+    if (!touched.current.includes(key)) touched.current.push(key);
     setListing((p) => ({ ...p, [key]: value }));
     setAudit(null);
     setConsent(false);
     setFields((p) => ({ ...p, [key]: [] }));
   }
   async function run(task: () => Promise<void>, label: string) {
-    if (busy) return;
+    if (busyRef.current || busy) return;
+    busyRef.current = true;
     setError('');
     setNotice('');
     setBusy(label);
@@ -166,6 +181,7 @@ export default function SubmissionForm({
       if (err.fields) setFields(err.fields);
     } finally {
       setBusy('');
+      busyRef.current = false;
     }
   }
   async function save() {
@@ -188,7 +204,13 @@ export default function SubmissionForm({
     setSaved(data.submission);
     setListing(data.submission.payload);
     setAudit(null);
-    window.history.replaceState(null, '', '/submit?id=' + data.submission.id);
+    window.history.replaceState(
+      null,
+      '',
+      '/submit?id=' +
+        data.submission.id +
+        (path === 'payment' ? '&plan=paid' : ''),
+    );
     return data.submission as Saved;
   }
   async function checkFiles() {
@@ -285,18 +307,21 @@ export default function SubmissionForm({
         <p>Share what it does. Help people find their next connection.</p>
       </div>
       <ol className="stepper" aria-label="Submission progress">
-        {steps.map((label, index) => (
-          <li
-            key={label}
-            className={
-              index === step ? 'current' : index < step ? 'complete' : ''
-            }
-            aria-current={index === step ? 'step' : undefined}
-          >
-            <span>{index < step ? <Check size={14} /> : index + 1}</span>
-            {label}
-          </li>
-        ))}
+        {steps.slice(1).map((label, itemIndex) => {
+          const index = itemIndex + 1;
+          return (
+            <li
+              key={label}
+              className={
+                index === step ? 'current' : index < step ? 'complete' : ''
+              }
+              aria-current={index === step ? 'step' : undefined}
+            >
+              <span>{index < step ? <Check size={14} /> : index}</span>
+              {label}
+            </li>
+          );
+        })}
       </ol>
       <div className="submission-layout">
         <section className="form-panel" aria-busy={Boolean(busy)}>
@@ -317,68 +342,71 @@ export default function SubmissionForm({
             <>
               <h2>Start with a link.</h2>
               <p>
-                Import public project details, then review and complete your
-                listing.
+                Paste your homepage, repository, or documentation URL. We’ll
+                read its public details and fill your listing for you.
               </p>
-              <div className="type-options">
-                {[
-                  { id: 'server', name: 'MCP server', icon: Server },
-                  { id: 'client', name: 'MCP client', icon: Monitor },
-                  { id: 'product', name: 'Agentic product', icon: Workflow },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={listing.kind === item.id ? 'selected' : ''}
-                    onClick={() =>
-                      update('kind', item.id as ListingInput['kind'])
-                    }
-                  >
-                    <item.icon size={19} />
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-              <div className="stack-form">
-                <label>
-                  Link type
-                  <select
-                    value={sourceType}
-                    onChange={(e) =>
-                      setSourceType(e.target.value as typeof sourceType)
-                    }
-                  >
-                    <option value="repository">Repository URL</option>
-                    <option value="homepage">
-                      Homepage or documentation URL
-                    </option>
-                    <option value="endpoint">Remote MCP endpoint</option>
-                  </select>
-                </label>
-                <label htmlFor="import-url">
-                  Public URL
-                  <Input
-                    type="url"
-                    id="import-url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder={
-                      sourceType === 'repository'
-                        ? 'https://github.com/owner/project'
-                        : sourceType === 'endpoint'
-                          ? 'https://api.yoursite.com/mcp'
-                          : 'https://yoursite.com'
-                    }
-                  />
-                  <small>
-                    Public HTTPS links only. Keep API keys and private
-                    credentials out of your listing.
-                  </small>
-                </label>
-              </div>
+              <fieldset disabled={Boolean(busy) || checkoutOpen}>
+                <div className="type-options">
+                  {[
+                    { id: 'server', name: 'MCP server', icon: Server },
+                    { id: 'client', name: 'MCP client', icon: Monitor },
+                    { id: 'product', name: 'Agentic product', icon: Workflow },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={listing.kind === item.id ? 'selected' : ''}
+                      aria-pressed={listing.kind === item.id}
+                      onClick={() =>
+                        update('kind', item.id as ListingInput['kind'])
+                      }
+                    >
+                      <item.icon size={19} />
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="stack-form">
+                  <label>
+                    Link type
+                    <select
+                      value={sourceType}
+                      onChange={(e) =>
+                        setSourceType(e.target.value as typeof sourceType)
+                      }
+                    >
+                      <option value="repository">Repository URL</option>
+                      <option value="homepage">
+                        Homepage or documentation URL
+                      </option>
+                      <option value="endpoint">Remote MCP endpoint</option>
+                    </select>
+                  </label>
+                  <label htmlFor="import-url">
+                    Public URL
+                    <Input
+                      type="url"
+                      id="import-url"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder={
+                        sourceType === 'repository'
+                          ? 'https://github.com/owner/project'
+                          : sourceType === 'endpoint'
+                            ? 'https://api.yoursite.com/mcp'
+                            : 'https://yoursite.com'
+                      }
+                    />
+                    <small>
+                      Public HTTPS links only. Keep API keys and private
+                      credentials out of your listing.
+                    </small>
+                  </label>
+                </div>
+              </fieldset>
               <div className="actions">
                 <Button
-                  disabled={Boolean(busy) || !url.trim()}
+                  disabled={Boolean(busy) || checkoutOpen || !url.trim()}
                   onClick={() =>
                     run(async () => {
                       const result = await api('/api/import', {
@@ -386,14 +414,31 @@ export default function SubmissionForm({
                         kind: listing.kind,
                         sourceType,
                       });
-                      setListing(result.listing);
-                      setNotice(result.notice);
+                      const merged = mergeSuggestions(
+                        listing,
+                        result.suggestions,
+                        touched.current,
+                      );
+                      setListing(merged.listing);
+                      setImported(result);
+                      setPreserved(merged.preserved);
+                      setAudit(null);
+                      setConsent(false);
+                      setFields({});
+                      setNotice(
+                        merged.applied.length +
+                          ' fields filled for you. ' +
+                          (merged.preserved.length
+                            ? merged.preserved.length + ' edited fields kept. '
+                            : '') +
+                          'Review the suggestions below.',
+                      );
                       setStep(2);
-                    }, 'Importing details')
+                    }, 'Reading your project, docs, and public files')
                   }
                 >
                   <Link2 size={16} />
-                  Import details
+                  Fill for me
                   <ArrowRight size={16} />
                 </Button>
                 <Button
@@ -413,6 +458,74 @@ export default function SubmissionForm({
                 Make the description useful and specific. Every field can be
                 reviewed before publication.
               </p>
+              {imported && (
+                <details className="import-report" open>
+                  <summary>
+                    Imported details · {imported.evidence.length} sourced
+                    suggestions
+                  </summary>
+                  <p>
+                    {imported.notice} Importing does not verify ownership,
+                    functionality, or eligibility for a free listing.
+                  </p>
+                  <details>
+                    <summary>Sources and checks</summary>
+                    <ul className="import-evidence">
+                      {imported.evidence.map((e) => (
+                        <li key={e.field}>
+                          <strong>{fieldNames[e.field] || e.field}</strong> —{' '}
+                          <a
+                            href={e.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {e.source} ↗
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    <ul>
+                      {imported.observations
+                        .filter((o) => o.status === 'unavailable')
+                        .map((o) => (
+                          <li key={o.url}>
+                            <a
+                              href={o.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {new URL(o.url).pathname}
+                            </a>
+                            : {o.detail}
+                          </li>
+                        ))}
+                    </ul>
+                  </details>
+                  {preserved.length > 0 && (
+                    <div className="import-alternative">
+                      <p>
+                        Your edited fields were kept. You can apply an
+                        individual suggestion:
+                      </p>
+                      {preserved.map((key) => (
+                        <p key={key}>
+                          <strong>{fieldNames[key] || key}:</strong>{' '}
+                          {String(imported.suggestions[key]).slice(0, 220)}
+                          <button
+                            disabled={Boolean(busy) || checkoutOpen}
+                            onClick={() => {
+                              update(key, imported.suggestions[key] as never);
+                              setPreserved((p) => p.filter((x) => x !== key));
+                            }}
+                          >
+                            Use suggestion
+                          </button>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </details>
+              )}
               {checkoutOpen && (
                 <div className="notice warning">
                   A checkout is open for this version.{' '}
@@ -688,6 +801,7 @@ export default function SubmissionForm({
               <div className="payment-options">
                 <button
                   className={path === 'agentic' ? 'selected' : ''}
+                  aria-pressed={path === 'agentic'}
                   onClick={() => {
                     setPath('agentic');
                     setConsent(false);
@@ -703,6 +817,7 @@ export default function SubmissionForm({
                 </button>
                 <button
                   className={path === 'payment' ? 'selected' : ''}
+                  aria-pressed={path === 'payment'}
                   onClick={() => {
                     setPath('payment');
                     setConsent(false);
@@ -990,29 +1105,64 @@ export default function SubmissionForm({
           )}
         </section>
         <aside className="submission-aside">
-          <span className="eyebrow">A GOOD LISTING OPENS DOORS</span>
-          <h3>Make the next step clear.</h3>
+          <div className="preview-label">
+            LIVE PREVIEW <span>{saved && !dirty ? 'SAVED' : 'UNSAVED'}</span>
+          </div>
+          <div className="listing-top">
+            <span className="project-monogram">
+              {listing.name ? listing.name.slice(0, 2) : '{}'}
+            </span>
+            <span className="type-label">
+              {listing.kind === 'server'
+                ? 'MCP SERVER'
+                : listing.kind === 'client'
+                  ? 'MCP CLIENT'
+                  : 'AI PRODUCT'}
+            </span>
+          </div>
+          <h3>{listing.name || 'Your project name'}</h3>
           <p>
-            Tell people what your project can do, how to connect, and where to
-            find the documentation.
+            {listing.summary ||
+              'Your project description will appear here as you fill in your details.'}
           </p>
-          <ul>
-            <li>
-              <Check size={16} />A public page for your project
-            </li>
-            <li>
-              <Check size={16} />
-              Search and category discovery
-            </li>
-            <li>
-              <Check size={16} />
-              Setup and endpoint details
-            </li>
-            <li>
-              <Check size={16} />
-              Edit from your account
-            </li>
-          </ul>
+          <div className="listing-tags">
+            {listing.tags
+              .filter(Boolean)
+              .slice(0, 4)
+              .map((tag, i) => (
+                <span key={i}>{tag}</span>
+              ))}
+          </div>
+          <dl className="preview-facts">
+            <div>
+              <dt>Category</dt>
+              <dd>{listing.category}</dd>
+            </div>
+            <div>
+              <dt>Connection</dt>
+              <dd>
+                {listing.transport === 'unknown'
+                  ? 'Not specified'
+                  : listing.transport}
+              </dd>
+            </div>
+            <div>
+              <dt>File check</dt>
+              <dd>
+                {eligible
+                  ? 'Passed'
+                  : audit
+                    ? 'Needs attention'
+                    : 'Not checked'}
+              </dd>
+            </div>
+            <div>
+              <dt>Listing option</dt>
+              <dd>
+                {path === 'agentic' ? 'Free with Agentic' : 'US$49.99 once'}
+              </dd>
+            </div>
+          </dl>
           <div className="aside-account">
             <span>Signed in as</span>
             <strong>{email}</strong>

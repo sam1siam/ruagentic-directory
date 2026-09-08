@@ -85,6 +85,18 @@ export default async function Page() {
             <c.icon size={27} />
             <h2>{c.name}</h2>
             <p>{c.description}</p>
+            <div className="collection-members">
+              {items
+                .filter((p) =>
+                  c.kind ? p.kind === c.kind : p.category === c.category,
+                )
+                .slice(0, 4)
+                .map((p) => (
+                  <i key={p.slug} title={p.name}>
+                    {p.name.slice(0, 2).toUpperCase()}
+                  </i>
+                ))}
+            </div>
             <span>
               {
                 items.filter((p) =>
