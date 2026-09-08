@@ -95,7 +95,7 @@ A refunded or disputed payment is durably recorded even if its webhook precedes 
 
 ## Resend
 
-Verify `mail.ruagentic.com`. `RESEND_FROM` identifies the sender; `SUPPORT_EMAIL` must be a monitored inbox. Use a sending-only domain-scoped API key. Confirmation messages are queued in the publication transaction and attempted after the response. The daily cron retries outstanding jobs; manually invoke the protected cron after fixing a provider outage if quicker recovery is needed.
+Verify `mail.ruagentic.com`. `RESEND_FROM` identifies the sender; `SUPPORT_EMAIL` must be a monitored inbox. Use a sending-only domain-scoped API key. Confirmation messages are queued in the publication transaction and attempted after the response. The protected cron runs every ten minutes and drains outstanding jobs with the same provider idempotency key; each worker also waits for the first 30-second retry inside its own invocation. Jobs that remain unconfirmed 23 hours after their first attempt become `uncertain` and need a manual provider check before any resend.
 
 The intended support address is `hello@ruagentic.com`, using Spaceship's free forwarding to the owner's selected existing inbox. Preserve Spaceship's root receiving MX records alongside Resend's sending records on the `mail` subdomain. Set `SUPPORT_EMAIL` after receiving is verified; confirmation messages use it as Reply-To. Forwarding is an address for receiving mail, not a standalone mailbox or an SMTP account.
 

@@ -182,22 +182,21 @@ export function DecodeHeadline() {
     };
   }, []);
   return (
-    <h1 className="decode-headline">
-      <button
-        className="decode-button"
-        type="button"
-        onClick={play}
-        aria-label={HEADLINE}
-        title="Replay headline animation"
-      >
-        <span className="decode-measure" aria-hidden="true">
-          {HEADLINE}
-        </span>
+    <div className="decode-wrap">
+      <h1 className="decode-headline" data-text={HEADLINE}>
+        <span className="sr-only">{HEADLINE}</span>
         <span className="decode-buffer" aria-hidden="true">
           {buffer}
         </span>
-      </button>
-    </h1>
+      </h1>
+      <button
+        className="decode-replay"
+        type="button"
+        onClick={play}
+        aria-label="Replay headline animation"
+        title="Replay headline animation"
+      />
+    </div>
   );
 }
 

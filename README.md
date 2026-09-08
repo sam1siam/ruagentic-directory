@@ -27,7 +27,7 @@ Without account variables, public catalog pages use the checked-in source datase
 
 ## Database
 
-Apply `supabase/migrations/202609080001_directory.sql` to the directory project. It creates tables, RLS policies, immutable revisions, and transactional publication/payment functions. Browser roles cannot publish or change payment/verification state.
+Apply the files in `supabase/migrations/` to the directory project in order. The first creates tables, RLS policies, immutable revisions, and transactional publication/payment functions; later files replace functions or constraints and are safe to apply on top. Browser roles cannot publish or change payment/verification state.
 
 Import the source-labeled catalog once:
 

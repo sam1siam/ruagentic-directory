@@ -61,32 +61,35 @@ export function cronAuthorized(request: Request) {
     timingSafeEqual(actual, expected)
   );
 }
+const privateJson = (data: unknown, status = 200) =>
+  Response.json(data, {
+    status,
+    headers: { 'Cache-Control': 'private, no-store' },
+  });
 export async function respond(fn: () => Promise<unknown>) {
   try {
-    return Response.json(await fn(), {
-      headers: { 'Cache-Control': 'private, no-store' },
-    });
+    return privateJson(await fn());
   } catch (error) {
     if (error instanceof ZodError)
-      return Response.json(
+      return privateJson(
         {
           error: 'Please check the highlighted fields.',
           fields: z.flattenError(error).fieldErrors,
         },
-        { status: 400 },
+        400,
       );
     if (error instanceof HttpError)
-      return Response.json({ error: error.message }, { status: error.status });
+      return privateJson({ error: error.message }, error.status);
     console.error(
       'directory_request_failed',
       error instanceof Error ? error.name : 'unknown',
     );
-    return Response.json(
+    return privateJson(
       {
         error:
           'This action could not finish. Your saved information is preserved. Please try again.',
       },
-      { status: 503 },
+      503,
     );
   }
 }

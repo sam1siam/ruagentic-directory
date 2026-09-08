@@ -79,6 +79,18 @@ assert.equal(
   (await fetch(base + '/api/v1/listings/not-a-real-directory-entry')).status,
   404,
 );
+assert.equal(
+  (await fetch(base + '/tools/not-a-real-directory-entry')).status,
+  404,
+  'unknown listings must be real 404s, not streamed 200s',
+);
+{
+  const gated = await fetch(base + '/dashboard', { redirect: 'manual' });
+  assert.ok(
+    [302, 303, 307, 308].includes(gated.status),
+    'signed-out dashboard must redirect on the server, got ' + gated.status,
+  );
+}
 const empty = await (
   await fetch(base + '/api/v1/listings?q=zzzz-no-such-project-zzzz')
 ).json();

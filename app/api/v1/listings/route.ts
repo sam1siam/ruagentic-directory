@@ -1,5 +1,14 @@
 import { catalog } from '@/lib/server/catalog';
 export const dynamic = 'force-dynamic';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'Access-Control-Max-Age': '86400',
+};
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
 export async function GET(request: Request) {
   const p = new URL(request.url).searchParams;
   const q = (p.get('q') ?? '').slice(0, 200).toLowerCase(),

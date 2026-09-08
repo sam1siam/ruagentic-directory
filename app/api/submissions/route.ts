@@ -25,6 +25,8 @@ export async function POST(request: Request) {
     sameOrigin(request);
     const user = await signedIn();
     await rateLimit('save:' + user.id, 100);
-    return { submission: await saveSubmission(user.id, await body(request)) };
+    return {
+      submission: await saveSubmission(user.id, await body(request, 131072)),
+    };
   });
 }

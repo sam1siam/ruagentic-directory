@@ -27,6 +27,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/((?!auth/).*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+          },
+        ],
+      },
+      {
+        source: '/api/:name(cron|webhooks)/:path*',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+      },
+      {
         source: '/auth/:path*',
         headers: [
           { key: 'Referrer-Policy', value: 'strict-origin' },

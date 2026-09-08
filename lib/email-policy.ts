@@ -31,7 +31,7 @@ export function retryDecision(
     : {
         state: 'failed',
         next: new Date(
-          now + Math.min(3600000, 30000 * 2 ** attempts),
+          now + Math.min(3600000, 30000 * 2 ** Math.max(0, attempts - 1)),
         ).toISOString(),
       };
 }

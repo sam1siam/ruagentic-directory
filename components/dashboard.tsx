@@ -60,7 +60,9 @@ export default function Dashboard({
                   <span className={'status-pill ' + row.state}>
                     {row.state === 'editing'
                       ? 'Saved, not published'
-                      : row.state}
+                      : row.state === 'withdrawn'
+                        ? 'Unpublished'
+                        : row.state}
                     {row.hasUnpublishedChanges && row.state === 'published'
                       ? ' · unpublished changes'
                       : ''}
@@ -94,8 +96,8 @@ export default function Dashboard({
                   <div className="withdraw-confirm">
                     <p>
                       Remove this listing from the public directory? Your saved
-                      information will remain in your account. This does not
-                      refund a payment.
+                      information stays in your account and you can publish it
+                      again later. This does not refund a payment.
                     </p>
                     <div className="actions">
                       <Button

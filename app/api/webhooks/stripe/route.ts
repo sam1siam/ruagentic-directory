@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       if (!isDirectoryMetadata(session.metadata))
         return Response.json({ received: true, ignored: true });
       await fulfill(session.id, event.id, event.type);
-      after(() => deliverEmails().then(() => {}));
+      after(() => deliverEmails().catch(() => {}));
     } else if (
       event.type === 'checkout.session.expired' ||
       event.type === 'checkout.session.async_payment_failed'

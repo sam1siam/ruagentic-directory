@@ -295,6 +295,7 @@ function CommandPalette({
         <Dialog.Popup
           className="palette"
           aria-label="Search the directory"
+          aria-modal="true"
           initialFocus={input}
         >
           <CornerBrackets />

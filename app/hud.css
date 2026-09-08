@@ -1373,35 +1373,42 @@ kbd {
   padding: 8px 0;
   min-width: 0;
 }
-.decode-headline {
+.decode-wrap {
+  position: relative;
   margin: 0 0 20px;
+  max-width: 12.26em;
   font-size: clamp(62px, 4.84vw, 84px);
+}
+.decode-headline {
+  display: grid;
+  margin: 0;
+  font-size: inherit;
   line-height: 1;
   font-weight: 600;
   letter-spacing: -0.035em;
   color: var(--text);
   min-height: 2em;
-  max-width: 12.26em;
 }
-.decode-button {
-  display: grid;
-  position: relative;
-  width: 100%;
-  text-align: left;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  cursor: pointer;
-}
-.decode-button > span {
+/* Reserve the final headline's height while the glyphs decode. */
+.decode-headline::before {
+  content: attr(data-text);
   grid-area: 1 / 1;
-}
-.decode-measure {
   visibility: hidden;
 }
 .decode-buffer {
+  grid-area: 1 / 1;
   overflow-wrap: anywhere;
+}
+.decode-replay {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+.decode-replay:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 6px;
 }
 .hero-copy > p {
   margin: 0 0 30px;
@@ -3544,7 +3551,7 @@ kbd {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    background: rgba(7, 12, 18, 0.96);
+    background: #070c12;
     border: 1px solid rgba(92, 225, 230, 0.3);
     box-shadow: var(--glass-shadow);
     backdrop-filter: blur(24px);

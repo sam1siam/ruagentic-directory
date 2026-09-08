@@ -72,7 +72,7 @@ export async function startCheckout(owner: string, input: unknown) {
   if (Date.now() - Date.parse(attempt.created_at) > 23 * 3600000)
     throw new HttpError(
       409,
-      'The previous checkout needs reconciliation. Contact support before trying another payment.',
+      'The previous checkout could not be completed. Cancel it from your listing, then continue again.',
     );
   const metadata = {
     app: directoryPaymentApp,
@@ -83,6 +83,7 @@ export async function startCheckout(owner: string, input: unknown) {
   const session = await service.checkout.sessions.create(
     {
       mode: 'payment',
+      adaptive_pricing: { enabled: false },
       client_reference_id: id,
       line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
       success_url: appUrl() + '/submit?id=' + id + '&checkout=complete',
@@ -185,11 +186,23 @@ export async function cancelCheckout(owner: string, id: string) {
     .maybeSingle();
   if (error) throw error;
   if (!attempt) return { cancelled: true };
-  if (!attempt.stripe_session_id)
+  if (!attempt.stripe_session_id) {
+    // A session that never reached the database cannot complete after Stripe's
+    // 24 hour idempotency and Checkout lifetimes; release the submission.
+    if (Date.now() - Date.parse(attempt.created_at) > 25 * 3600000) {
+      const released = await db
+        .from('checkout_attempts')
+        .update({ state: 'expired' })
+        .eq('id', attempt.id)
+        .eq('state', 'creating');
+      if (released.error) throw released.error;
+      return { cancelled: true };
+    }
     throw new HttpError(
       409,
       'The checkout is still being created. Wait a moment and try again.',
     );
+  }
   const service = stripe();
   let session = await service.checkout.sessions.retrieve(
     attempt.stripe_session_id,

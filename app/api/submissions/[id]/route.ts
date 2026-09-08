@@ -1,5 +1,5 @@
 import { after } from 'next/server';
-import { respond, sameOrigin, signedIn } from '@/lib/server/http';
+import { rateLimit, respond, sameOrigin, signedIn } from '@/lib/server/http';
 import { ownedSubmission, databaseError } from '@/lib/server/submissions';
 import { adminClient } from '@/lib/supabase/server';
 import { fulfill } from '@/lib/server/payments';
@@ -20,7 +20,14 @@ export async function GET(
       .order('created_at', { ascending: false });
     if (error) throw error;
     const open = checkouts?.find((c) => c.state === 'open');
-    if (open?.stripe_session_id) {
+    // The webhook is authoritative; reconcile on load only within a per-user budget.
+    const reconcile =
+      open?.stripe_session_id &&
+      (await rateLimit('reconcile:' + user.id, 30).then(
+        () => true,
+        () => false,
+      ));
+    if (open?.stripe_session_id && reconcile) {
       try {
         await fulfill(
           open.stripe_session_id,
@@ -28,7 +35,7 @@ export async function GET(
           'checkout.reconcile',
         );
         submission = await ownedSubmission(user.id, id);
-        after(() => deliverEmails().then(() => {}));
+        after(() => deliverEmails().catch(() => {}));
       } catch {
         /* Webhook will retry; never infer payment from a redirect. */
       }

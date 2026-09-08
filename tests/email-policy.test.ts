@@ -53,21 +53,25 @@ await test('confirmation copy accurately distinguishes payment from the free Age
   }
 });
 
-await test('email retry backoff grows and is capped at one hour', () => {
+await test('email retry backoff starts at 30 seconds, doubles, and is capped at one hour', () => {
   const now = Date.parse('2026-09-08T12:00:00.000Z');
   const firstAttempt = new Date(now - 60_000).toISOString();
-  assert.deepEqual(retryDecision(0, firstAttempt, now), {
+  // A claim increments attempts to 1 before a failure is recorded.
+  assert.deepEqual(retryDecision(1, firstAttempt, now), {
     state: 'failed',
     next: '2026-09-08T12:00:30.000Z',
   });
-  assert.deepEqual(retryDecision(1, firstAttempt, now), {
+  assert.deepEqual(retryDecision(2, firstAttempt, now), {
     state: 'failed',
     next: '2026-09-08T12:01:00.000Z',
   });
   assert.deepEqual(retryDecision(7, firstAttempt, now), {
     state: 'failed',
-    next: '2026-09-08T13:00:00.000Z',
+    next: '2026-09-08T12:32:00.000Z',
   });
+  assert.ok(
+    Date.parse(retryDecision(7, firstAttempt, now).next!) - now <= 3_600_000,
+  );
 });
 
 await test('unconfirmed mail stops retrying before the provider idempotency window expires', () => {

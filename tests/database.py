@@ -140,7 +140,7 @@ class Harness:
                           "),'emails',(select count(*) from public.email_outbox o join public.publication_events p on p.id=o.event_id where p.submission_id=" + sid + "))")
 
 
-def bootstrap(h: Harness, migration: str):
+def bootstrap(h: Harness, migrations: list[str]):
     h.sql("create database " + h.database, role=None, database="postgres")
     h.sql("""
 do $$ begin
@@ -156,7 +156,8 @@ $$;
 grant usage on schema public,auth to anon,authenticated,service_role;
 grant execute on function auth.uid() to anon,authenticated,service_role;
 """, role=None)
-    h.sql(migration, role=None)
+    for migration in migrations:
+        h.sql(migration, role=None)
     h.sql("insert into auth.users values(" + literal(OWNER_A) + ",'a@fixture.invalid',now()),(" +
           literal(OWNER_B) + ",'b@fixture.invalid',now())", role=None)
 
@@ -324,6 +325,34 @@ def run_tests(h: Harness):
         h.sql("select public.withdraw_submission(" + literal(OWNER_A) + "," + literal(s["id"]) + ")")
         assert h.value("select to_jsonb(count(*)) from public.directory_entries where slug=" + literal(e["slug"]), role="anon") == 0
 
+    @case("Withdrawn listing can be edited, checked out and republished with its slug")
+    def republish_withdrawn():
+        s = h.submission("republish"); a = h.audit(s); e = h.publish(s, "agentic", a["id"])
+        h.sql("select public.withdraw_submission(" + literal(OWNER_A) + "," + literal(s["id"]) + ")")
+        assert h.entry(s)["visible"] is False
+        again = h.publish(s, "agentic", a["id"])
+        assert again["visible"] is True and again["slug"] == e["slug"]
+        assert h.value("select to_jsonb(state) from public.submissions where id=" + literal(s["id"])) == "published"
+        counts = h.counts(s)
+        assert counts["events"] == 1 and counts["emails"] == 1, "republishing a published revision must not duplicate events or emails"
+        h.sql("select public.withdraw_submission(" + literal(OWNER_A) + "," + literal(s["id"]) + ")")
+        changed = h.edit(s)
+        assert h.checkout(changed)["state"] == "creating"
+
+    @case("Suspended listing stays locked for publication and checkout")
+    def suspended_locked():
+        s = h.submission("suspended"); c = h.checkout(s); h.fulfill(c); h.revoke(c)
+        assert h.value("select to_jsonb(state) from public.submissions where id=" + literal(s["id"])) == "suspended"
+        h.expect_error("select public.publish_submission(" + ",".join([literal(OWNER_A), literal(s["id"]), str(s["revision"]), "'payment'", literal(c["id"])]) + ")", contains="submission_unavailable")
+        h.expect_error("select public.begin_checkout(" + ",".join([literal(OWNER_A), literal(s["id"]), str(s["revision"]), "'terms'"]) + ")", contains="submission_unavailable")
+
+    @case("Deleting a listing keeps its reports")
+    def reports_survive_deletion():
+        s = h.submission("reports"); a = h.audit(s); e = h.publish(s, "agentic", a["id"])
+        report = h.value("insert into public.listing_reports(slug,reason) values(" + literal(e["slug"]) + ",'This fixture report must survive deletion.') returning to_jsonb(id)")
+        h.sql("delete from public.submissions where id=" + literal(s["id"]))
+        assert h.value("select to_jsonb(slug) from public.listing_reports where id=" + literal(report)) is None
+
     @case("Concurrent email claims are disjoint while locks are held")
     def email_concurrent():
         h.sql("update public.email_outbox set state='sent',lease_until=null")
@@ -379,7 +408,8 @@ def run_tests(h: Harness):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--container", required=True, help="Already-running container named ruagentic-db-test* with label ruagentic.db-test=true")
-    parser.add_argument("--migration", type=pathlib.Path, default=ROOT / "supabase/migrations/202609080001_directory.sql")
+    parser.add_argument("--migration", type=pathlib.Path, action="append", default=None,
+                        help="Migration file to apply, repeatable. Defaults to every supabase/migrations/*.sql in order.")
     parser.add_argument("--report", type=pathlib.Path, default=ROOT / "work/directory-db-test-results.json")
     args = parser.parse_args()
     if not re.fullmatch(r"ruagentic-db-test[a-zA-Z0-9_.-]*", args.container):
@@ -391,13 +421,14 @@ def main():
     if not container.get("State", {}).get("Running"):
         parser.error("Container must already be running; this harness never starts services")
     database = "ruagentic_test_" + uuid.uuid4().hex[:12]
-    migration_bytes = args.migration.resolve(strict=True).read_bytes()
+    files = args.migration or sorted((ROOT / "supabase/migrations").glob("*.sql"))
+    migration_bytes = [path.resolve(strict=True).read_bytes() for path in files]
     h = Harness(args.container, database)
-    bootstrap(h, migration_bytes.decode("utf-8-sig"))
+    bootstrap(h, [chunk.decode("utf-8-sig") for chunk in migration_bytes])
     results = run_tests(h)
     report = {"observedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "container": args.container,
-              "database": database, "migration": str(args.migration.resolve()),
-              "migrationSha256": hashlib.sha256(migration_bytes).hexdigest(),
+              "database": database, "migrations": [str(path.resolve()) for path in files],
+              "migrationSha256": hashlib.sha256(b"".join(migration_bytes)).hexdigest(),
               "passed": all(r["passed"] for r in results), "tests": results,
               "scope": "Isolated PostgreSQL SQL/RLS/concurrency only. No Stripe, Resend, Supabase or other network services called.",
               "databaseRetained": True}

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const user = await signedIn();
     await rateLimit('publish:' + user.id, 30);
     const result = await publishSubmission(user.id, await body(request));
-    after(() => deliverEmails().then(() => {}));
+    after(() => deliverEmails().catch(() => {}));
     return result;
   });
 }

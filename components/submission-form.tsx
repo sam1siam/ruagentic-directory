@@ -198,12 +198,14 @@ export default function SubmissionForm({
         ) {
           setPublished(data.submission.slug);
         }
-        if (['withdrawn', 'suspended'].includes(data.submission.state))
-          setError(
-            'This listing is ' +
-              data.submission.state +
-              '. Contact support to restore it.',
+        if (data.submission.state === 'suspended')
+          setError('This listing is suspended. Contact support to restore it.');
+        else if (data.submission.state === 'withdrawn')
+          setNotice(
+            'This listing is unpublished. Review it and publish again to make it visible.',
           );
+        if (data.payments.some((p: { state: string }) => p.state === 'paid'))
+          setPath('payment');
       })
       .catch((e: Error) => {
         if (active) setError(e.message);
