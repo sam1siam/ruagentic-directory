@@ -1,0 +1,70 @@
+import { after } from 'next/server';
+import Stripe from 'stripe';
+import { stripe, fulfill } from '@/lib/server/payments';
+import { adminClient } from '@/lib/supabase/server';
+import { deliverEmails } from '@/lib/server/email';
+export const runtime = 'nodejs';
+export async function POST(request: Request) {
+  if (!process.env.STRIPE_WEBHOOK_SECRET)
+    return new Response('Webhook unavailable', { status: 503 });
+  let event: Stripe.Event;
+  try {
+    const signature = request.headers.get('stripe-signature');
+    if (!signature) throw new Error('Missing signature');
+    const bytes = await request.arrayBuffer();
+    if (bytes.byteLength > 262144)
+      return new Response('Payload too large', { status: 413 });
+    event = stripe().webhooks.constructEvent(
+      Buffer.from(bytes),
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
+  } catch {
+    return new Response('Invalid signature', { status: 400 });
+  }
+  try {
+    if (
+      event.type === 'checkout.session.completed' ||
+      event.type === 'checkout.session.async_payment_succeeded'
+    ) {
+      const session = event.data.object as Stripe.Checkout.Session;
+      await fulfill(session.id, event.id, event.type);
+      after(() => deliverEmails().then(() => {}));
+    } else if (
+      event.type === 'checkout.session.expired' ||
+      event.type === 'checkout.session.async_payment_failed'
+    ) {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const { error } = await adminClient()
+        .from('checkout_attempts')
+        .update({
+          state:
+            event.type === 'checkout.session.expired' ? 'expired' : 'failed',
+        })
+        .eq('stripe_session_id', session.id)
+        .in('state', ['creating', 'open']);
+      if (error) throw error;
+    } else if (
+      event.type === 'charge.refunded' ||
+      event.type === 'charge.dispute.created'
+    ) {
+      const object = event.data.object as Stripe.Charge | Stripe.Dispute;
+      const payment = object.payment_intent;
+      if (
+        typeof payment === 'string' &&
+        (event.type !== 'charge.refunded' || (object as Stripe.Charge).refunded)
+      ) {
+        const { error } = await adminClient().rpc('revoke_payment', {
+          p_payment: payment,
+          p_state: event.type === 'charge.refunded' ? 'refunded' : 'disputed',
+          p_event: event.id,
+        });
+        if (error) throw error;
+      }
+    }
+    return Response.json({ received: true });
+  } catch {
+    console.error('stripe_fulfillment_failed', event.id);
+    return new Response('Fulfillment must retry', { status: 500 });
+  }
+}

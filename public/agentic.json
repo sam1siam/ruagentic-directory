@@ -1,0 +1,65 @@
+{
+  "$schema": "https://ruagentic.org/schemas/site-1.1.schema.json",
+  "agentic": "1.1.0",
+  "type": "site",
+  "origin": "https://ruagentic.com",
+  "name": "RUAGENTIC Directory",
+  "description": "RUAGENTIC is the official Agentic directory for agentic AI MCP servers, clients, and tools. Discover project capabilities and connection details, compare tools, and submit a listing with a one-time payment or verified free Agentic publication.",
+  "resources": [
+    {
+      "kind": "website",
+      "url": "https://ruagentic.com/",
+      "source": "https://ruagentic.com/developers",
+      "availability": "retrieved",
+      "title": "RUAGENTIC directory"
+    },
+    {
+      "kind": "documentation",
+      "url": "https://ruagentic.com/developers",
+      "source": "https://ruagentic.com/developers",
+      "availability": "retrieved",
+      "title": "Public discovery API and MCP documentation"
+    },
+    {
+      "kind": "llms",
+      "url": "https://ruagentic.com/llms.txt",
+      "source": "https://ruagentic.com/developers",
+      "availability": "retrieved",
+      "title": "Agent-readable documentation index"
+    },
+    {
+      "kind": "openapi",
+      "url": "https://ruagentic.com/openapi.json",
+      "source": "https://ruagentic.com/developers",
+      "availability": "retrieved",
+      "title": "Directory OpenAPI description"
+    },
+    {
+      "kind": "mcp",
+      "url": "https://ruagentic.com/mcp",
+      "source": "https://ruagentic.com/developers",
+      "availability": "linked",
+      "title": "RUAGENTIC read-only directory MCP"
+    }
+  ],
+  "apis": [
+    {
+      "document": "https://ruagentic.com/openapi.json",
+      "openapi": "3.1.0",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/v1/listings",
+          "operationId": "searchListings",
+          "summary": "Search public directory listings"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/listings/{slug}",
+          "operationId": "getListing",
+          "summary": "Read a public listing"
+        }
+      ]
+    }
+  ]
+}

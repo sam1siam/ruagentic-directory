@@ -1,0 +1,26 @@
+name: Directory checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Start isolated PostgreSQL
+        run: docker run --detach --name ruagentic-db-test-ci --label ruagentic.db-test=true --env POSTGRES_HOST_AUTH_METHOD=trust postgres:18
+      - name: Wait for PostgreSQL
+        run: for i in {1..20}; do docker exec ruagentic-db-test-ci pg_isready -U postgres && exit 0; sleep 1; done; exit 1
+      - run: python3 tests/database.py --container ruagentic-db-test-ci
