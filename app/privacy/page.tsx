@@ -17,6 +17,12 @@ export default function Page() {
         listing payment and send confirmation messages.
       </p>
       <p>
+        If you choose GitHub sign-in, Supabase receives your GitHub account
+        identifier, public profile information, and email address to create or
+        connect your directory account. GitHub sign-in does not give RUAGENTIC
+        access to your private repositories.
+      </p>
+      <p>
         Project descriptions, public URLs, connection instructions, source
         labels, and publication-check dates become public when a listing is
         published. Your account email, saved tools, internal reports, and
@@ -39,9 +45,10 @@ export default function Page() {
       <h2>Service providers</h2>
       <p>
         The directory uses Vercel for hosting, Supabase for accounts and data,
-        Stripe for payments, and Resend for transactional email. These providers
-        process information needed to operate the requested service. Their
-        processing may occur outside your country.
+        Stripe for payments, Resend for transactional email, and GitHub for
+        optional GitHub sign-in. These providers process information needed to
+        operate the requested service. Their processing may occur outside your
+        country.
       </p>
       <h2>Cookies and browser storage</h2>
       <p>
