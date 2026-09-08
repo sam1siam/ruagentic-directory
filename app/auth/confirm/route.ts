@@ -26,5 +26,13 @@ export async function GET(request: Request) {
         ),
       );
   }
-  return NextResponse.redirect(new URL('/login?error=link', appUrl()));
+  const retry = new URL('/login', appUrl());
+  retry.searchParams.set('error', 'link');
+  retry.searchParams.set(
+    'next',
+    type === 'recovery'
+      ? '/reset-password'
+      : safeNext(url.searchParams.get('next')),
+  );
+  return NextResponse.redirect(retry);
 }

@@ -34,6 +34,26 @@ assert.equal(list.listings.length, 2);
 assert.ok(list.total >= 31);
 assert.equal(list.nextOffset, 2);
 const first = list.listings[0];
+for (const path of [
+  '/auth/callback?next=%2Fsubmit%3Fedit%3D123',
+  '/auth/confirm?next=%2Fsubmit%3Fedit%3D123',
+  '/auth/confirm?type=recovery',
+  '/auth/callback?next=https%3A%2F%2Fother.example',
+]) {
+  const response = await fetch(base + path, { redirect: 'manual' });
+  assert.equal(response.status, 307);
+  const destination = new URL(response.headers.get('location')!);
+  assert.equal(destination.pathname, '/login');
+  assert.equal(destination.searchParams.get('error'), 'link');
+  assert.equal(
+    destination.searchParams.get('next'),
+    path.includes('recovery')
+      ? '/reset-password'
+      : path.includes('other.example')
+        ? '/dashboard'
+        : '/submit?edit=123',
+  );
+}
 assert.equal((await fetch(base + '/tools/' + first.slug)).status, 200);
 assert.equal(
   (await fetch(base + '/api/v1/listings/' + first.slug)).status,

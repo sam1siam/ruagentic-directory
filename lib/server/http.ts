@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { ZodError, z } from 'zod';
 import { userClient, adminClient } from '../supabase/server';
+import { boundedBody, BodyLimitError } from '../bounded-body';
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -20,25 +21,11 @@ export function sameOrigin(request: Request) {
 export async function body(request: Request, limit = 24000) {
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new HttpError(415, 'Send JSON.');
-  const reader = request.body?.getReader();
-  if (!reader) throw new HttpError(400, 'Missing request body.');
-  let size = 0;
-  const chunks: Uint8Array[] = [];
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.length;
-      if (size > limit)
-        throw new HttpError(413, 'The submission is too large.');
-      chunks.push(value);
-    }
-  } finally {
-    await reader.cancel().catch(() => {});
-  }
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  } catch {
+    return JSON.parse((await boundedBody(request, limit)).toString('utf8'));
+  } catch (error) {
+    if (error instanceof BodyLimitError)
+      throw new HttpError(413, 'The submission is too large.');
     throw new HttpError(400, 'The submitted data could not be read.');
   }
 }

@@ -250,8 +250,8 @@ export default function SubmissionForm({
           <span className="eyebrow">LISTING PUBLISHED</span>
           <h1>{listing.name} is on RUAGENTIC.</h1>
           <p>
-            Your listing has a permanent public URL. Its confirmation email is
-            queued for {email}.
+            Your listing has a permanent public URL. Check {email} for its
+            publication confirmation; delivery may take a few minutes.
           </p>
           <div className="copy-url">
             https://ruagentic.com/tools/{published}

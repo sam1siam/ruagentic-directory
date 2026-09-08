@@ -15,7 +15,9 @@ export default function AuthForm({
   reset?: boolean;
   available?: boolean;
 }) {
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login'),
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'confirm'>(
+      'login',
+    ),
     [email, setEmail] = useState(''),
     [password, setPassword] = useState(''),
     [busy, setBusy] = useState(false),
@@ -59,6 +61,21 @@ export default function AuthForm({
         setMessage(
           'Check your inbox for the confirmation link. If you already have an account, sign in or reset your password.',
         );
+      } else if (mode === 'confirm') {
+        const { error } = await client.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo:
+              window.location.origin +
+              '/auth/callback?next=' +
+              encodeURIComponent(safeNext(next)),
+          },
+        });
+        if (error) throw error;
+        setMessage(
+          'If this account is awaiting confirmation, a new link will arrive shortly. Open it in this browser.',
+        );
       } else {
         const { error } = await client.auth.resetPasswordForEmail(email, {
           redirectTo:
@@ -85,14 +102,18 @@ export default function AuthForm({
             ? 'Create your account'
             : mode === 'forgot'
               ? 'Reset your password'
-              : 'Welcome back'}
+              : mode === 'confirm'
+                ? 'Confirm your email'
+                : 'Welcome back'}
       </h1>
       <p>
         {reset
           ? 'Use at least 12 characters.'
           : mode === 'register'
             ? 'Save tools, submit a project, and manage your listings.'
-            : 'Sign in to save tools and manage your projects.'}
+            : mode === 'confirm'
+              ? 'Request a new account confirmation link.'
+              : 'Sign in to save tools and manage your projects.'}
       </p>
       {!available && (
         <div className="notice warning">
@@ -114,7 +135,7 @@ export default function AuthForm({
             />
           </label>
         )}
-        {(reset || mode !== 'forgot') && (
+        {(reset || mode === 'login' || mode === 'register') && (
           <label>
             Password
             <Input
@@ -161,7 +182,9 @@ export default function AuthForm({
               ? 'Create account'
               : mode === 'forgot'
                 ? 'Send reset link'
-                : 'Sign in'}
+                : mode === 'confirm'
+                  ? 'Resend confirmation'
+                  : 'Sign in'}
           <ArrowRight size={16} />
         </Button>
       </form>
@@ -174,6 +197,7 @@ export default function AuthForm({
           {mode === 'login' ? (
             <>
               <button
+                disabled={busy}
                 onClick={() => {
                   setMode('register');
                   setError('');
@@ -183,6 +207,7 @@ export default function AuthForm({
                 Create an account
               </button>
               <button
+                disabled={busy}
                 onClick={() => {
                   setMode('forgot');
                   setError('');
@@ -194,6 +219,7 @@ export default function AuthForm({
             </>
           ) : (
             <button
+              disabled={busy}
               onClick={() => {
                 setMode('login');
                 setError('');
@@ -201,6 +227,18 @@ export default function AuthForm({
               }}
             >
               Back to sign in
+            </button>
+          )}
+          {mode !== 'confirm' && (
+            <button
+              disabled={busy}
+              onClick={() => {
+                setMode('confirm');
+                setError('');
+                setMessage('');
+              }}
+            >
+              Resend confirmation email
             </button>
           )}
         </div>

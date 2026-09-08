@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { stripe, fulfill } from '@/lib/server/payments';
 import { adminClient } from '@/lib/supabase/server';
 import { deliverEmails } from '@/lib/server/email';
+import { boundedBody, BodyLimitError } from '@/lib/bounded-body';
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
   if (!process.env.STRIPE_WEBHOOK_SECRET)
@@ -11,15 +12,15 @@ export async function POST(request: Request) {
   try {
     const signature = request.headers.get('stripe-signature');
     if (!signature) throw new Error('Missing signature');
-    const bytes = await request.arrayBuffer();
-    if (bytes.byteLength > 262144)
-      return new Response('Payload too large', { status: 413 });
+    const bytes = await boundedBody(request, 262144);
     event = stripe().webhooks.constructEvent(
-      Buffer.from(bytes),
+      bytes,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET,
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof BodyLimitError)
+      return new Response('Payload too large', { status: 413 });
     return new Response('Invalid signature', { status: 400 });
   }
   try {
