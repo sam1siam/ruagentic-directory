@@ -22,5 +22,15 @@ jobs:
       - name: Start isolated PostgreSQL
         run: docker run --detach --name ruagentic-db-test-ci --label ruagentic.db-test=true --env POSTGRES_HOST_AUTH_METHOD=trust postgres:18
       - name: Wait for PostgreSQL
-        run: for i in {1..20}; do docker exec ruagentic-db-test-ci pg_isready -U postgres && exit 0; sleep 1; done; exit 1
+        # The image starts a temporary server during initialisation, so require two
+        # real connections three seconds apart rather than a single pg_isready.
+        run: |
+          for i in $(seq 1 40); do
+            if docker exec ruagentic-db-test-ci psql -U postgres -c 'select 1' >/dev/null 2>&1; then
+              sleep 3
+              docker exec ruagentic-db-test-ci psql -U postgres -c 'select 1' >/dev/null 2>&1 && exit 0
+            fi
+            sleep 2
+          done
+          echo 'PostgreSQL did not become ready'; exit 1
       - run: python3 tests/database.py --container ruagentic-db-test-ci
