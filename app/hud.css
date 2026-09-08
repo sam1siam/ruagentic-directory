@@ -2173,6 +2173,11 @@ kbd {
   max-width: 480px;
   margin: 0 auto 24px;
 }
+/* Pages that show the card without the rails (reset password, unavailable sign-in). */
+.auth-page > .auth-card {
+  max-width: 480px;
+  margin: 0 auto;
+}
 .auth-frame {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 480px minmax(0, 1fr);
