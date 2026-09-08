@@ -1,38 +1,12 @@
-import { NextResponse } from 'next/server';
 import { userClient } from '@/lib/supabase/server';
-import { safeNext } from '@/lib/listing';
 import { appUrl } from '@/lib/server/http';
-export async function GET(request: Request) {
-  const url = new URL(request.url),
-    token = url.searchParams.get('token_hash'),
-    type = url.searchParams.get('type');
-  if (
-    token &&
-    ['signup', 'recovery', 'email_change', 'email'].includes(type ?? '')
-  ) {
-    const { error } = await (
-      await userClient()
-    ).auth.verifyOtp({
-      token_hash: token,
-      type: type as 'signup' | 'recovery' | 'email_change' | 'email',
-    });
-    if (!error)
-      return NextResponse.redirect(
-        new URL(
-          type === 'recovery'
-            ? '/reset-password'
-            : safeNext(url.searchParams.get('next')),
-          appUrl(),
-        ),
-      );
-  }
-  const retry = new URL('/login', appUrl());
-  retry.searchParams.set('error', 'link');
-  retry.searchParams.set(
-    'next',
-    type === 'recovery'
-      ? '/reset-password'
-      : safeNext(url.searchParams.get('next')),
-  );
-  return NextResponse.redirect(retry);
+import { handleConfirmation } from '@/lib/auth-confirmation';
+
+async function confirm(request: Request) {
+  return handleConfirmation(request, appUrl(), async (input) => {
+    const { error } = await (await userClient()).auth.verifyOtp(input);
+    return !error;
+  });
 }
+
+export { confirm as GET, confirm as HEAD, confirm as POST };

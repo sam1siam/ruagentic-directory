@@ -10,6 +10,43 @@ Create the directory database in the RUAGENTIC organization. Apply the SQL migra
 
 Configure custom SMTP with the verified Resend sending domain before opening registration. The default Supabase email service is not a public production email setup. Enable appropriate auth rate limits and monitor delivery. Keep database/service keys server-only; use the publishable key in browser code. RLS remains enabled on all exposed tables.
 
+Set the minimum password length to 12 characters, matching the signup and reset forms. Use `smtp.resend.com`, port `465`, username `resend`, sender `notifications@mail.ruagentic.com`, and sender name `RUAGENTIC`. Store a separate Resend key named `RUAGENTIC auth SMTP`, restricted to sending from `mail.ruagentic.com`, as the SMTP password. Keep that key in Supabase only. The app's listing-email key stays in Vercel. Custom SMTP initially allows 30 auth emails per hour; review capacity and delivery before raising that limit.
+
+Use these Supabase email templates with Site URL `https://ruagentic.com`. They use the existing token-hash confirmation route so opening an email on another device does not require the original browser's PKCE verifier. Keep email link tracking disabled. Test actual email receipt, confirmation, and recovery after configuring the domain.
+
+Signup subject: `Confirm your RUAGENTIC email address`
+
+```html
+<h2>Confirm your email address</h2>
+<p>Confirm this email address to finish creating your RUAGENTIC account.</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/dashboard"
+    >Confirm email address</a
+  >
+</p>
+<p>If you did not create this account, you can ignore this email.</p>
+```
+
+Reset subject: `Reset your RUAGENTIC password`
+
+```html
+<h2>Reset your password</h2>
+<p>A password reset was requested for your RUAGENTIC account.</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password"
+    >Choose a new password</a
+  >
+</p>
+<p>
+  If you did not request this reset, you can ignore this email. Your password
+  will stay the same.
+</p>
+```
+
+Confirmation links are single-use. Opening a link displays an explicit confirmation button; GET and HEAD do not consume the token. The button posts to the same-origin confirmation route before creating a session. Keep `Referrer-Policy: strict-origin` on this form: it strips token-bearing paths while retaining the Origin header needed for form validation. Include scanner-prefetch behavior in account-email validation. See [Supabase's email-prefetching guidance](https://supabase.com/docs/guides/auth/auth-email-templates#email-prefetching).
+
 ## Stripe
 
 Use the separate RUAGENTIC Stripe account (formerly Superway) in Vertex Innovation Collective. Do not use AstroFabric's account or credentials. The application key needs Checkout Sessions write access and Payment Intents, Prices, and Products read access. Connected-account permissions and all other resource permissions stay disabled.

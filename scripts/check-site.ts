@@ -34,6 +34,19 @@ assert.equal(list.listings.length, 2);
 assert.ok(list.total >= 31);
 assert.equal(list.nextOffset, 2);
 const first = list.listings[0];
+for (const method of ['GET', 'HEAD']) {
+  const confirmation = await fetch(
+    base + '/auth/confirm?type=email&token_hash=' + 'a'.repeat(64),
+    { method, redirect: 'manual' },
+  );
+  assert.equal(confirmation.status, 200);
+  assert.equal(confirmation.headers.get('cache-control'), 'private, no-store');
+  assert.equal(confirmation.headers.get('referrer-policy'), 'strict-origin');
+  const content = await confirmation.text();
+  if (method === 'GET')
+    assert.match(content, /<form method="post" action="\/auth\/confirm">/);
+  else assert.equal(content, '');
+}
 for (const path of [
   '/auth/callback?next=%2Fsubmit%3Fedit%3D123',
   '/auth/confirm?next=%2Fsubmit%3Fedit%3D123',
