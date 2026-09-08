@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Instrument_Sans, JetBrains_Mono } from 'next/font/google';
 import { SiteHeader, SiteFooter } from '@/components/site-shell';
+import {
+  DesignInteractions,
+  LightField,
+} from '@/components/design-interactions';
 import './globals.css';
 import './directory.css';
 import './hud.css';
@@ -35,7 +39,11 @@ export default function RootLayout({
           Skip to content
         </a>
         <SiteHeader />
-        <div id="main">{children}</div>
+        <DesignInteractions />
+        <div id="main">
+          <LightField />
+          {children}
+        </div>
         <SiteFooter />
       </body>
     </html>

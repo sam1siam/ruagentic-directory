@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   ArrowUpRight,
+  ArrowRight,
   Braces,
   Check,
   Copy,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { browserClient } from '@/lib/supabase/browser';
+import { LightField, UtcClock } from '@/components/design-interactions';
 import {
   Dialog,
   DialogContent,
@@ -71,7 +73,12 @@ export function SiteHeader() {
       }
     }
     document.addEventListener('keydown', shortcut);
-    return () => document.removeEventListener('keydown', shortcut);
+    const search = () => setOpen(true);
+    window.addEventListener('directory:search', search);
+    return () => {
+      document.removeEventListener('keydown', shortcut);
+      window.removeEventListener('directory:search', search);
+    };
   }, []);
   useEffect(() => {
     if (!open) return;
@@ -113,17 +120,30 @@ export function SiteHeader() {
           <i /> AGENTIC DIRECTORY
         </span>
         <span>MCP SERVERS / CLIENTS / PRODUCTS</span>
+        <UtcClock />
         <a href="https://ruagentic.org">
           OPEN CONVENTION <ArrowUpRight size={11} />
         </a>
       </div>
-      <header className="site-header">
+      <header
+        className={`site-header${pathname === '/submit' ? ' submission-header' : ''}`}
+      >
         <Link href="/" className="brand">
           <span className="brand-symbol">
             <Braces size={19} />
           </span>
           RUAGENTIC<span className="brand-label">DIR</span>
         </Link>
+        {pathname === '/submit' && (
+          <>
+            <span className="submission-breadcrumb">
+              / SUBMIT / YOUR PROJECT
+            </span>
+            <Link href="/dashboard" className="submission-exit">
+              Exit <X size={14} />
+            </Link>
+          </>
+        )}
         <nav
           id="main-navigation"
           aria-label="Main navigation"
@@ -151,17 +171,22 @@ export function SiteHeader() {
             aria-label="Search the directory"
           >
             <Search size={14} />
-            <span>Search</span>
+            <span>Search the index…</span>
             <kbd>Ctrl K</kbd>
           </Button>
           <Link
             className="header-signin"
             href={signedIn ? '/dashboard' : '/login'}
+            aria-current={
+              pathname === '/login' || pathname === '/dashboard'
+                ? 'page'
+                : undefined
+            }
           >
             {signedIn ? 'Account' : 'Sign in'}
           </Link>
           <Link href="/submit" className="button primary">
-            Submit <ArrowUpRight size={14} />
+            Submit project <ArrowRight size={14} />
           </Link>
           <Button
             className="mobile-toggle"
@@ -246,6 +271,7 @@ export function SiteFooter() {
   const command = 'curl https://ruagentic.com/agentic.json';
   return (
     <footer className="site-footer">
+      <LightField variant="footer" />
       <div className="footer-grid">
         <div className="footer-brand">
           <Link href="/" className="brand">

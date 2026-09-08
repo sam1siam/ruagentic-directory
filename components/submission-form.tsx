@@ -75,6 +75,12 @@ const steps = [
   'Listing option',
   'Review',
 ];
+const stepDescriptions = [
+  'Import from your URL',
+  'Project and connection details',
+  'Free checker or one-time payment',
+  'Review and go live',
+];
 export default function SubmissionForm({
   id,
   email,
@@ -106,6 +112,12 @@ export default function SubmissionForm({
   const [imported, setImported] = useState<ImportResult | null>(null);
   const [preserved, setPreserved] = useState<ImportField[]>([]);
   const busyRef = useRef(false);
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
+  useEffect(() => {
+    if (previousStep.current !== step) stepHeading.current?.focus();
+    previousStep.current = step;
+  }, [step]);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(timer);
@@ -301,30 +313,60 @@ export default function SubmissionForm({
     );
   return (
     <main className="content-page submission-page">
-      <div className="page-heading">
-        <span className="eyebrow">JOIN THE DIRECTORY</span>
-        <h1>Submit your project.</h1>
-        <p>Share what it does. Help people find their next connection.</p>
+      <h1 className="sr-only">Submit your project</h1>
+      <div className="submission-sequence">
+        <p className="sequence-label">SEQUENCE</p>
+        <ol className="stepper" aria-label="Submission progress">
+          {steps.slice(1).map((label, itemIndex) => {
+            const index = itemIndex + 1;
+            return (
+              <li
+                key={label}
+                className={
+                  index === step ? 'current' : index < step ? 'complete' : ''
+                }
+                aria-current={index === step ? 'step' : undefined}
+              >
+                <button
+                  type="button"
+                  disabled={index > step || Boolean(busy) || checkoutOpen}
+                  onClick={() => setStep(index)}
+                  aria-label={`${label}: ${stepDescriptions[itemIndex]}`}
+                >
+                  <span>
+                    {index < step ? (
+                      <Check size={14} />
+                    ) : (
+                      String(index).padStart(2, '0')
+                    )}
+                  </span>
+                  <div>
+                    <strong>{label}</strong>
+                    <small>{stepDescriptions[itemIndex]}</small>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        <div className="sequence-progress">
+          <span>
+            PROGRESS <b>{Math.round(((step - 1) / 3) * 100)}%</b>
+          </span>
+          <progress
+            aria-label="Submission steps"
+            max={100}
+            value={Math.round(((step - 1) / 3) * 100)}
+          >
+            {Math.round(((step - 1) / 3) * 100)}%
+          </progress>
+        </div>
       </div>
-      <ol className="stepper" aria-label="Submission progress">
-        {steps.slice(1).map((label, itemIndex) => {
-          const index = itemIndex + 1;
-          return (
-            <li
-              key={label}
-              className={
-                index === step ? 'current' : index < step ? 'complete' : ''
-              }
-              aria-current={index === step ? 'step' : undefined}
-            >
-              <span>{index < step ? <Check size={14} /> : index}</span>
-              {label}
-            </li>
-          );
-        })}
-      </ol>
       <div className="submission-layout">
-        <section className="form-panel" aria-busy={Boolean(busy)}>
+        <section className="form-panel" aria-busy={Boolean(busy)} key={step}>
+          <h2 className="step-kicker" tabIndex={-1} ref={stepHeading}>
+            STEP {String(step).padStart(2, '0')} / 04 · {steps[step]}
+          </h2>
           {error && (
             <div className="notice error" role="alert">
               <AlertCircle size={18} />
@@ -1106,32 +1148,34 @@ export default function SubmissionForm({
         </section>
         <aside className="submission-aside">
           <div className="preview-label">
-            LIVE PREVIEW <span>{saved && !dirty ? 'SAVED' : 'UNSAVED'}</span>
+            LISTING PREVIEW <span>LIVE</span>
           </div>
-          <div className="listing-top">
-            <span className="project-monogram">
-              {listing.name ? listing.name.slice(0, 2) : '{}'}
-            </span>
-            <span className="type-label">
-              {listing.kind === 'server'
-                ? 'MCP SERVER'
-                : listing.kind === 'client'
-                  ? 'MCP CLIENT'
-                  : 'AI PRODUCT'}
-            </span>
-          </div>
-          <h3>{listing.name || 'Your project name'}</h3>
-          <p>
-            {listing.summary ||
-              'Your project description will appear here as you fill in your details.'}
-          </p>
-          <div className="listing-tags">
-            {listing.tags
-              .filter(Boolean)
-              .slice(0, 4)
-              .map((tag, i) => (
-                <span key={i}>{tag}</span>
-              ))}
+          <div className="preview-card glass-panel">
+            <div className="listing-top">
+              <span className="project-monogram">
+                {listing.name ? listing.name.slice(0, 2) : '{}'}
+              </span>
+              <span className="type-label">
+                {listing.kind === 'server'
+                  ? 'MCP SERVER'
+                  : listing.kind === 'client'
+                    ? 'MCP CLIENT'
+                    : 'AI PRODUCT'}
+              </span>
+            </div>
+            <h3>{listing.name || 'Your project name'}</h3>
+            <p>
+              {listing.summary ||
+                'Your project description will appear here as you fill in your details.'}
+            </p>
+            <div className="listing-tags">
+              {listing.tags
+                .filter(Boolean)
+                .slice(0, 4)
+                .map((tag, i) => (
+                  <span key={i}>{tag}</span>
+                ))}
+            </div>
           </div>
           <dl className="preview-facts">
             <div>
@@ -1164,6 +1208,9 @@ export default function SubmissionForm({
             </div>
           </dl>
           <div className="aside-account">
+            <span className="save-state">
+              {saved && !dirty ? 'CHANGES SAVED' : 'UNSAVED CHANGES'}
+            </span>
             <span>Signed in as</span>
             <strong>{email}</strong>
             <Link href="/dashboard">Your dashboard ↗</Link>

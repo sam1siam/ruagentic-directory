@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Check, ArrowUpRight } from 'lucide-react';
+import PricingOptions from '@/components/pricing-options';
 export const metadata = {
   title: 'Listing options',
   description:
@@ -7,7 +8,7 @@ export const metadata = {
 };
 export default function Page() {
   return (
-    <main className="content-page">
+    <main className="content-page pricing-page">
       <div className="page-heading">
         <span className="eyebrow">ONE DIRECTORY. TWO WAYS IN.</span>
         <h1>Get your project discovered.</h1>
@@ -16,74 +17,76 @@ export default function Page() {
           options give your project the same useful listing page.
         </p>
       </div>
-      <div className="pricing-grid">
-        <section className="pricing-card">
-          <span className="eyebrow">FREE WITH AGENTIC</span>
-          <h2>Make your project agent-readable.</h2>
-          <div className="price">
-            US$0<small>per listing</small>
-          </div>
-          <p>Publish your Agentic files and pass the publication checker.</p>
-          <ul>
-            {[
-              'Public listing page and permanent URL',
-              'Category and search discovery',
-              'Documentation and connection details',
-              'Edit from your account',
-              'Confirmation email after publication',
-            ].map((t) => (
-              <li key={t}>
-                <Check size={17} />
-                {t}
-              </li>
-            ))}
-          </ul>
-          <Link className="button primary" href="/submit">
-            Check and list for free
-            <ArrowUpRight size={16} />
-          </Link>
-          <p>
-            Requires matching agentic.json, agentic.txt, and README links for
-            your project.{' '}
-            <a className="text-link" href="https://ruagentic.org/generate/">
-              Generate your files ↗
-            </a>
-          </p>
-        </section>
-        <section className="pricing-card paid">
-          <span className="eyebrow">ONE-TIME LISTING</span>
-          <h2>Publish your project.</h2>
-          <div className="price">
-            US$49.99<small>once</small>
-          </div>
-          <p>Complete your listing and pay securely with Stripe.</p>
-          <ul>
-            {[
-              'Everything in the free listing',
-              'No Agentic file requirement',
-              'No recurring directory subscription',
-              'Updates for the same project included',
-              'Payment receipt from Stripe',
-            ].map((t) => (
-              <li key={t}>
-                <Check size={17} />
-                {t}
-              </li>
-            ))}
-          </ul>
-          <Link className="button secondary" href="/submit?plan=paid">
-            Start your listing
-            <ArrowUpRight size={16} />
-          </Link>
-          <p>
-            Payment covers directory publication. Listings follow our{' '}
-            <Link className="text-link" href="/guidelines">
-              guidelines
+      <PricingOptions
+        free={
+          <>
+            <h2>Make your project agent-readable.</h2>
+            <div className="price">
+              US$0<small>per listing</small>
+            </div>
+            <p>Publish your Agentic files and pass the publication checker.</p>
+            <ul>
+              {[
+                'Public listing page and permanent URL',
+                'Category and search discovery',
+                'Documentation and connection details',
+                'Edit from your account',
+                'Confirmation email after publication',
+              ].map((t) => (
+                <li key={t}>
+                  <Check size={17} />
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <Link className="button primary" href="/submit">
+              Run checker & list free
+              <ArrowUpRight size={16} />
             </Link>
-            .
-          </p>
-        </section>
-      </div>
+            <p>
+              Requires matching agentic.json, agentic.txt, and README links for
+              your project.{' '}
+              <a className="text-link" href="https://ruagentic.org/generate/">
+                Generate your files ↗
+              </a>
+            </p>
+          </>
+        }
+        paid={
+          <>
+            <h2>Publish your project.</h2>
+            <div className="price">
+              US$49.99<small>once</small>
+            </div>
+            <p>Complete your listing and pay securely with Stripe.</p>
+            <ul>
+              {[
+                'Everything in the free listing',
+                'No Agentic file requirement',
+                'No recurring directory subscription',
+                'Updates for the same project included',
+                'Payment receipt from Stripe',
+              ].map((t) => (
+                <li key={t}>
+                  <Check size={17} />
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <Link className="button secondary" href="/submit?plan=paid">
+              Start your listing
+              <ArrowUpRight size={16} />
+            </Link>
+            <p>
+              Payment covers directory publication. Listings follow our{' '}
+              <Link className="text-link" href="/guidelines">
+                guidelines
+              </Link>
+              .
+            </p>
+          </>
+        }
+      />
       <section>
         <h2>Good to know</h2>
         <div className="faq-list">
