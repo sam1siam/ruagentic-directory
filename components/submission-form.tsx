@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import ToolCard from '@/components/tool-card';
 import {
   categories,
   emptyListing,
@@ -1150,33 +1151,15 @@ export default function SubmissionForm({
           <div className="preview-label">
             LISTING PREVIEW <span>LIVE</span>
           </div>
-          <div className="preview-card glass-panel">
-            <div className="listing-top">
-              <span className="project-monogram">
-                {listing.name ? listing.name.slice(0, 2) : '{}'}
-              </span>
-              <span className="type-label">
-                {listing.kind === 'server'
-                  ? 'MCP SERVER'
-                  : listing.kind === 'client'
-                    ? 'MCP CLIENT'
-                    : 'AI PRODUCT'}
-              </span>
-            </div>
-            <h3>{listing.name || 'Your project name'}</h3>
-            <p>
-              {listing.summary ||
-                'Your project description will appear here as you fill in your details.'}
-            </p>
-            <div className="listing-tags">
-              {listing.tags
-                .filter(Boolean)
-                .slice(0, 4)
-                .map((tag, i) => (
-                  <span key={i}>{tag}</span>
-                ))}
-            </div>
-          </div>
+          <ToolCard
+            name={listing.name || 'Your project name'}
+            kind={listing.kind}
+            summary={
+              listing.summary ||
+              'Your project description will appear here as you fill in your details.'
+            }
+            category={listing.category}
+          />
           <dl className="preview-facts">
             <div>
               <dt>Category</dt>

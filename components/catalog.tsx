@@ -14,7 +14,6 @@ import {
   Server,
   Monitor,
   Workflow,
-  ArrowRight,
   SlidersHorizontal,
   FileJson,
 } from 'lucide-react';
@@ -27,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ToolCard from '@/components/tool-card';
 
 export type CatalogListing = {
   slug: string;
@@ -255,35 +255,15 @@ export default function Catalog({
         </div>
         <div className="listing-grid">
           {filtered.map((item) => (
-            <article className="listing-card" key={item.slug}>
-              <span className="card-glow" aria-hidden="true" />
-              <div className="listing-top">
-                <span className="project-monogram">
-                  {item.name.slice(0, 2)}
-                </span>
-                <span className="type-label">
-                  {item.kind === 'server'
-                    ? 'MCP SERVER'
-                    : item.kind === 'client'
-                      ? 'MCP CLIENT'
-                      : 'AGENTIC PRODUCT'}
-                </span>
-              </div>
-              <Link className="listing-title" href={'/tools/' + item.slug}>
-                <h3>{item.name}</h3>
-                <ArrowUpRight size={18} />
-              </Link>
-              <p className="card-summary">{item.summary}</p>
-              <div className="listing-bottom">
-                <span>{item.source}</span>
-                <Link
-                  href={'/tools/' + item.slug}
-                  aria-label={'View ' + item.name}
-                >
-                  <ArrowRight size={17} />
-                </Link>
-              </div>
-            </article>
+            <ToolCard
+              key={item.slug}
+              name={item.name}
+              kind={item.kind}
+              summary={item.summary}
+              source={item.source}
+              category={item.category}
+              href={'/tools/' + item.slug}
+            />
           ))}
         </div>
         {!filtered.length && (

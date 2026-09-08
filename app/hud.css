@@ -82,9 +82,6 @@ body {
 .light-field i:nth-child(3) {
   display: none;
 }
-.light-home {
-  max-height: 1100px;
-}
 .light-home i:first-child {
   width: 640px;
   height: 640px;
@@ -96,13 +93,13 @@ body {
   width: 520px;
   height: 520px;
   left: -220px;
-  bottom: -260px;
+  top: 840px;
   animation-duration: 26s;
 }
 .light-home i:nth-child(3) {
   display: block;
   left: 45%;
-  bottom: -360px;
+  top: 860px;
   animation-duration: 30s;
 }
 .light-collections i:first-child {
@@ -812,6 +809,10 @@ select option {
   height: auto;
   gap: 0;
   flex-wrap: wrap;
+  overflow: visible;
+}
+.catalog-tabs [data-slot='tabs'] {
+  min-width: 0;
 }
 .catalog-tabs [data-slot='tabs-trigger'] {
   padding: 14px 20px;
@@ -824,6 +825,10 @@ select option {
 .catalog-tabs [data-slot='tabs-trigger'][data-active] {
   color: var(--primary);
   background: transparent;
+}
+.catalog-tabs [data-slot='tabs-trigger']::after {
+  bottom: 0;
+  background: var(--primary);
 }
 .catalog-count {
   font: 11px var(--font-geist-mono);

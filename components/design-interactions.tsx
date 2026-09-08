@@ -21,7 +21,7 @@ export function DesignInteractions() {
       frame = requestAnimationFrame(() => {
         const target = event.target instanceof Element ? event.target : null;
         const card = target?.closest<HTMLElement>(
-          '.listing-card, .collection-card',
+          '[data-cursor-glow], .collection-card',
         );
         if (card) {
           const rect = card.getBoundingClientRect();
