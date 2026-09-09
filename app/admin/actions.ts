@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/server/admin';
 import { adminClient } from '@/lib/supabase/server';
 import { sendMail } from '@/lib/server/mail';
@@ -223,4 +224,33 @@ export async function retryEmail(form: FormData) {
   if (error) throw error;
   await log(admin.email, 'email.retry', id);
   refresh();
+}
+
+/** Demo material in the admin's own account: a real published listing, a
+ *  draft and a test-mode sponsorship, so the dashboard can be reviewed. */
+export async function seedDemo(form: FormData) {
+  const admin = await requireAdmin('/admin');
+  const mode = text(form, 'mode', 10);
+  let notice: string;
+  try {
+    if (mode === 'remove') {
+      const { removeDemoData } = await import('@/lib/server/demo');
+      const removed = await removeDemoData(admin);
+      notice = removed.length
+        ? 'Removed: ' + removed.join(', ') + '.'
+        : 'Nothing to remove.';
+      await log(admin.email, 'demo.remove', admin.id, notice);
+    } else {
+      const { createDemoData } = await import('@/lib/server/demo');
+      const result = await createDemoData(admin);
+      notice = `Listing: ${result.published}. Draft: ${result.draft}. Sponsorship: ${result.sponsorship}.`;
+      await log(admin.email, 'demo.create', admin.id, notice);
+    }
+  } catch (err) {
+    notice = 'Demo data failed: ' + (err as Error).message.slice(0, 300);
+    await log(admin.email, 'demo.failed', admin.id, notice);
+  }
+  refresh();
+  revalidatePath('/dashboard');
+  redirect('/admin?notice=' + encodeURIComponent(notice));
 }

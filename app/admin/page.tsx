@@ -1,13 +1,15 @@
 import Link from 'next/link';
 import { actionRows, overview } from '@/lib/server/admin';
 import { formatUsd } from '@/lib/advertising';
+import { seedDemo } from './actions';
+export const maxDuration = 90;
 const ranges = [7, 14, 30, 90];
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams: Promise<{ days?: string; notice?: string }>;
 }) {
-  const { days: raw } = await searchParams;
+  const { days: raw, notice } = await searchParams;
   const days = ranges.includes(Number(raw)) ? Number(raw) : 14;
   const [data, log] = await Promise.all([overview(days), actionRows()]);
   const max = Math.max(
@@ -16,6 +18,7 @@ export default async function Page({
   );
   return (
     <>
+      {notice && <output className="notice">{notice.slice(0, 600)}</output>}
       <section className="admin-section">
         <div className="admin-section-head">
           <h2>Right now</h2>
@@ -155,6 +158,30 @@ export default async function Page({
             </tbody>
           </table>
         </div>
+      </section>
+      <section className="admin-section">
+        <div className="admin-section-head">
+          <h2>Demo data for your account</h2>
+          <p>
+            Creates, in the account you are signed in with, a real published
+            listing (the directory’s own MCP server, put through the Agentic
+            Protocol check and published free), an unpublished draft, and a
+            test-mode sponsorship that lands in the approval queue. Then open
+            your dashboard to see what a sponsor or publisher sees. Safe to run
+            again; “Remove” deletes all three.
+          </p>
+        </div>
+        <form action={seedDemo} className="admin-actions">
+          <button className="button primary" name="mode" value="create">
+            Create demo data
+          </button>
+          <button className="button secondary" name="mode" value="remove">
+            Remove demo data
+          </button>
+          <Link href="/dashboard" className="button">
+            Open your dashboard →
+          </Link>
+        </form>
       </section>
       <section className="admin-section">
         <div className="admin-section-head">
