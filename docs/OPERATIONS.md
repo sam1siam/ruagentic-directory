@@ -102,6 +102,10 @@ curl -X POST https://ruagentic.com/api/admin/bootstrap \
 
 Signing up through `/login` with that address works too; the account only needs to be confirmed.
 
+## Data health (scheduled fact checks)
+
+`/api/cron/health` runs every three hours (Vercel cron, `CRON_SECRET`) and checks 40 bundled listings that were checked longest ago: homepage, documentation and repository links (HEAD, then GET; 403/429 count as bot walls, not failures), the MCP endpoint (GET; 401/405/406 mean it exists), the GitHub repository (missing, archived, renamed, no commits for 18 months; set `GITHUB_TOKEN` for a higher API quota) and the Official MCP Registry record (missing or newer version). Results land in `listing_checks`; the whole catalog cycles in about two days. Nothing is hidden automatically. The admin Data health tab lists broken and warning listings with recheck and hide/show; hiding writes `catalog_overrides`, which the public catalog applies on every request. Fixing the data itself still happens in `data/catalog.json`; the seed cron refreshes imported database rows whenever a bundled entry's name, category, summary, tags or observation date changes, and never touches user submissions. Migration `202609080007_listing_health.sql`.
+
 ## Catalog
 
 `data/catalog.json` bundles source-labelled listings. The public catalog merges database rows with bundled entries the database has not stored yet, and the hourly `/api/cron/seed` cron inserts those rows (never touching existing ones) so bookmarks and reports can reference them.

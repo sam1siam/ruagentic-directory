@@ -9,6 +9,7 @@ const tabs = [
   ['/admin/accounts', 'Accounts'],
   ['/admin/reports', 'Reports'],
   ['/admin/email', 'Email'],
+  ['/admin/health', 'Data health'],
 ] as const;
 export default function AdminTabs({
   pending,

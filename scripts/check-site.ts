@@ -150,7 +150,7 @@ const forbidden = await fetch(base + '/api/submissions', {
   body: '{}',
 });
 assert.equal(forbidden.status, 403);
-for (const job of ['email', 'seed']) {
+for (const job of ['email', 'seed', 'health']) {
   const cron = await fetch(base + '/api/cron/' + job);
   assert.equal(cron.status, 401, 'cron ' + job + ' must require the secret');
 }

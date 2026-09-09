@@ -333,3 +333,53 @@ export async function moveSponsor(form: FormData) {
   await log(admin.email, 'sponsor.move-' + direction, id);
   refresh();
 }
+
+/** Re-run the fact check for one bundled listing. */
+export async function recheckListing(form: FormData) {
+  const admin = await requireAdmin('/admin/health');
+  const slug = text(form, 'slug', 120);
+  if (!/^[a-z0-9-]{1,120}$/.test(slug)) return;
+  const { bundledCatalog } = await import('@/lib/server/catalog');
+  const { checkAndSave } = await import('@/lib/server/health');
+  const item = (await bundledCatalog()).find((i) => i.slug === slug);
+  if (!item) return;
+  const record = await checkAndSave(item);
+  await log(admin.email, 'health.recheck', slug, record.status);
+  refresh();
+  revalidatePath('/admin/health');
+}
+
+/** Hide a bundled listing from the directory (or show it again) without a deploy. */
+export async function hideListing(form: FormData) {
+  const admin = await requireAdmin('/admin/health');
+  const slug = text(form, 'slug', 120);
+  const hidden = text(form, 'hidden', 5) === 'true';
+  const note = text(form, 'note');
+  if (!/^[a-z0-9-]{1,120}$/.test(slug)) return;
+  const { error } = await adminClient().from('catalog_overrides').upsert(
+    {
+      slug,
+      hidden,
+      note,
+      updated_by: admin.email,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'slug' },
+  );
+  if (error) throw error;
+  await log(admin.email, hidden ? 'listing.hide' : 'listing.show', slug, note);
+  refresh();
+  revalidatePath('/admin/health');
+}
+
+/** Run the next batch of fact checks right away. */
+export async function runHealthNow() {
+  const admin = await requireAdmin('/admin/health');
+  const { runHealthBatch } = await import('@/lib/server/health');
+  const result = await runHealthBatch(20);
+  const notice = `Checked ${result.checked}: ${result.ok} ok, ${result.warn} warnings, ${result.broken} broken.`;
+  await log(admin.email, 'health.batch', 'manual', notice);
+  refresh();
+  revalidatePath('/admin/health');
+  redirect('/admin/health?notice=' + encodeURIComponent(notice));
+}

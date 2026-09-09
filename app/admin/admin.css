@@ -380,6 +380,22 @@ a.kpi:hover {
   }
 }
 
+.issue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+.issue-list code {
+  color: var(--amber);
+  font:
+    11px var(--font-code),
+    monospace;
+  margin-right: 6px;
+}
 .bar-order {
   list-style: none;
   margin: 16px 0 0;
