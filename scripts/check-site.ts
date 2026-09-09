@@ -163,6 +163,24 @@ const foreignAd = await fetch(base + '/api/advertise/checkout', {
   body: '{}',
 });
 assert.equal(foreignAd.status, 403, 'sponsor checkout must be same-origin');
+const anonymousAd = await fetch(base + '/api/advertise/checkout', {
+  method: 'POST',
+  headers: { Origin: base, 'Content-Type': 'application/json' },
+  body: '{}',
+});
+assert.ok(
+  [401, 503].includes(anonymousAd.status),
+  'sponsor checkout must require an account, got ' + anonymousAd.status,
+);
+const anonymousPortal = await fetch(base + '/api/sponsorships/portal', {
+  method: 'POST',
+  headers: { Origin: base, 'Content-Type': 'application/json' },
+  body: '{}',
+});
+assert.ok(
+  [401, 503].includes(anonymousPortal.status),
+  'billing portal must require an account, got ' + anonymousPortal.status,
+);
 const webhook = await fetch(base + '/api/webhooks/stripe', {
   method: 'POST',
   body: '{}',

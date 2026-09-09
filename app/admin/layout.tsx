@@ -18,7 +18,9 @@ export default async function AdminLayout({
     () => [[], []] as const,
   );
   const pending = orders.filter(
-    (o) => o.approval === 'pending' && o.status === 'active',
+    (o) =>
+      o.status === 'active' &&
+      (o.approval === 'pending' || (o.pending && o.approval === 'approved')),
   ).length;
   const open = reports.filter((r) => r.state === 'open').length;
   return (

@@ -3,6 +3,20 @@ import Dashboard from '@/components/dashboard';
 import Link from 'next/link';
 import { configured, userClient, adminClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-policy';
+import SponsorshipsPanel, {
+  type SponsorshipView,
+} from '@/components/sponsorships-panel';
+import {
+  orderMonthly,
+  ownedOrders,
+  subscriptionFacts,
+} from '@/lib/server/sponsorships';
+import {
+  parseCategories,
+  placementById,
+  type CreativeEdit,
+  type PlacementId,
+} from '@/lib/advertising';
 export const metadata = {
   title: 'Your dashboard',
   robots: { index: false, follow: false },
@@ -36,6 +50,39 @@ export default async function Page() {
   ]);
   if (submissions.error || bookmarks.error || events.error)
     throw new Error('Your dashboard could not be loaded.');
+  let sponsorships: SponsorshipView[] = [];
+  try {
+    const orders = await ownedOrders({
+      id: user.user.id,
+      email: user.user.email ?? null,
+      confirmed: Boolean(user.user.email_confirmed_at),
+    });
+    const facts = await Promise.all(
+      orders.slice(0, 10).map((o) => subscriptionFacts(o)),
+    );
+    sponsorships = orders.map((o, i) => ({
+      session: o.stripe_session_id,
+      product: o.product,
+      placement: o.placement as PlacementId,
+      placementName: placementById(o.placement)?.name ?? o.placement,
+      categories: parseCategories(o.categories),
+      approval: o.approval,
+      status: facts[i]?.status === 'canceled' ? 'canceled' : o.status,
+      livemode: o.livemode,
+      page: '/sponsors/' + encodeURIComponent(o.slug),
+      tagline: o.tagline,
+      description: o.description,
+      cta: o.cta,
+      url: o.url,
+      pending: (o.pending as CreativeEdit | null) ?? null,
+      monthly: orderMonthly(o).display,
+      renewsAt: facts[i]?.renewsAt ?? null,
+      cancelAtPeriodEnd: facts[i]?.cancelAtPeriodEnd ?? false,
+      createdAt: o.created_at,
+    }));
+  } catch {
+    sponsorships = [];
+  }
   return (
     <>
       {isAdminEmail(user.user.email) && user.user.email_confirmed_at && (
@@ -46,6 +93,7 @@ export default async function Page() {
         </div>
       )}
       <Dashboard
+        extra={<SponsorshipsPanel orders={sponsorships} />}
         email={user.user.email ?? ''}
         submissions={(submissions.data ?? []).map((s) => ({
           ...s,

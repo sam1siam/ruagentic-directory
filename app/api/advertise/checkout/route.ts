@@ -6,6 +6,7 @@ import {
   rateLimit,
   respond,
   sameOrigin,
+  signedIn,
 } from '@/lib/server/http';
 import { stripe } from '@/lib/server/payments';
 import {
@@ -32,6 +33,7 @@ function clientKey(request: Request) {
 export async function POST(request: Request) {
   return respond(async () => {
     sameOrigin(request);
+    const user = await signedIn();
     await rateLimit('advertise:' + clientKey(request), 10);
     const creative = creativeSchema.parse(await body(request, 8192));
     const placement = placementById(creative.placement)!;
@@ -43,12 +45,14 @@ export async function POST(request: Request) {
         503,
         'Sponsorship checkout is being configured. Contact us and we will set it up for you.',
       );
-    const metadata = creativeMetadata(creative);
+    const metadata = { ...creativeMetadata(creative), owner: user.id };
     const categoryNames = includesCard(creative.placement)
       ? creative.categories.map((s) => categoryBySlug(s)!.name)
       : [];
     const session = await stripe().checkout.sessions.create({
       mode: 'subscription',
+      customer_email: user.email,
+      client_reference_id: user.id,
       line_items: [
         { price, quantity: 1 },
         ...(total.extras > 0

@@ -217,3 +217,63 @@ export function pickSponsor(
   const pool = paid.length ? paid : eligible;
   return pool[Math.floor(now / 600000) % pool.length];
 }
+/** Fields a sponsor may change after buying; the placement itself and the
+ *  target URL are fixed by the order. */
+export type CreativeEdit = {
+  tagline: string;
+  description: string;
+  cta: string;
+  categories: string[];
+};
+export function creativeEditSchema(placement: PlacementId) {
+  return z
+    .object({
+      tagline: z.string().trim().min(10).max(120),
+      description: z.string().trim().max(200).default(''),
+      cta: z.string().trim().max(24).default(''),
+      categories: z
+        .array(z.string().refine((s) => Boolean(categoryBySlug(s))))
+        .max(categorySlugs.length)
+        .default([]),
+    })
+    .strict()
+    .transform((value) =>
+      includesCard(placement)
+        ? value
+        : { ...value, description: '', cta: '', categories: [] },
+    )
+    .superRefine((value, ctx) => {
+      if (!includesCard(placement)) return;
+      if (value.description.length < 20)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['description'],
+          message:
+            'Describe your product in at least 20 characters for the featured card.',
+        });
+      if (value.categories.length < 1)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['categories'],
+          message: 'Choose at least one category for the featured card.',
+        });
+      if (new Set(value.categories).size !== value.categories.length)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['categories'],
+          message: 'Each category can be chosen once.',
+        });
+    });
+}
+/** What to do with the "extra category" subscription item so billing matches
+ *  the chosen categories: one category is included, the rest are billed. */
+export function categoryItemPlan(
+  currentQuantity: number | null,
+  categories: readonly string[],
+): { action: 'none' | 'create' | 'update' | 'delete'; quantity: number } {
+  const quantity = Math.max(0, categories.length - 1);
+  if (quantity === 0)
+    return { action: currentQuantity === null ? 'none' : 'delete', quantity };
+  if (currentQuantity === null) return { action: 'create', quantity };
+  return { action: currentQuantity === quantity ? 'none' : 'update', quantity };
+}

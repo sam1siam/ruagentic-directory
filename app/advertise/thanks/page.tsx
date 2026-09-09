@@ -61,8 +61,8 @@ export default async function Page({
             : `If you completed a checkout, we review your creative within ${reviewWindow} and email you when it is live. Contact us if you need help.`}
         </p>
         <div className="actions">
-          <Link href="/" className="button primary">
-            View the directory →
+          <Link href="/dashboard" className="button primary">
+            Manage in your dashboard →
           </Link>
           <Link href="/contact" className="button">
             Contact us

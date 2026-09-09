@@ -52,8 +52,8 @@ export function sponsorshipEmail(order: {
   const test = order.livemode ? '' : ' (test mode)';
   return {
     subject: 'Your RUAGENTIC sponsorship is in review' + test,
-    text: `Thanks for sponsoring RUAGENTIC${test}. We received your order for ${order.product}.\n\nPlacement: ${order.placement} (${order.total} a month)\nWhere it will appear: ${where}\nYour sponsor page once live: ${page}\n\nWe review every creative against the listing guidelines and approve sponsorships within ${reviewWindow}. You will get an email the moment it goes live. Stripe emails your receipt and a link to manage or cancel the subscription. To change your creative, reply to this email.\n\nSponsorship never changes rankings, source labels or Agentic Protocol checks, and it is labelled as sponsored wherever it appears.`,
-    html: `<h1>Your sponsorship is in review${escapeHtml(test)}</h1><p>Thanks for sponsoring RUAGENTIC. We received your order for ${escapeHtml(order.product)}.</p><p><strong>Placement:</strong> ${escapeHtml(order.placement)} (${escapeHtml(order.total)} a month)<br><strong>Where it will appear:</strong> ${escapeHtml(where)}<br><strong>Your sponsor page once live:</strong> <a href="${page}">${page}</a></p><p>We review every creative against the listing guidelines and approve sponsorships within ${reviewWindow}. You will get an email the moment it goes live. Stripe emails your receipt and a link to manage or cancel the subscription. To change your creative, reply to this email.</p><p>Sponsorship never changes rankings, source labels or Agentic Protocol checks, and it is labelled as sponsored wherever it appears.</p>`,
+    text: `Thanks for sponsoring RUAGENTIC${test}. We received your order for ${order.product}.\n\nPlacement: ${order.placement} (${order.total} a month)\nWhere it will appear: ${where}\nYour sponsor page once live: ${page}\n\nWe review every creative against the listing guidelines and approve sponsorships within ${reviewWindow}. You will get an email the moment it goes live. Manage billing, edit your creative or cancel any time from your dashboard: https://ruagentic.com/dashboard\n\nSponsorship never changes rankings, source labels or Agentic Protocol checks, and it is labelled as sponsored wherever it appears.`,
+    html: `<h1>Your sponsorship is in review${escapeHtml(test)}</h1><p>Thanks for sponsoring RUAGENTIC. We received your order for ${escapeHtml(order.product)}.</p><p><strong>Placement:</strong> ${escapeHtml(order.placement)} (${escapeHtml(order.total)} a month)<br><strong>Where it will appear:</strong> ${escapeHtml(where)}<br><strong>Your sponsor page once live:</strong> <a href="${page}">${page}</a></p><p>We review every creative against the listing guidelines and approve sponsorships within ${reviewWindow}. You will get an email the moment it goes live. Manage billing, edit your creative or cancel any time from <a href="https://ruagentic.com/dashboard">your dashboard</a>.</p><p>Sponsorship never changes rankings, source labels or Agentic Protocol checks, and it is labelled as sponsored wherever it appears.</p>`,
   };
 }
 /** Sent when a reviewer approves or rejects the creative. */
@@ -63,9 +63,23 @@ export function sponsorshipDecisionEmail(order: {
   placement: string;
   slug: string;
   note: string;
+  /** True when the decision concerns edits to an already live creative. */
+  changes?: boolean;
 }) {
   const page =
     'https://ruagentic.com/sponsors/' + encodeURIComponent(order.slug);
+  if (order.changes)
+    return order.decision === 'approved'
+      ? {
+          subject: 'Your RUAGENTIC sponsorship changes are live',
+          text: `The changes to the ${order.product} creative are now live on RUAGENTIC. Any category change is billed with proration from today.\n\nManage your sponsorship: https://ruagentic.com/dashboard${order.note ? '\n\nNote from the reviewer: ' + order.note : ''}`,
+          html: `<h1>Your changes are live</h1><p>The changes to the ${escapeHtml(order.product)} creative are now live on RUAGENTIC. Any category change is billed with proration from today.</p><p><a href="https://ruagentic.com/dashboard">Manage your sponsorship</a></p>${order.note ? '<p><strong>Note from the reviewer:</strong> ' + escapeHtml(order.note) + '</p>' : ''}`,
+        }
+      : {
+          subject: 'Your RUAGENTIC sponsorship changes were not approved',
+          text: `We reviewed the changes to the ${order.product} creative and could not approve them; your current creative stays live.${order.note ? '\n\nReason: ' + order.note : ''}\n\nEdit and resend from your dashboard: https://ruagentic.com/dashboard`,
+          html: `<h1>Changes not approved</h1><p>We reviewed the changes to the ${escapeHtml(order.product)} creative and could not approve them; your current creative stays live.</p>${order.note ? '<p><strong>Reason:</strong> ' + escapeHtml(order.note) + '</p>' : ''}<p><a href="https://ruagentic.com/dashboard">Edit and resend from your dashboard</a></p>`,
+        };
   if (order.decision === 'approved')
     return {
       subject: 'Your RUAGENTIC sponsorship is live',

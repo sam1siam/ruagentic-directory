@@ -38,6 +38,12 @@ export async function recordAdOrder(session: Stripe.Checkout.Session) {
     session.customer_details?.email ?? session.customer_email ?? null;
   const categories = parseCategories(metadata.categories);
   const slug = sponsorSlug(metadata.product, session.id);
+  const uuid = /^[0-9a-f-]{36}$/i;
+  const owner = uuid.test(metadata.owner ?? '')
+    ? metadata.owner
+    : uuid.test(session.client_reference_id ?? '')
+      ? session.client_reference_id
+      : null;
   const paid = session.payment_status === 'paid';
   const { error } = await db.from('ad_orders').upsert(
     {
@@ -45,6 +51,7 @@ export async function recordAdOrder(session: Stripe.Checkout.Session) {
       stripe_subscription_id: subscription,
       stripe_customer_id: customer,
       customer_email: email,
+      owner_id: owner,
       slug,
       placement: metadata.placement,
       product: metadata.product,

@@ -5,7 +5,8 @@ import { requireAdmin } from '@/lib/server/admin';
 import { adminClient } from '@/lib/supabase/server';
 import { sendMail } from '@/lib/server/mail';
 import { sponsorshipDecisionEmail } from '@/lib/email-policy';
-import { placementById } from '@/lib/advertising';
+import { placementById, type CreativeEdit } from '@/lib/advertising';
+import { reconcileCategoryBilling } from '@/lib/server/sponsorships';
 
 const text = (form: FormData, key: string, max = 500) => {
   const value = form.get(key);
@@ -28,7 +29,9 @@ function refresh() {
 }
 
 /** Approve, reject or return a sponsorship to the queue. Approval is what
- *  makes a paid placement render; the sponsor is emailed the decision. */
+ *  makes a paid placement render; the sponsor is emailed the decision. When
+ *  a live sponsor has edits waiting in `pending`, the same buttons apply or
+ *  drop those edits and leave the approval itself untouched. */
 export async function reviewSponsor(form: FormData) {
   const admin = await requireAdmin('/admin/sponsors');
   const id = text(form, 'session', 200);
@@ -46,23 +49,72 @@ export async function reviewSponsor(form: FormData) {
     .eq('stripe_session_id', id)
     .maybeSingle();
   if (error || !order) return;
+  const pending = (order.pending ?? null) as CreativeEdit | null;
+  const changes = Boolean(pending) && order.approval === 'approved';
+  const now = new Date().toISOString();
+  const review = {
+    reviewed_at: now,
+    reviewed_by: admin.email,
+    review_note: note,
+    updated_at: now,
+  };
+  const patch =
+    changes && decision === 'approved'
+      ? {
+          ...review,
+          tagline: pending!.tagline,
+          description: pending!.description,
+          cta: pending!.cta,
+          categories: pending!.categories.join(','),
+          pending: null,
+        }
+      : changes && decision === 'rejected'
+        ? { ...review, pending: null }
+        : { ...review, approval: decision };
   const update = await db
     .from('ad_orders')
-    .update({
-      approval: decision,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by: admin.email,
-      review_note: note,
-      updated_at: new Date().toISOString(),
-    })
+    .update(patch)
     .eq('stripe_session_id', id);
   if (update.error) throw update.error;
-  await log(admin.email, 'sponsor.' + decision, id, note);
-  if (
+  await log(
+    admin.email,
+    'sponsor.' + (changes ? 'changes-' : '') + decision,
+    id,
+    note,
+  );
+  if (decision === 'approved') {
+    // Billing follows approval: match the extra-category line to the
+    // categories that are now live.
+    const live = {
+      stripe_subscription_id: String(order.stripe_subscription_id ?? ''),
+      placement: String(order.placement),
+      categories: changes
+        ? pending!.categories.join(',')
+        : String(order.categories ?? ''),
+    };
+    try {
+      const plan = await reconcileCategoryBilling(live);
+      if (plan.action !== 'none' && plan.action !== 'skipped')
+        await log(
+          admin.email,
+          'sponsor.billing.' + plan.action,
+          id,
+          'extra categories: ' + plan.quantity,
+        );
+    } catch (err) {
+      await log(
+        admin.email,
+        'sponsor.billing.failed',
+        id,
+        (err as Error).message.slice(0, 300),
+      );
+    }
+  }
+  const notify =
     order.customer_email &&
     decision !== 'pending' &&
-    order.approval !== decision
-  )
+    (changes || order.approval !== decision);
+  if (notify)
     await sendMail(
       String(order.customer_email),
       sponsorshipDecisionEmail({
@@ -73,6 +125,7 @@ export async function reviewSponsor(form: FormData) {
           String(order.placement),
         slug: String(order.slug),
         note,
+        changes,
       }),
       'sponsorship-' + decision + '/' + id + '/' + Date.now(),
     ).catch(() => {});

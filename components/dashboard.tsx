@@ -18,10 +18,13 @@ export default function Dashboard({
   email,
   submissions,
   saved,
+  extra,
 }: {
   email: string;
   submissions: Row[];
   saved: { slug: string; name: string; summary: string }[];
+  /** Extra sections rendered after the projects, e.g. sponsorships. */
+  extra?: React.ReactNode;
 }) {
   const [rows, setRows] = useState(submissions),
     [error, setError] = useState(''),
@@ -174,6 +177,7 @@ export default function Dashboard({
           </div>
         )}
       </section>
+      {extra}
     </main>
   );
 }

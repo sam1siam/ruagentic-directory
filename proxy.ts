@@ -36,5 +36,8 @@ export const config = {
     '/reset-password',
     '/api/account/:path*',
     '/api/submissions/:path*',
+    '/api/sponsorships/:path*',
+    '/api/advertise/:path*',
+    '/advertise',
   ],
 };

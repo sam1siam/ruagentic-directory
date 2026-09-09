@@ -224,3 +224,60 @@ await test('slots prefer paid sponsors, respect categories, and fall back to the
   assert.equal(houseSponsor.page, '/tools/astrofabric');
   assert.ok(houseSponsor.description && houseSponsor.description.length >= 20);
 });
+
+await test('category billing plan matches the chosen categories', async () => {
+  const { categoryItemPlan, creativeEditSchema } =
+    await import('../lib/advertising.ts');
+  assert.deepEqual(categoryItemPlan(null, ['finance']), {
+    action: 'none',
+    quantity: 0,
+  });
+  assert.deepEqual(categoryItemPlan(null, ['finance', 'automation']), {
+    action: 'create',
+    quantity: 1,
+  });
+  assert.deepEqual(categoryItemPlan(1, ['finance', 'automation']), {
+    action: 'none',
+    quantity: 1,
+  });
+  assert.deepEqual(
+    categoryItemPlan(1, ['finance', 'automation', 'productivity']),
+    { action: 'update', quantity: 2 },
+  );
+  assert.deepEqual(categoryItemPlan(2, ['finance']), {
+    action: 'delete',
+    quantity: 0,
+  });
+  const edit = creativeEditSchema('card').parse({
+    tagline: 'A tagline long enough to pass.',
+    description: 'A description long enough for the featured card.',
+    cta: 'Try it',
+    categories: ['finance', 'automation'],
+  });
+  assert.equal(edit.categories.length, 2);
+  const barEdit = creativeEditSchema('bar').parse({
+    tagline: 'A tagline long enough to pass.',
+    description: 'ignored for the bar',
+    categories: ['finance'],
+  });
+  assert.deepEqual(barEdit, {
+    tagline: 'A tagline long enough to pass.',
+    description: '',
+    cta: '',
+    categories: [],
+  });
+  assert.ok(
+    !creativeEditSchema('card').safeParse({
+      tagline: 'A tagline long enough to pass.',
+      description: 'short',
+      categories: ['finance'],
+    }).success,
+  );
+  assert.ok(
+    !creativeEditSchema('card').safeParse({
+      tagline: 'A tagline long enough to pass.',
+      description: 'A description long enough for the featured card.',
+      categories: [],
+    }).success,
+  );
+});

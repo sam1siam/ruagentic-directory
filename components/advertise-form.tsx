@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { LoaderCircle } from 'lucide-react';
 import {
   categoryExtraAmount,
@@ -20,7 +21,15 @@ const TAGLINE_HINT = 'One sentence that makes users click.';
 const DESCRIPTION_HINT =
   'Two or three sentences about what your product does and who it is for.';
 
-export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
+export default function AdvertiseForm({
+  cancelled,
+  signedIn = false,
+  email,
+}: {
+  cancelled?: boolean;
+  signedIn?: boolean;
+  email?: string;
+}) {
   const [placement, setPlacement] = useState<PlacementId>('both'),
     [product, setProduct] = useState(''),
     [tagline, setTagline] = useState(''),
@@ -310,10 +319,29 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
           </small>
         )}
       </div>
-      <button type="submit" className="button primary" disabled={busy}>
-        {busy && <LoaderCircle size={14} className="spin" />}
-        Continue to payment ({total.display}/month) →
-      </button>
+      {signedIn ? (
+        <button type="submit" className="button primary" disabled={busy}>
+          {busy && <LoaderCircle size={14} className="spin" />}
+          Continue to payment ({total.display}/month) →
+        </button>
+      ) : (
+        <div className="signin-gate">
+          <Link href="/login?next=%2Fadvertise" className="button primary">
+            Sign in to continue →
+          </Link>
+          <small>
+            Sponsorships belong to an account so you can manage billing, edit
+            the creative or cancel later. Sign in or create one, then come back
+            here.
+          </small>
+        </div>
+      )}
+      {signedIn && email && (
+        <p className="muted">
+          Billing receipts go to <b>{email}</b>; manage everything later from
+          your dashboard.
+        </p>
+      )}
     </form>
   );
 }

@@ -102,6 +102,47 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
           </div>
         )}
       </dl>
+      {order.pending && order.approval === 'approved' && (
+        <div className="pending-changes">
+          <strong>Changes awaiting review</strong>
+          <dl className="admin-fields">
+            {(
+              [
+                ['Tagline', order.tagline, order.pending.tagline],
+                [
+                  'Card description',
+                  order.description,
+                  order.pending.description,
+                ],
+                ['Button label', order.cta, order.pending.cta],
+                [
+                  'Categories',
+                  cats,
+                  order.pending.categories
+                    .map((s) => categoryBySlug(s)?.name ?? s)
+                    .join(', '),
+                ],
+              ] as const
+            )
+              .filter(([, before, after]) => before !== after)
+              .map(([label, before, after]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>
+                    <s>{before || '—'}</s>
+                    <br />
+                    {after || '—'}
+                  </dd>
+                </div>
+              ))}
+          </dl>
+          <p className="muted">
+            Approve applies these to the live creative and adjusts the
+            subscription’s extra-category line with proration. Reject drops them
+            and keeps the live creative; the note is emailed.
+          </p>
+        </div>
+      )}
       <form action={reviewSponsor} className="admin-actions">
         <input type="hidden" name="session" value={order.stripe_session_id} />
         <input
@@ -110,17 +151,21 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
           placeholder="Note to the sponsor (sent with a rejection) or for the log"
           defaultValue={order.review_note}
         />
-        {order.approval !== 'approved' && (
+        {(order.approval !== 'approved' || order.pending) && (
           <button className="button primary" name="decision" value="approved">
-            Approve · go live
+            {order.pending && order.approval === 'approved'
+              ? 'Approve changes'
+              : 'Approve · go live'}
           </button>
         )}
-        {order.approval !== 'rejected' && (
+        {(order.approval !== 'rejected' || order.pending) && (
           <button className="button secondary" name="decision" value="rejected">
-            Reject
+            {order.pending && order.approval === 'approved'
+              ? 'Reject changes'
+              : 'Reject'}
           </button>
         )}
-        {order.approval !== 'pending' && (
+        {order.approval !== 'pending' && !order.pending && (
           <button className="button" name="decision" value="pending">
             Back to queue
           </button>
@@ -139,7 +184,9 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
 export default async function Page() {
   const orders = await adOrders();
   const queue = orders.filter(
-    (o) => o.approval === 'pending' && o.status === 'active',
+    (o) =>
+      o.status === 'active' &&
+      (o.approval === 'pending' || (o.pending && o.approval === 'approved')),
   );
   const rest = orders.filter((o) => !queue.includes(o));
   return (

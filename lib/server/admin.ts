@@ -112,6 +112,13 @@ export type AdOrder = {
   reviewed_by: string | null;
   review_note: string;
   livemode: boolean;
+  owner_id?: string | null;
+  pending?: {
+    tagline: string;
+    description: string;
+    cta: string;
+    categories: string[];
+  } | null;
   created_at: string;
   updated_at: string;
 };

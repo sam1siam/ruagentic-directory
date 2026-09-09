@@ -80,6 +80,10 @@ Cards and tiles open the sponsor's page at `/sponsors/<slug>` (noindex), which c
 
 Sponsorship never affects ordering, source labels or Agentic Protocol checks, and every placement is labelled as sponsored.
 
+## Sponsor self-service
+
+Buying a placement requires a signed-in, confirmed account; the order stores the buyer (`ad_orders.owner_id`, migration 202609080005) and orders paid earlier are claimed by the confirmed email that paid. The dashboard shows every sponsorship with its state, monthly amount and renewal date (read live from Stripe), and offers: Manage billing (a Stripe Customer Portal session: card, invoices, cancel; the portal must be enabled in Stripe with cancellation allowed), Edit creative (tagline, description, button label, categories) and Buy another placement. Edits to a live creative are stored in `pending` and the live version stays up until a reviewer approves them from the Sponsorships tab; edits to an order still in review replace it in place. When a reviewer approves, the subscription's extra-category line is created, updated or removed with proration so billing matches the live categories (`STRIPE_AD_PRICE_CATEGORY`). The restricted Stripe key needs Checkout Sessions (write), Billing Portal sessions (write), Customers (read) and Subscriptions (write).
+
 ## Admin
 
 `/admin` is the review console: it requires a confirmed Supabase sign-in whose email is listed in `ADMIN_EMAILS` (default `hello@ruagentic.com`); anyone else gets a 404. Tabs: Overview (accounts created, free and paid listings, submissions and sponsorship orders for today, 7 and 30 days and all time, a daily chart, and the admin action log), Sponsorships (every order with all fields; approve, reject with a note that is emailed, or return to the queue), Submissions (by day range and route, with suspend/restore), Accounts (creations with confirmation state and listing counts), Reports (open and closed listing reports) and Email (the confirmation outbox with retry).

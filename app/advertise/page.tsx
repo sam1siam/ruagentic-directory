@@ -3,6 +3,8 @@ import AdvertiseForm from '@/components/advertise-form';
 import { directoryStats } from '@/lib/server/stats';
 import { categoryExtraAmount, formatUsd } from '@/lib/advertising';
 import { reviewWindow } from '@/lib/admin-policy';
+import { configured, userClient } from '@/lib/supabase/server';
+import { ownedOrders } from '@/lib/server/sponsorships';
 export const metadata = {
   title: 'Advertise',
   description:
@@ -14,6 +16,24 @@ export default async function Page({
   searchParams: Promise<{ cancelled?: string }>;
 }) {
   const [p, stats] = await Promise.all([searchParams, directoryStats()]);
+  let account: { email: string; orders: number } | null = null;
+  if (configured()) {
+    try {
+      const { data } = await (await userClient()).auth.getUser();
+      if (data.user?.email) {
+        const orders = data.user.email_confirmed_at
+          ? await ownedOrders({
+              id: data.user.id,
+              email: data.user.email,
+              confirmed: true,
+            })
+          : [];
+        account = { email: data.user.email, orders: orders.length };
+      }
+    } catch {
+      account = null;
+    }
+  }
   return (
     <main className="content-page advertise-page">
       <div className="page-heading">
@@ -24,8 +44,20 @@ export default async function Page({
           approve it, within {reviewWindow} of payment.
         </p>
       </div>
+      {account && account.orders > 0 && (
+        <div className="notice">
+          You have {account.orders} sponsorship
+          {account.orders === 1 ? '' : 's'} on this account.{' '}
+          <Link href="/dashboard">Manage billing and creatives</Link> from your
+          dashboard, or buy another placement below.
+        </div>
+      )}
       <div className="advertise-layout">
-        <AdvertiseForm cancelled={p.cancelled === '1'} />
+        <AdvertiseForm
+          cancelled={p.cancelled === '1'}
+          signedIn={Boolean(account)}
+          email={account?.email}
+        />
         <aside className="advertise-aside">
           <div className="stat-grid">
             <div>
@@ -46,7 +78,11 @@ export default async function Page({
             <li>
               Choose a placement, your categories and submit your creative.
             </li>
-            <li>Pay securely by card through Stripe.</li>
+            <li>
+              Sign in or create an account, then pay securely by card through
+              Stripe. Your account is where you manage billing, edit the
+              creative or cancel later.
+            </li>
             <li>
               We review your creative and approve it within {reviewWindow}. Your
               placement goes live the moment it is approved, and we email you
