@@ -9,6 +9,7 @@ import {
 import { directoryStats } from '@/lib/server/stats';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { houseSponsor, pickSponsor } from '@/lib/advertising';
+import { gtmNoscriptSrc, gtmScript } from '@/lib/analytics';
 import './globals.css';
 import './hud.css';
 import './browse.css';
@@ -47,7 +48,23 @@ export default async function RootLayout({
   const bar = pickSponsor('bar', sponsors) ?? houseSponsor;
   return (
     <html lang="en" className="dark">
+      <head>
+        {/* Google Tag Manager */}
+        <script id="gtm" dangerouslySetInnerHTML={{ __html: gtmScript }} />
+        {/* End Google Tag Manager */}
+      </head>
       <body className={sans.variable + ' ' + mono.variable}>
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src={gtmNoscriptSrc}
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+            title="Google Tag Manager"
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
         <a className="skip-link" href="#main">
           Skip to content
         </a>

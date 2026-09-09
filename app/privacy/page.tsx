@@ -54,8 +54,10 @@ export default function Page() {
       <p>
         Authentication uses necessary cookies to keep you signed in. The
         comparison feature stores selected public listing identifiers in your
-        browser. We do not add advertising pixels or sell personal information
-        through this directory.
+        browser. Google Tag Manager loads our site measurement tags, which may
+        set cookies or similar identifiers to count visits and understand how
+        the directory is used. We do not sell personal information through this
+        directory.
       </p>
       <h2>Retention and your choices</h2>
       <p>
