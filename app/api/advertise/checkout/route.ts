@@ -62,6 +62,11 @@ export async function POST(request: Request) {
       allow_promotion_codes: false,
       billing_address_collection: 'auto',
       consent_collection: { terms_of_service: 'required' },
+      branding_settings: {
+        display_name: 'RUAGENTIC',
+        background_color: '#0b0d0f',
+        button_color: '#bcf36c',
+      },
       custom_text: {
         terms_of_service_acceptance: {
           message:
