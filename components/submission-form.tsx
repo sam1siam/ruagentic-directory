@@ -994,7 +994,7 @@ export default function SubmissionForm({
                   {textField('endpoint', 'Remote MCP endpoint', {
                     code: true,
                     placeholder: 'https://api.yoursite.com/mcp',
-                    hint: 'Optional for local servers and clients.',
+                    hint: 'Optional for local servers and clients. Listings with an endpoint and authentication details get a generated connect guide with client snippets, which ranks for setup searches.',
                   })}
                   {textField('profileUrl', 'Agentic Protocol manifest URL', {
                     code: true,

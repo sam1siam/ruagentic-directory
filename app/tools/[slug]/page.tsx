@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { catalog, listingBySlug } from '@/lib/server/catalog';
 import ListingActions from '@/components/listing-actions';
+import ConnectGuide from '@/components/connect-guide';
+import { listingJsonLd } from '@/lib/seo';
 import { SponsorTile } from '@/components/sponsor';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsor } from '@/lib/advertising';
@@ -65,15 +67,10 @@ export default async function Page({
     version?: string;
     transport?: { type?: string };
   }[];
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: item.name,
-    description: item.summary,
-    url: item.homepage,
-    applicationCategory: item.category,
-    operatingSystem: item.platforms.join(', ') || undefined,
-  };
+  const jsonLd = listingJsonLd(
+    item,
+    'https://ruagentic.com/tools/' + encodeURIComponent(item.slug),
+  );
   return (
     <main className="content-page detail-page">
       <script
@@ -136,15 +133,8 @@ export default async function Page({
             </section>
           )}
           <section>
-            <h2>Connect and get started</h2>
-            {item.setup ? (
-              <pre className="setup-code">{item.setup}</pre>
-            ) : (
-              <p>
-                Open the project documentation for its current setup
-                instructions and access requirements.
-              </p>
-            )}
+            <h2>How to connect</h2>
+            <ConnectGuide item={item} />
             <div className="resource-links">
               {[
                 [Globe, 'Project website', item.homepage],

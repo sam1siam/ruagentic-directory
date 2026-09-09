@@ -4159,3 +4159,62 @@ progress.progress-track::-moz-progress-bar {
 legend {
   padding: 0;
 }
+
+/* ---------------------------------------------------------------- connect guide */
+.connect-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 18px;
+}
+.connect-qa h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+.connect-qa p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--body);
+  margin: 0 0 8px;
+}
+.connect-qa code {
+  font:
+    12.5px var(--font-code),
+    monospace;
+  color: var(--cyan);
+}
+.connect-qa .setup-code {
+  margin: 0;
+}
+.snippet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.snippet .label {
+  display: block;
+  margin-bottom: 6px;
+  font:
+    10px var(--font-code),
+    monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.snippet pre {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--field-bg);
+  overflow: auto;
+  font:
+    12.5px/1.7 var(--font-code),
+    monospace;
+  color: var(--text);
+}
+.snippet pre code {
+  color: inherit;
+  font: inherit;
+}
