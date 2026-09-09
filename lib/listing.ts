@@ -3,14 +3,25 @@ import ipaddr from 'ipaddr.js';
 export const kinds = ['server', 'client', 'product'] as const;
 export const categories = [
   'Developer tools',
+  'AI & language models',
   'Data & intelligence',
-  'Productivity',
   'Search & research',
-  'Communication',
-  'Design & content',
-  'Infrastructure',
-  'Finance',
+  'Browser & web automation',
   'Automation',
+  'Productivity',
+  'Communication',
+  'Customer support & sales',
+  'Marketing & SEO',
+  'Design & content',
+  'Media, audio & video',
+  'Infrastructure',
+  'Security & identity',
+  'Finance',
+  'E-commerce',
+  'Science & health',
+  'Gaming & 3D',
+  'Location & travel',
+  'Other',
 ] as const;
 export function cleanUrl(value: string) {
   const text = value.trim();

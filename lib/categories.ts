@@ -1,4 +1,6 @@
-/** Directory taxonomy shared by pages, the sidebar filters and the command palette. */
+/** Directory taxonomy shared by pages, the sidebar filters, the command
+ *  palette, the advertise form and the listing schema. Slugs are URLs, so
+ *  existing ones never change. */
 export const categories = [
   {
     slug: 'developer-tools',
@@ -7,53 +9,112 @@ export const categories = [
       'Coding agents, IDE integrations, repositories, CI and the tooling that surrounds them.',
   },
   {
+    slug: 'ai-models',
+    name: 'AI & language models',
+    description:
+      'Model gateways, inference, agent frameworks, memory, evaluation and observability for LLM applications.',
+  },
+  {
     slug: 'data-intelligence',
     name: 'Data & intelligence',
     description:
-      'Databases, vector stores, analytics and machine learning platforms agents can query.',
-  },
-  {
-    slug: 'productivity',
-    name: 'Productivity',
-    description:
-      'Tasks, documents, chat clients and workspace tools that keep work moving.',
+      'Databases, vector stores, analytics and data pipelines agents can query.',
   },
   {
     slug: 'search-research',
     name: 'Search & research',
     description:
-      'Web search, retrieval and information sources for better informed agents.',
+      'Web search, retrieval, academic and knowledge sources for better informed agents.',
   },
   {
-    slug: 'communication',
-    name: 'Communication',
-    description: 'Email, messaging and customer conversation channels.',
-  },
-  {
-    slug: 'design-content',
-    name: 'Design & content',
-    description:
-      'Design tools, content systems, media and generation for creative work.',
-  },
-  {
-    slug: 'infrastructure',
-    name: 'Infrastructure',
-    description:
-      'Cloud platforms, deployment, secrets and operational control.',
-  },
-  {
-    slug: 'finance',
-    name: 'Finance',
-    description: 'Payments, market data and financial operations.',
+    slug: 'browser-automation',
+    name: 'Browser & web automation',
+    description: 'Browser control, scraping and agents that act on the web.',
   },
   {
     slug: 'automation',
     name: 'Automation',
     description:
-      'Workflow platforms, browser automation and integrations that connect everyday systems.',
+      'Workflow platforms, integrations and RPA that connect everyday systems.',
+  },
+  {
+    slug: 'productivity',
+    name: 'Productivity',
+    description:
+      'Tasks, documents, notes and workspace tools that keep work moving.',
+  },
+  {
+    slug: 'communication',
+    name: 'Communication',
+    description: 'Email, chat, messaging and social channels.',
+  },
+  {
+    slug: 'support-sales',
+    name: 'Customer support & sales',
+    description:
+      'Help desks, CRMs, sales pipelines and customer-facing agents.',
+  },
+  {
+    slug: 'marketing',
+    name: 'Marketing & SEO',
+    description: 'Campaigns, web analytics, SEO and advertising tools.',
+  },
+  {
+    slug: 'design-content',
+    name: 'Design & content',
+    description: 'Design tools, content systems and writing for creative work.',
+  },
+  {
+    slug: 'media',
+    name: 'Media, audio & video',
+    description:
+      'Image, speech, audio, music and video generation and processing.',
+  },
+  {
+    slug: 'infrastructure',
+    name: 'Infrastructure',
+    description:
+      'Cloud platforms, deployment, monitoring and operational control.',
+  },
+  {
+    slug: 'security',
+    name: 'Security & identity',
+    description:
+      'Authentication, secrets, scanning, compliance and threat intelligence.',
+  },
+  {
+    slug: 'finance',
+    name: 'Finance',
+    description: 'Payments, banking, accounting, markets and crypto.',
+  },
+  {
+    slug: 'ecommerce',
+    name: 'E-commerce',
+    description: 'Storefronts, catalogs, orders and fulfilment.',
+  },
+  {
+    slug: 'science-health',
+    name: 'Science & health',
+    description: 'Biology, medicine, scientific data and health tools.',
+  },
+  {
+    slug: 'gaming',
+    name: 'Gaming & 3D',
+    description: 'Game engines, 3D tools and virtual worlds.',
+  },
+  {
+    slug: 'location-travel',
+    name: 'Location & travel',
+    description: 'Maps, geodata, weather, transport and travel.',
+  },
+  {
+    slug: 'other',
+    name: 'Other',
+    description: 'Tools that do not fit another category yet.',
   },
 ] as const;
 export type Category = (typeof categories)[number];
+export const categoryNames = categories.map((c) => c.name);
 export const kinds = [
   {
     slug: 'servers',
@@ -80,7 +141,7 @@ export const kinds = [
   },
 ] as const;
 export type KindPage = (typeof kinds)[number];
-/** Editorial picks shown first on the home page. Everything else follows alphabetically. */
+/** Hand-picked leads for the home page sections, by kind. */
 export const featured: Record<KindPage['kind'], string[]> = {
   server: [
     'github-mcp',

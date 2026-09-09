@@ -473,7 +473,7 @@
   "repository": "https://github.com/microsoft/playwright-mcp",
   "documentation": "https://github.com/microsoft/playwright-mcp",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "browser automation"
@@ -5974,7 +5974,7 @@
   "repository": "https://github.com/mastra-ai/mastra",
   "documentation": "https://mastra.ai/docs/connections/mcp",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "agent frameworks"
@@ -6325,7 +6325,7 @@
   "repository": "https://github.com/googleanalytics/google-analytics-mcp",
   "documentation": "",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "Marketing & SEO",
   "tags": [
    "mcp",
    "analytics"
@@ -7303,7 +7303,7 @@
   "repository": "https://github.com/snyk/cli",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "security"
@@ -7377,7 +7377,7 @@
   "repository": "https://github.com/SonarSource/sonarqube-mcp-server",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "code quality"
@@ -8064,7 +8064,7 @@
   "repository": "",
   "documentation": "https://developers.intercom.com/docs/guides/mcp",
   "endpoint": "https://mcp.intercom.com/mcp",
-  "category": "Communication",
+  "category": "Customer support & sales",
   "tags": [
    "mcp",
    "customer support"
@@ -8449,7 +8449,7 @@
   "repository": "https://github.com/apify/apify-mcp-server",
   "documentation": "https://docs.apify.com/platform/integrations/mcp",
   "endpoint": "https://mcp.apify.com/",
-  "category": "Automation",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "scraping",
@@ -10139,7 +10139,7 @@
   "repository": "https://github.com/auth0/auth0-mcp-server",
   "documentation": "",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "identity"
@@ -10372,7 +10372,7 @@
   "repository": "https://github.com/mapbox/mcp-server",
   "documentation": "",
   "endpoint": "",
-  "category": "Search & research",
+  "category": "Location & travel",
   "tags": [
    "mcp",
    "maps",
@@ -10612,7 +10612,7 @@
   "repository": "https://github.com/ahujasid/blender-mcp",
   "documentation": "",
   "endpoint": "",
-  "category": "Design & content",
+  "category": "Gaming & 3D",
   "tags": [
    "mcp",
    "3d"
@@ -10911,7 +10911,7 @@
   "repository": "https://github.com/google/mcp-security",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "security"
@@ -10984,7 +10984,7 @@
   "repository": "https://github.com/hashicorp/vault-mcp-server",
   "documentation": "",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "secrets"
@@ -11280,7 +11280,7 @@
   "repository": "",
   "documentation": "https://huggingface.co/mcp",
   "endpoint": "https://huggingface.co/mcp",
-  "category": "Data & intelligence",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "machine learning"
@@ -14477,7 +14477,7 @@
   "repository": "https://github.com/crewAIInc/crewAI",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "framework"
@@ -14635,7 +14635,7 @@
   "repository": "https://github.com/langflow-ai/langflow",
   "documentation": "",
   "endpoint": "",
-  "category": "Automation",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "low-code",
@@ -14714,7 +14714,7 @@
   "repository": "https://github.com/pydantic/pydantic-ai",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "framework",
@@ -14793,7 +14793,7 @@
   "repository": "https://github.com/microsoft/agent-framework",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "framework"
@@ -14943,7 +14943,7 @@
   "repository": "https://github.com/openai/openai-agents-python",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "sdk"
@@ -15572,7 +15572,7 @@
   "repository": "https://github.com/anthropics/claude-agent-sdk-python",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "sdk"
@@ -15941,7 +15941,7 @@
   "repository": "https://github.com/Portkey-AI/gateway",
   "documentation": "",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "AI & language models",
   "tags": [
    "agents",
    "gateway"
@@ -16097,7 +16097,7 @@
   "repository": "https://github.com/browserbase/stagehand",
   "documentation": "",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Browser & web automation",
   "tags": [
    "agents",
    "browser automation"
@@ -16807,7 +16807,7 @@
   "repository": "https://github.com/ChiR24/Unreal_mcp",
   "documentation": "",
   "endpoint": "https://server.smithery.ai/@ChiR24/unreal_mcp/mcp",
-  "category": "Design & content",
+  "category": "Gaming & 3D",
   "tags": [
    "mcp",
    "content"
@@ -17463,7 +17463,7 @@
   "repository": "https://github.com/glifxyz/glif-mcp-server",
   "documentation": "https://glif.app/mcp",
   "endpoint": "https://glif.app/api/mcp",
-  "category": "Design & content",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "content"
@@ -17773,7 +17773,7 @@
   "repository": "https://github.com/spronta/crawlie",
   "documentation": "https://crawlie.app",
   "endpoint": "https://crawlie.app/mcp",
-  "category": "Search & research",
+  "category": "Marketing & SEO",
   "tags": [
    "mcp",
    "search"
@@ -18162,7 +18162,7 @@
   "repository": "https://github.com/maximem-ai/maximem_synap_sdk",
   "documentation": "https://www.maximem.ai/docs",
   "endpoint": "https://synap-mcp.maximem.ai/mcp",
-  "category": "Infrastructure",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "infrastructure"
@@ -18327,7 +18327,7 @@
   "repository": "https://github.com/nostrband/ServiceGraph",
   "documentation": "https://servicegraph.co",
   "endpoint": "https://mcp.servicegraph.co",
-  "category": "Data & intelligence",
+  "category": "Marketing & SEO",
   "tags": [
    "mcp",
    "data"
@@ -18653,7 +18653,7 @@
   "repository": "https://github.com/trendsmcp-ai/Trends-MCP",
   "documentation": "https://trendsmcp.ai",
   "endpoint": "https://social-media.api.trendsmcp.ai/mcp",
-  "category": "Design & content",
+  "category": "Marketing & SEO",
   "tags": [
    "mcp",
    "content"
@@ -19093,7 +19093,7 @@
   "repository": "https://github.com/trycua/cua",
   "documentation": "https://cua.ai",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "developer tools"
@@ -19522,7 +19522,7 @@
   "repository": "https://github.com/nottelabs/notte",
   "documentation": "https://www.notte.cc/",
   "endpoint": "",
-  "category": "Search & research",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "search"
@@ -20298,7 +20298,7 @@
   "repository": "https://github.com/comet-ml/opik-mcp",
   "documentation": "https://www.comet.com/site/products/opik/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -21079,7 +21079,7 @@
   "repository": "https://github.com/wso2/fhir-mcp-server",
   "documentation": "",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "Science & health",
   "tags": [
    "mcp",
    "data"
@@ -21436,7 +21436,7 @@
   "repository": "https://github.com/opgginc/opgg-mcp",
   "documentation": "",
   "endpoint": "",
-  "category": "Design & content",
+  "category": "Gaming & 3D",
   "tags": [
    "mcp",
    "content"
@@ -21493,7 +21493,7 @@
   "repository": "https://github.com/cycodehq/cycode-cli",
   "documentation": "https://www.cycode.com",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "infrastructure"
@@ -22264,7 +22264,7 @@
   "repository": "https://github.com/supadata-ai/mcp",
   "documentation": "https://supadata.ai",
   "endpoint": "",
-  "category": "Design & content",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "content"
@@ -24354,7 +24354,7 @@
   "repository": "https://github.com/currents-dev/currents-mcp",
   "documentation": "https://currents.dev",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "developer tools"
@@ -26221,7 +26221,7 @@
   "repository": "https://github.com/rinadelph/Agent-MCP",
   "documentation": "",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -26702,7 +26702,7 @@
   "repository": "https://github.com/opentabs-dev/opentabs",
   "documentation": "https://opentabs.dev",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "developer tools"
@@ -26945,7 +26945,7 @@
   "repository": "https://github.com/LvcidPsyche/auto-browser",
   "documentation": "",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "automation"
@@ -27178,7 +27178,7 @@
   "repository": "https://github.com/eat-pray-ai/yutu",
   "documentation": "https://yutu.ifor.dev",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "automation"
@@ -27302,7 +27302,7 @@
   "repository": "https://github.com/kimtaeyoon83/mcp-server-youtube-transcript",
   "documentation": "",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "automation"
@@ -28901,7 +28901,7 @@
   "repository": "https://github.com/burningion/video-editing-mcp",
   "documentation": "",
   "endpoint": "",
-  "category": "Design & content",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "content"
@@ -28958,7 +28958,7 @@
   "repository": "https://github.com/saurabhsharma2u/search-console-mcp",
   "documentation": "https://searchconsolemcp.saurabh.app/",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "Marketing & SEO",
   "tags": [
    "mcp",
    "data"
@@ -29201,7 +29201,7 @@
   "repository": "https://github.com/the-momentum/apple-health-mcp-server",
   "documentation": "",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "Science & health",
   "tags": [
    "mcp",
    "data"
@@ -32718,7 +32718,7 @@
   "repository": "https://github.com/truffle-ai/dexto",
   "documentation": "https://cli.dexto.ai/docs/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "developer tools"
@@ -34236,7 +34236,7 @@
   "repository": "",
   "documentation": "https://elevenlabs.io/docs/agents-platform/customization/tools/mcp",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "communication"
@@ -34300,7 +34300,7 @@
   "repository": "",
   "documentation": "https://docs.vapi.ai/tools/mcp",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "communication"
@@ -34364,7 +34364,7 @@
   "repository": "https://github.com/langchain-ai/langchain",
   "documentation": "https://docs.langchain.com/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -34437,7 +34437,7 @@
   "repository": "https://github.com/griptape-ai/griptape",
   "documentation": "https://docs.griptape.ai/stable/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -34510,7 +34510,7 @@
   "repository": "https://github.com/FoundationAgents/MetaGPT",
   "documentation": "https://docs.deepwisdom.ai/main/en/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -34578,7 +34578,7 @@
   "repository": "https://github.com/QwenLM/Qwen-Agent",
   "documentation": "https://qwenlm.github.io/Qwen-Agent/en/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -34646,7 +34646,7 @@
   "repository": "https://github.com/Significant-Gravitas/AutoGPT",
   "documentation": "https://agpt.co/docs",
   "endpoint": "",
-  "category": "Automation",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "automation"
@@ -34719,7 +34719,7 @@
   "repository": "https://github.com/inngest/agent-kit",
   "documentation": "https://agentkit.inngest.com/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -34933,7 +34933,7 @@
   "repository": "https://github.com/embabel/embabel-agent",
   "documentation": "https://docs.embabel.com/embabel-agent/guide/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -35006,7 +35006,7 @@
   "repository": "https://github.com/0xPlaygrounds/rig",
   "documentation": "https://rig.rs/docs",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -35275,7 +35275,7 @@
   "repository": "",
   "documentation": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "infrastructure"
@@ -35334,7 +35334,7 @@
   "repository": "",
   "documentation": "https://developers.openai.com/api/docs/guides/agent-builder",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -35941,7 +35941,7 @@
   "repository": "",
   "documentation": "https://docs.browserbase.com/",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "infrastructure"
@@ -36005,7 +36005,7 @@
   "repository": "https://github.com/steel-dev/steel-browser",
   "documentation": "https://docs.steel.dev/",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "infrastructure"
@@ -36206,7 +36206,7 @@
   "repository": "https://github.com/lightpanda-io/browser",
   "documentation": "https://lightpanda.io/docs",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "infrastructure"
@@ -36279,7 +36279,7 @@
   "repository": "https://github.com/Skyvern-AI/skyvern",
   "documentation": "https://docs.skyvern.com/introduction",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "automation"
@@ -36480,7 +36480,7 @@
   "repository": "https://github.com/aws/nova-act",
   "documentation": "https://docs.aws.amazon.com/nova-act/latest/userguide/",
   "endpoint": "",
-  "category": "Automation",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "automation"
@@ -36617,7 +36617,7 @@
   "repository": "https://github.com/simular-ai/Agent-S",
   "documentation": "https://sai.work",
   "endpoint": "",
-  "category": "Automation",
+  "category": "Browser & web automation",
   "tags": [
    "mcp",
    "automation"
@@ -36954,7 +36954,7 @@
   "repository": "",
   "documentation": "https://docs.gitlab.com/user/duo_agent_platform/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -37584,7 +37584,7 @@
   "repository": "",
   "documentation": "https://docs.langchain.com/langsmith/observability",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -37858,7 +37858,7 @@
   "repository": "https://github.com/Helicone/helicone",
   "documentation": "https://docs.helicone.ai",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -37995,7 +37995,7 @@
   "repository": "https://github.com/AgentOps-AI/agentops",
   "documentation": "https://docs.agentops.ai",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -38068,7 +38068,7 @@
   "repository": "https://github.com/lmnr-ai/lmnr",
   "documentation": "https://laminar.sh/docs",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -38273,7 +38273,7 @@
   "repository": "https://github.com/confident-ai/deepeval",
   "documentation": "https://deepeval.com/docs/getting-started",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -38346,7 +38346,7 @@
   "repository": "https://github.com/promptfoo/promptfoo",
   "documentation": "https://promptfoo.app/docs/intro/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "developer tools"
@@ -38419,7 +38419,7 @@
   "repository": "",
   "documentation": "https://docs.honeyhive.ai/v2/introduction/what-is-hhai",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -38620,7 +38620,7 @@
   "repository": "https://github.com/guardrails-ai/guardrails",
   "documentation": "https://guardrailsai.com/docs",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -38693,7 +38693,7 @@
   "repository": "https://github.com/NVIDIA-NeMo/Guardrails",
   "documentation": "https://docs.nvidia.com/nemo/guardrails",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -38761,7 +38761,7 @@
   "repository": "",
   "documentation": "https://docs.lakera.ai/docs/api",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "developer tools"
@@ -38825,7 +38825,7 @@
   "repository": "",
   "documentation": "https://www.superagent.sh/docs",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "Security & identity",
   "tags": [
    "mcp",
    "developer tools"
@@ -38889,7 +38889,7 @@
   "repository": "https://github.com/mem0ai/mem0",
   "documentation": "https://docs.mem0.ai/introduction",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "data"
@@ -39035,7 +39035,7 @@
   "repository": "https://github.com/topoteretes/cognee",
   "documentation": "https://docs.cognee.ai",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "data"
@@ -39254,7 +39254,7 @@
   "repository": "",
   "documentation": "https://docs.vectara.com",
   "endpoint": "",
-  "category": "Data & intelligence",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "data"
@@ -39651,7 +39651,7 @@
   "repository": "https://github.com/BerriAI/litellm",
   "documentation": "https://docs.litellm.ai/",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "infrastructure"
@@ -39724,7 +39724,7 @@
   "repository": "",
   "documentation": "https://openrouter.ai/docs",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "infrastructure"
@@ -39788,7 +39788,7 @@
   "repository": "",
   "documentation": "https://developer.konghq.com/ai-gateway/",
   "endpoint": "",
-  "category": "Infrastructure",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "infrastructure"
@@ -40785,7 +40785,7 @@
   "repository": "",
   "documentation": "https://docs.retellai.com/general/introduction",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Media, audio & video",
   "tags": [
    "mcp",
    "communication"
@@ -40849,7 +40849,7 @@
   "repository": "https://github.com/livekit/agents",
   "documentation": "https://docs.livekit.io/agents/",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -40917,7 +40917,7 @@
   "repository": "https://github.com/pipecat-ai/pipecat",
   "documentation": "https://docs.pipecat.ai",
   "endpoint": "",
-  "category": "Developer tools",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "developer tools"
@@ -41318,7 +41318,7 @@
   "repository": "",
   "documentation": "https://docs.ada.cx",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Customer support & sales",
   "tags": [
    "mcp",
    "communication"
@@ -41383,7 +41383,7 @@
   "repository": "",
   "documentation": "https://fin.ai/",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Customer support & sales",
   "tags": [
    "mcp",
    "communication"
@@ -41442,7 +41442,7 @@
   "repository": "",
   "documentation": "https://support.zendesk.com/hc/en-us/articles/6478272212506",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Customer support & sales",
   "tags": [
    "mcp",
    "communication"
@@ -41506,7 +41506,7 @@
   "repository": "",
   "documentation": "https://docs.kore.ai",
   "endpoint": "",
-  "category": "Communication",
+  "category": "Customer support & sales",
   "tags": [
    "mcp",
    "communication"
@@ -42203,7 +42203,7 @@
   "repository": "",
   "documentation": "https://community.jasper.ai/c/help-center/",
   "endpoint": "",
-  "category": "Design & content",
+  "category": "Marketing & SEO",
   "tags": [
    "mcp",
    "content"
@@ -42267,7 +42267,7 @@
   "repository": "",
   "documentation": "https://dev.writer.com/",
   "endpoint": "",
-  "category": "Design & content",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "content"
@@ -42468,7 +42468,7 @@
   "repository": "",
   "documentation": "https://docs.glean.com/",
   "endpoint": "",
-  "category": "Productivity",
+  "category": "AI & language models",
   "tags": [
    "mcp",
    "productivity"

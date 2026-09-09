@@ -6,7 +6,7 @@
 - [Directory](https://ruagentic.com/): Search projects by name, capability, type, and category.
 - [Public API](https://ruagentic.com/developers): Read-only listing search and project details.
 - [MCP servers](https://ruagentic.com/servers), [Clients](https://ruagentic.com/clients), [Agentic products](https://ruagentic.com/products): Browse by type with sidebar filters.
-- [Categories](https://ruagentic.com/categories): Nine categories, each with its own page.
+- [Categories](https://ruagentic.com/categories): Twenty categories, from developer tools and AI models to security, e-commerce and travel, each with its own page.
 - [Agentic Protocol JSON](https://ruagentic.com/agentic.json): Machine-readable site profile.
 - [Agentic Protocol TXT](https://ruagentic.com/agentic.txt): Text index of the profile.
 

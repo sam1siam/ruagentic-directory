@@ -1,21 +1,11 @@
 import { z } from 'zod';
+import { categoryNames } from './categories';
 export const filterInput = z
   .object({
     query: z.string().max(200).default(''),
     kind: z.enum(['all', 'server', 'client', 'product']).default('all'),
     category: z
-      .enum([
-        'All categories',
-        'Developer tools',
-        'Data & intelligence',
-        'Productivity',
-        'Search & research',
-        'Communication',
-        'Design & content',
-        'Infrastructure',
-        'Finance',
-        'Automation',
-      ])
+      .enum(['All categories', ...categoryNames])
       .default('All categories'),
   })
   .strict();

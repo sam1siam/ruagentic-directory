@@ -29,8 +29,8 @@ async function CategoryIndex() {
         <div>
           <h1>Browse by category.</h1>
           <p className="lead">
-            Every listing sits in one of nine categories. Open one to filter it
-            further by type, search and sort.
+            Every listing sits in one of twenty categories. Open one to filter
+            it further by type, search and sort.
           </p>
         </div>
         <dl className="stat-grid">
