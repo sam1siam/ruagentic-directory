@@ -26,11 +26,11 @@ const navigation = [
   ['Products', '/products'],
   ['Categories', '/categories'],
   ['Advertise', '/advertise'],
-  ['List your project', '/pricing'],
+  ['List your project', '/submit'],
 ] as const;
 const actions = [
-  ['Submit a project', '/submit', 'PUBLISH'],
-  ['List your project', '/pricing', 'PRICING'],
+  ['List your project', '/submit', 'PUBLISH'],
+  ['Listing options and pricing', '/pricing', 'PRICING'],
   ['Advertise', '/advertise', 'SPONSOR'],
   ['All MCP servers', '/servers', 'BROWSE'],
   ['All clients', '/clients', 'BROWSE'],
@@ -125,7 +125,7 @@ export function SiteHeader({
       <header className={`site-header${inSubmit ? ' submission-header' : ''}`}>
         <Link href="/" className="brand" aria-label="RUAGENTIC directory home">
           <span className="brand-symbol" aria-hidden="true">
-            {'{}'}
+            {'{A}'}
           </span>
           RUAGENTIC<span className="brand-label">DIR</span>
         </Link>
@@ -383,7 +383,7 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
   if (pathname === '/')
     return (
       <footer className="site-footer footer-short">
-        <span className="footer-brand-mini">{'{}'} RUAGENTIC</span>
+        <span className="footer-brand-mini">{'{A}'} RUAGENTIC</span>
         <span>
           Official agentic directory · source and check dates on every listing
         </span>
@@ -404,7 +404,7 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
         <div className="footer-brand">
           <Link href="/" className="brand">
             <span className="brand-symbol" aria-hidden="true">
-              {'{}'}
+              {'{A}'}
             </span>
             RUAGENTIC<span className="brand-label">DIR</span>
           </Link>
@@ -451,7 +451,8 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
         </div>
         <div className="footer-column">
           <h2>Publish</h2>
-          <Link href="/pricing">List your project</Link>
+          <Link href="/submit">List your project</Link>
+          <Link href="/pricing">Listing options</Link>
           <Link href="/advertise">Advertise</Link>
           <Link href="/guidelines">Listing guidelines</Link>
           <a href="https://ruagentic.org/audit/">Publication checker ↗</a>

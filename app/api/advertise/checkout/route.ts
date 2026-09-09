@@ -11,10 +11,14 @@ import { stripe } from '@/lib/server/payments';
 import {
   creativeMetadata,
   creativeSchema,
+  includesCard,
   placementById,
+  quote,
 } from '@/lib/advertising';
+import { categoryBySlug } from '@/lib/categories';
 export const runtime = 'nodejs';
-/** Recurring Stripe prices for each placement, created in the Stripe dashboard. */
+/** Recurring Stripe prices, created in the Stripe dashboard: one per
+ *  placement plus the per-category extra. */
 export function placementPrice(placement: string) {
   return process.env['STRIPE_AD_PRICE_' + placement.toUpperCase()] || '';
 }
@@ -32,15 +36,25 @@ export async function POST(request: Request) {
     const creative = creativeSchema.parse(await body(request, 8192));
     const placement = placementById(creative.placement)!;
     const price = placementPrice(placement.id);
-    if (!price)
+    const extraPrice = placementPrice('category');
+    const total = quote(creative.placement, creative.categories);
+    if (!price || (total.extras > 0 && !extraPrice))
       throw new HttpError(
         503,
         'Sponsorship checkout is being configured. Contact us and we will set it up for you.',
       );
     const metadata = creativeMetadata(creative);
+    const categoryNames = includesCard(creative.placement)
+      ? creative.categories.map((s) => categoryBySlug(s)!.name)
+      : [];
     const session = await stripe().checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price, quantity: 1 }],
+      line_items: [
+        { price, quantity: 1 },
+        ...(total.extras > 0
+          ? [{ price: extraPrice, quantity: total.extras }]
+          : []),
+      ],
       success_url: appUrl() + '/advertise/thanks?session={CHECKOUT_SESSION_ID}',
       cancel_url: appUrl() + '/advertise?cancelled=1',
       metadata,
@@ -58,7 +72,10 @@ export async function POST(request: Request) {
             placement.name +
             ' for ' +
             creative.product +
-            ', billed monthly. Cancel any time from the Stripe billing portal link in your receipt.',
+            (categoryNames.length ? ' in ' + categoryNames.join(', ') : '') +
+            ', ' +
+            total.display +
+            ' billed monthly. Cancel any time from the Stripe billing portal link in your receipt.',
         },
       },
     });

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { PublicListing } from '@/lib/listing';
 import { Button } from './ui/button';
+import HudSelect from '@/components/hud-select';
 export default function Compare({
   listings,
   initial,
@@ -47,20 +48,16 @@ export default function Compare({
         <label className="sr-only" htmlFor="compare-tool">
           Choose a tool
         </label>
-        <select
+        <HudSelect
           id="compare-tool"
           value={candidate}
-          onChange={(e) => setCandidate(e.target.value)}
-        >
-          <option value="">Choose a tool to compare</option>
-          {listings
+          onValueChange={setCandidate}
+          placeholder="Choose a tool to compare"
+          className="compare-select"
+          options={listings
             .filter((l) => !selected.includes(l.slug))
-            .map((l) => (
-              <option key={l.slug} value={l.slug}>
-                {l.name}
-              </option>
-            ))}
-        </select>
+            .map((l) => [l.slug, l.name] as const)}
+        />
         <Button
           disabled={!candidate || selected.length >= 4}
           onClick={() => {

@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import AdvertiseForm from '@/components/advertise-form';
 import { directoryStats } from '@/lib/server/stats';
+import { categoryExtraAmount, formatUsd } from '@/lib/advertising';
 export const metadata = {
   title: 'Advertise',
   description:
-    'Sponsor RUAGENTIC: a site-wide top bar, a featured card in the listing grids, or both, billed monthly.',
+    'Sponsor RUAGENTIC: a site-wide top bar, a featured card in the categories you choose, or both, billed monthly.',
 };
 export default async function Page({
   searchParams,
@@ -41,23 +42,30 @@ export default async function Page({
           </div>
           <h2>How it works</h2>
           <ol className="advertise-steps">
-            <li>Choose a placement and submit your ad creative.</li>
+            <li>
+              Choose a placement, your categories and submit your creative.
+            </li>
             <li>Pay securely by card through Stripe.</li>
             <li>
               Your placement goes live within minutes and stays live while the
-              subscription is active.
+              subscription is active. You get a confirmation email with your
+              sponsor page link; Stripe sends the receipt and a link to manage
+              or cancel.
             </li>
           </ol>
           <h2>Where you appear</h2>
           <ul className="advertise-steps">
             <li>
               <strong>Top bar</strong> puts your name and tagline in the sponsor
-              bar at the top of every page.
+              bar at the top of every page, linked straight to your site.
             </li>
             <li>
-              <strong>Featured card</strong> takes the first card on the home
-              page and every listing page, plus a tile on every listing detail
-              page. It needs a short description and an optional button label.
+              <strong>Featured card</strong> takes the first card on the
+              category pages you choose, on the server, client and product pages
+              and the home page, plus a tile on listing detail pages in your
+              categories. One category is included; each extra category is{' '}
+              {formatUsd(categoryExtraAmount)} a month. The card opens your
+              sponsor page on the directory, which links to your site.
             </li>
             <li>
               <strong>Top bar + featured card</strong> combines both for less

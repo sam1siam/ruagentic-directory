@@ -1,12 +1,14 @@
 import { z } from 'zod';
+import { categories, categoryBySlug } from './categories.ts';
 /** Sponsorship placements. The top bar is site-wide; the featured card is the
- *  first card in listing grids plus a tile on every listing detail page. */
+ *  first card on the category pages a sponsor chooses (one included, more for
+ *  a monthly extra), on the kind pages and home, plus a tile on detail pages
+ *  in those categories. */
 export const placements = [
   {
     id: 'bar',
     name: 'Top bar',
     amount: 99900,
-    display: 'US$999',
     placement:
       'Your name and tagline in the sponsor bar at the top of every page.',
     surfaces: ['bar'],
@@ -16,9 +18,8 @@ export const placements = [
     id: 'card',
     name: 'Featured card',
     amount: 49900,
-    display: 'US$499',
     placement:
-      'A featured card in the home and listing grids, plus a tile on every listing detail page.',
+      'A featured card on the category pages you choose, on the server, client and product pages and the home page, plus a tile on listing detail pages in your categories.',
     surfaces: ['listing', 'detail'],
     save: '',
   },
@@ -26,12 +27,13 @@ export const placements = [
     id: 'both',
     name: 'Top bar + featured card',
     amount: 129900,
-    display: 'US$1,299',
-    placement: 'Both placements together on every page of the directory.',
+    placement: 'Both placements together across the directory.',
     surfaces: ['bar', 'listing', 'detail'],
     save: 'Save US$199 a month',
   },
 ] as const;
+/** Monthly price of each category beyond the first for card placements. */
+export const categoryExtraAmount = 5000;
 export type Placement = (typeof placements)[number];
 export type PlacementId = Placement['id'];
 export type Surface = 'bar' | 'listing' | 'detail';
@@ -40,16 +42,30 @@ export const placementById = (id: string) =>
 /** Surfaces a placement is entitled to, widened so `includes` accepts any surface. */
 export const placementSurfaces = (placement: Placement): readonly Surface[] =>
   placement.surfaces;
-/** Card and tile placements need a longer description and a call to action. */
+/** Card and tile placements need a description, a call to action and categories. */
 export const includesCard = (id: PlacementId) => id !== 'bar';
 export const adApp = 'ruagentic-ads';
+export const categorySlugs = categories.map((c) => c.slug);
+export const formatUsd = (cents: number) =>
+  'US$' + (cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
+/** Monthly total for a placement and the chosen categories. */
+export function quote(placement: PlacementId, chosen: readonly string[]) {
+  const base = placementById(placement)!;
+  const extras = includesCard(placement) ? Math.max(0, chosen.length - 1) : 0;
+  const amount = base.amount + extras * categoryExtraAmount;
+  return { amount, extras, display: formatUsd(amount) };
+}
 export type Sponsor = {
   name: string;
   tagline: string;
   description?: string;
   cta?: string;
   url: string;
+  /** Internal page the card and tile open; the outbound link lives there. */
+  page: string;
   placement: PlacementId;
+  /** Category slugs the card placement covers; empty means every category. */
+  categories: string[];
   house?: boolean;
 };
 /** The house sponsor shown in every slot no paid sponsor covers. The
@@ -61,7 +77,9 @@ export const houseSponsor: Sponsor = {
     'Autonomous data infrastructure that turns strategic objectives into verified datasets and live intelligence streams.',
   cta: 'Explore AstroFabric',
   url: 'https://astrofabric.ai',
+  page: '/tools/astrofabric',
   placement: 'both',
+  categories: [],
   house: true,
 };
 const httpsUrl = z
@@ -84,6 +102,10 @@ export const creativeSchema = z
     url: httpsUrl,
     description: z.string().trim().max(200).default(''),
     cta: z.string().trim().max(24).default(''),
+    categories: z
+      .array(z.string().refine((s) => Boolean(categoryBySlug(s))))
+      .max(categorySlugs.length)
+      .default([]),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -93,6 +115,18 @@ export const creativeSchema = z
         path: ['description'],
         message:
           'Describe your product in at least 20 characters for the featured card.',
+      });
+    if (includesCard(value.placement) && value.categories.length < 1)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['categories'],
+        message: 'Choose at least one category for the featured card.',
+      });
+    if (new Set(value.categories).size !== value.categories.length)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['categories'],
+        message: 'Each category can be chosen once.',
       });
     if (value.cta && value.cta.length < 2)
       ctx.addIssue({
@@ -104,6 +138,7 @@ export const creativeSchema = z
 export type Creative = z.infer<typeof creativeSchema>;
 /** Stripe metadata is limited to 500 characters per value and 50 keys. */
 export function creativeMetadata(creative: Creative) {
+  const cats = includesCard(creative.placement) ? creative.categories : [];
   return {
     app: adApp,
     placement: creative.placement,
@@ -111,6 +146,7 @@ export function creativeMetadata(creative: Creative) {
     tagline: creative.tagline.slice(0, 400),
     description: creative.description.slice(0, 500),
     cta: creative.cta.slice(0, 24),
+    categories: cats.join(','),
     url: creative.url.slice(0, 500),
   };
 }
@@ -122,6 +158,30 @@ export function isAdMetadata(
     typeof metadata === 'object' &&
     !Array.isArray(metadata) &&
     (metadata as Record<string, unknown>).app === adApp
+  );
+}
+export const parseCategories = (value: string | null | undefined) =>
+  (value ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => categoryBySlug(s));
+/** Stable, URL-safe id for a sponsor's page, derived from the product name
+ *  and the checkout session so two sponsors with one name never collide. */
+export function sponsorSlug(product: string, sessionId: string) {
+  const base =
+    product
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'sponsor';
+  return (
+    base +
+    '-' +
+    sessionId
+      .replace(/[^a-z0-9]/gi, '')
+      .slice(-6)
+      .toLowerCase()
   );
 }
 /** Adds the directory as referrer without disturbing the sponsor's own
@@ -136,16 +196,21 @@ export function sponsorHref(raw: string) {
     return raw;
   }
 }
-/** Pick the sponsor for a surface. Paid sponsors take the slot ahead of the
- *  house sponsor and rotate every ten minutes so each one gets shown. */
+/** Pick the sponsor for a surface, optionally within a category. Paid
+ *  sponsors take the slot ahead of the house sponsor and rotate every ten
+ *  minutes so each one gets shown. */
 export function pickSponsor(
   surface: Surface,
   sponsors: Sponsor[],
   now = Date.now(),
+  category?: string,
 ): Sponsor | null {
   const eligible = sponsors.filter((s) => {
     const placement = placementById(s.placement);
-    return placement ? placementSurfaces(placement).includes(surface) : false;
+    if (!placement || !placementSurfaces(placement).includes(surface))
+      return false;
+    if (surface === 'bar' || !category || !s.categories.length) return true;
+    return s.categories.includes(category);
   });
   if (!eligible.length) return null;
   const paid = eligible.filter((s) => !s.house);

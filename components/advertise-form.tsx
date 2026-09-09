@@ -3,11 +3,15 @@
 import { useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import {
+  categoryExtraAmount,
+  formatUsd,
   includesCard,
   placements,
+  quote,
   type PlacementId,
   type Sponsor,
 } from '@/lib/advertising';
+import { categories } from '@/lib/categories';
 import { api } from '@/lib/client-api';
 import { CornerBrackets } from '@/components/design-interactions';
 import { SponsorCard } from '@/components/sponsor';
@@ -23,24 +27,35 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
     [url, setUrl] = useState(''),
     [description, setDescription] = useState(''),
     [cta, setCta] = useState(''),
+    [chosen, setChosen] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const selected = placements.find((p) => p.id === placement)!;
   const card = includesCard(placement);
+  const total = quote(placement, chosen);
   const preview: Sponsor = {
     name: product || 'Your product',
     tagline: tagline || TAGLINE_HINT,
     description: description || DESCRIPTION_HINT,
-    cta: cta || 'Visit',
+    cta: cta || 'Learn more',
     url: url || 'https://example.com/',
+    page: '#',
     placement,
+    categories: chosen,
   };
+  const toggle = (slug: string) =>
+    setChosen((list) =>
+      list.includes(slug) ? list.filter((s) => s !== slug) : [...list, slug],
+    );
   return (
     <form
       className="advertise-form"
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;
+        if (card && chosen.length === 0) {
+          setError('Choose at least one category for the featured card.');
+          return;
+        }
         setBusy(true);
         setError('');
         try {
@@ -51,6 +66,7 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
             url,
             description: card ? description : '',
             cta: card ? cta : '',
+            categories: card ? chosen : [],
           });
           if (result.url) window.location.assign(result.url);
           else throw new Error('Checkout could not start.');
@@ -87,7 +103,7 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
               />
               <span className="tier-name">{p.name}</span>
               <span className="tier-price">
-                {p.display}
+                {formatUsd(p.amount)}
                 <small>/ month</small>
               </span>
               <span className="tier-placement">{p.placement}</span>
@@ -100,9 +116,54 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
           your receipt · sponsors in the same placement rotate evenly.
         </p>
       </section>
+      {card && (
+        <section className="advertise-step">
+          <h2>
+            <span className="step-no">2</span> Choose your categories
+          </h2>
+          <p className="muted">
+            One category is included. Each extra category adds{' '}
+            {formatUsd(categoryExtraAmount)} a month and puts your card on that
+            category page, its listing detail pages and its home page section.
+          </p>
+          <fieldset className="category-picker">
+            <legend className="sr-only">
+              Categories for the featured card
+            </legend>
+            {categories.map((c, i) => {
+              const on = chosen.includes(c.slug);
+              const order = chosen.indexOf(c.slug);
+              return (
+                <label
+                  key={c.slug}
+                  className={'category-option' + (on ? ' is-on' : '')}
+                >
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() => toggle(c.slug)}
+                  />
+                  <span className="category-option-name">{c.name}</span>
+                  <span className="category-option-price">
+                    {on
+                      ? order === 0
+                        ? 'Included'
+                        : '+' + formatUsd(categoryExtraAmount)
+                      : i === 0 && !chosen.length
+                        ? 'Included'
+                        : chosen.length
+                          ? '+' + formatUsd(categoryExtraAmount)
+                          : 'Included'}
+                  </span>
+                </label>
+              );
+            })}
+          </fieldset>
+        </section>
+      )}
       <section className="advertise-step">
         <h2>
-          <span className="step-no">2</span> Your ad
+          <span className="step-no">{card ? 3 : 2}</span> Your ad
         </h2>
         <div className="form-grid">
           <div className="field">
@@ -182,7 +243,8 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
                   />
                 </div>
                 <small>
-                  Shown on the featured card and the detail-page tile.
+                  Shown on the featured card, the detail-page tile and your
+                  sponsor page.
                 </small>
               </div>
               <div className="field">
@@ -195,7 +257,7 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
                     maxLength={24}
                     value={cta}
                     onChange={(e) => setCta(e.target.value)}
-                    placeholder="Visit"
+                    placeholder="Learn more"
                   />
                 </div>
               </div>
@@ -230,9 +292,25 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
           {error}
         </div>
       )}
+      <div className="advertise-total">
+        <span>Monthly total</span>
+        <b>{total.display}</b>
+        {card && (
+          <small>
+            {placements.find((p) => p.id === placement)!.name} ·{' '}
+            {Math.max(chosen.length, 1)}{' '}
+            {chosen.length > 1 ? 'categories' : 'category'}
+            {total.extras > 0 &&
+              ' · ' +
+                total.extras +
+                ' extra × ' +
+                formatUsd(categoryExtraAmount)}
+          </small>
+        )}
+      </div>
       <button type="submit" className="button primary" disabled={busy}>
         {busy && <LoaderCircle size={14} className="spin" />}
-        Continue to payment ({selected.display}/month) →
+        Continue to payment ({total.display}/month) →
       </button>
     </form>
   );

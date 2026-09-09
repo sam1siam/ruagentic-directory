@@ -1,14 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  categoryExtraAmount,
   creativeMetadata,
   creativeSchema,
   houseSponsor,
   isAdMetadata,
+  parseCategories,
   pickSponsor,
   placementSurfaces,
   placements,
+  quote,
   sponsorHref,
+  sponsorSlug,
   type Sponsor,
 } from '../lib/advertising.ts';
 
@@ -32,6 +36,26 @@ await test('placements mirror the published options and prices', () => {
   assert.ok(!placementSurfaces(card).includes('bar'));
 });
 
+await test('one category is included and each extra adds US$50', () => {
+  assert.equal(categoryExtraAmount, 5000);
+  assert.deepEqual(quote('card', ['finance']), {
+    amount: 49900,
+    extras: 0,
+    display: 'US$499',
+  });
+  assert.deepEqual(quote('card', ['finance', 'automation', 'productivity']), {
+    amount: 59900,
+    extras: 2,
+    display: 'US$599',
+  });
+  assert.deepEqual(quote('both', ['finance', 'automation']), {
+    amount: 134900,
+    extras: 1,
+    display: 'US$1,349',
+  });
+  assert.equal(quote('bar', ['finance', 'automation']).extras, 0);
+});
+
 await test('creatives are validated and fit Stripe metadata limits', () => {
   const creative = creativeSchema.parse({
     placement: 'bar',
@@ -42,6 +66,7 @@ await test('creatives are validated and fit Stripe metadata limits', () => {
   const metadata = creativeMetadata(creative);
   assert.equal(metadata.app, 'ruagentic-ads');
   assert.equal(metadata.description, '');
+  assert.equal(metadata.categories, '');
   assert.ok(Object.values(metadata).every((v) => v.length <= 500));
   assert.ok(isAdMetadata(metadata));
   assert.ok(!isAdMetadata({ app: 'ruagentic-directory' }));
@@ -52,8 +77,14 @@ await test('creatives are validated and fit Stripe metadata limits', () => {
     url: 'https://example.com/',
     description: 'A longer description for the featured card and tile.',
     cta: 'Start free',
+    categories: ['finance', 'automation'],
   });
   assert.equal(creativeMetadata(withCard).cta, 'Start free');
+  assert.equal(creativeMetadata(withCard).categories, 'finance,automation');
+  assert.deepEqual(parseCategories('finance, nope,automation'), [
+    'finance',
+    'automation',
+  ]);
   for (const bad of [
     {
       placement: 'platinum',
@@ -79,12 +110,36 @@ await test('creatives are validated and fit Stripe metadata limits', () => {
       tagline: 'short',
       url: 'https://example.com',
     },
-    // Card placements need a description.
+    // Card placements need a description and at least one category.
     {
       placement: 'card',
       product: 'Ok',
       tagline: 'long enough tagline',
       url: 'https://example.com',
+      categories: ['finance'],
+    },
+    {
+      placement: 'card',
+      product: 'Ok',
+      tagline: 'long enough tagline',
+      url: 'https://example.com',
+      description: 'A long enough description for the card.',
+    },
+    {
+      placement: 'card',
+      product: 'Ok',
+      tagline: 'long enough tagline',
+      url: 'https://example.com',
+      description: 'A long enough description for the card.',
+      categories: ['not-a-category'],
+    },
+    {
+      placement: 'card',
+      product: 'Ok',
+      tagline: 'long enough tagline',
+      url: 'https://example.com',
+      description: 'A long enough description for the card.',
+      categories: ['finance', 'finance'],
     },
     {
       placement: 'both',
@@ -92,6 +147,7 @@ await test('creatives are validated and fit Stripe metadata limits', () => {
       tagline: 'long enough tagline',
       url: 'https://example.com',
       description: 'too short',
+      categories: ['finance'],
     },
     {
       placement: 'bar',
@@ -118,21 +174,43 @@ await test('sponsor links carry the directory referrer without breaking the URL'
     'https://example.com/?ref=custom',
   );
   assert.equal(sponsorHref('not a url'), 'not a url');
+  assert.equal(
+    sponsorSlug('Acme AI!', 'cs_test_a1B2c3D4E5F6'),
+    'acme-ai-d4e5f6',
+  );
+  assert.equal(sponsorSlug('!!!', 'cs_x'), 'sponsor-csx');
 });
 
-await test('slots prefer paid sponsors, rotate evenly, and fall back to the house sponsor', () => {
-  const paid = (name: string, placement: Sponsor['placement']): Sponsor => ({
+await test('slots prefer paid sponsors, respect categories, and fall back to the house sponsor', () => {
+  const paid = (
+    name: string,
+    placement: Sponsor['placement'],
+    categories: string[] = [],
+  ): Sponsor => ({
     name,
     tagline: 'Tagline for ' + name,
     url: 'https://' + name.toLowerCase() + '.example',
+    page: '/sponsors/' + name.toLowerCase(),
     placement,
+    categories,
   });
-  const all = [paid('Alpha', 'both'), paid('Beta', 'card'), houseSponsor];
+  const all = [
+    paid('Alpha', 'both', ['finance']),
+    paid('Beta', 'card', ['automation', 'finance']),
+    houseSponsor,
+  ];
   assert.equal(pickSponsor('bar', all, 0)?.name, 'Alpha');
   assert.equal(pickSponsor('bar', all, 600000)?.name, 'Alpha');
   assert.equal(pickSponsor('listing', all, 0)?.name, 'Alpha');
   assert.equal(pickSponsor('listing', all, 600000)?.name, 'Beta');
-  assert.equal(pickSponsor('detail', all, 1200000)?.name, 'Alpha');
+  assert.equal(pickSponsor('listing', all, 0, 'automation')?.name, 'Beta');
+  assert.equal(pickSponsor('listing', all, 600000, 'automation')?.name, 'Beta');
+  assert.equal(pickSponsor('detail', all, 600000, 'finance')?.name, 'Beta');
+  assert.equal(
+    pickSponsor('listing', all, 0, 'productivity')?.name,
+    'AstroFabric',
+    'house sponsor covers categories nobody bought',
+  );
   assert.equal(
     pickSponsor('bar', [paid('Beta', 'card'), houseSponsor])?.name,
     'AstroFabric',
@@ -143,5 +221,6 @@ await test('slots prefer paid sponsors, rotate evenly, and fall back to the hous
   );
   assert.equal(pickSponsor('detail', [houseSponsor])?.name, 'AstroFabric');
   assert.equal(pickSponsor('detail', [paid('Gamma', 'bar')]), null);
+  assert.equal(houseSponsor.page, '/tools/astrofabric');
   assert.ok(houseSponsor.description && houseSponsor.description.length >= 20);
 });

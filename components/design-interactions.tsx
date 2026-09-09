@@ -4,18 +4,13 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 
 /* ------------------------------------------------------------------ motion */
-/** Magnetic primary buttons and cursor-following card glow from the handoff.
- *  Mouse only; disabled under prefers-reduced-motion. */
+/** Cursor-following card glow from the handoff. Buttons stay put and press
+ *  into the page with CSS instead. Mouse only; off under reduced motion. */
 export function DesignInteractions() {
   useEffect(() => {
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const fine = matchMedia('(hover: hover) and (pointer: fine)');
-    let active: HTMLElement | null = null;
     let frame = 0;
-    const reset = () => {
-      active?.style.removeProperty('translate');
-      active = null;
-    };
     const move = (event: PointerEvent) => {
       if (reduced.matches || !fine.matches || event.pointerType !== 'mouse')
         return;
@@ -25,58 +20,17 @@ export function DesignInteractions() {
         const card = target?.closest<HTMLElement>(
           '[data-cursor-glow], .collection-card',
         );
-        if (card) {
-          const rect = card.getBoundingClientRect();
-          card.style.setProperty(
-            '--cursor-x',
-            `${event.clientX - rect.left}px`,
-          );
-          card.style.setProperty('--cursor-y', `${event.clientY - rect.top}px`);
-        }
-        const button = target?.closest<HTMLElement>(
-          '.button.primary, [data-slot="button"][data-variant="default"]',
-        );
-        if (active !== button) reset();
-        if (!button || button.matches(':disabled, [aria-disabled="true"]'))
-          return;
-        active = button;
-        const rect = button.getBoundingClientRect();
-        const translated = getComputedStyle(button)
-          .translate.split(' ')
-          .map(parseFloat);
-        const x =
-          event.clientX - rect.left + (translated[0] || 0) - rect.width / 2;
-        const y =
-          event.clientY - rect.top + (translated[1] || 0) - rect.height / 2;
-        button.style.translate = `${x * 0.25}px ${y * 0.35}px`;
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--cursor-x', `${event.clientX - rect.left}px`);
+        card.style.setProperty('--cursor-y', `${event.clientY - rect.top}px`);
       });
     };
-    const leave = (event: PointerEvent) => {
-      if (
-        active &&
-        (!(event.relatedTarget instanceof Node) ||
-          !active.contains(event.relatedTarget))
-      ) {
-        cancelAnimationFrame(frame);
-        reset();
-      }
-    };
-    const stop = () => {
-      cancelAnimationFrame(frame);
-      reset();
-    };
+    const stop = () => cancelAnimationFrame(frame);
     document.addEventListener('pointermove', move, { passive: true });
-    document.addEventListener('pointerout', leave, { passive: true });
-    window.addEventListener('blur', stop);
-    reduced.addEventListener('change', stop);
-    fine.addEventListener('change', stop);
     return () => {
       stop();
       document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerout', leave);
-      window.removeEventListener('blur', stop);
-      reduced.removeEventListener('change', stop);
-      fine.removeEventListener('change', stop);
     };
   }, []);
   return null;
@@ -136,25 +90,27 @@ export function CornerBrackets({
 }
 
 /* ------------------------------------------------------------------ headline */
-const HEADLINE = 'Official listing directory for the Agentic Protocol';
+const PREFIX = 'Official listing directory for the ';
+const TARGET = 'Agentic Protocol';
+const HEADLINE = PREFIX + TARGET;
 const GLYPHS = '!<>-_\\/[]{}=+*^?#%&';
 export function DecodeHeadline() {
-  const [buffer, setBuffer] = useState(HEADLINE);
+  const [buffer, setBuffer] = useState(TARGET);
   const interval = useRef<ReturnType<typeof setInterval> | null>(null);
   function play() {
     if (interval.current) clearInterval(interval.current);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setBuffer(HEADLINE);
+      setBuffer(TARGET);
       return;
     }
     let frame = 0;
-    const total = HEADLINE.length + 14;
+    const total = TARGET.length + 14;
     interval.current = setInterval(() => {
       frame++;
       setBuffer(
-        HEADLINE.split('')
+        TARGET.split('')
           .map((char, index) =>
-            char === ' ' || frame - 6 > index * 0.9
+            char === ' ' || frame - 6 > index * 1.4
               ? char
               : GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
           )
@@ -163,16 +119,16 @@ export function DecodeHeadline() {
       if (frame > total) {
         clearInterval(interval.current!);
         interval.current = null;
-        setBuffer(HEADLINE);
+        setBuffer(TARGET);
       }
-    }, 38);
+    }, 46);
   }
   useEffect(() => {
     const timer = setTimeout(play, 300);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const stop = () => {
       if (interval.current) clearInterval(interval.current);
-      setBuffer(HEADLINE);
+      setBuffer(TARGET);
     };
     reduced.addEventListener('change', stop);
     return () => {
@@ -186,7 +142,8 @@ export function DecodeHeadline() {
       <h1 className="decode-headline" data-text={HEADLINE}>
         <span className="sr-only">{HEADLINE}</span>
         <span className="decode-buffer" aria-hidden="true">
-          {buffer}
+          {PREFIX}
+          <span className="decode-target">{buffer}</span>
         </span>
       </h1>
       <button

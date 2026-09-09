@@ -15,6 +15,7 @@ import ListingActions from '@/components/listing-actions';
 import { SponsorTile } from '@/components/sponsor';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsor } from '@/lib/advertising';
+import { categoryByName } from '@/lib/categories';
 import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 export async function generateMetadata({
@@ -47,7 +48,12 @@ export default async function Page({
   const related = (await catalog())
     .filter((p) => p.slug !== item.slug && p.category === item.category)
     .slice(0, 3);
-  const sponsor = pickSponsor('detail', await activeSponsors());
+  const sponsor = pickSponsor(
+    'detail',
+    await activeSponsors(),
+    undefined,
+    categoryByName(item.category)?.slug,
+  );
   const remotes = (item.remotes ?? []) as {
     type?: string;
     url?: string;

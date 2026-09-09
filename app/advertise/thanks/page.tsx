@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CheckCircle2 } from 'lucide-react';
 import { stripe } from '@/lib/server/payments';
 import { recordAdOrder } from '@/lib/server/ads';
-import { isAdMetadata, placementById } from '@/lib/advertising';
+import { isAdMetadata, placementById, sponsorSlug } from '@/lib/advertising';
 import { CornerBrackets } from '@/components/design-interactions';
 export const metadata = {
   title: 'Sponsorship confirmed',
@@ -14,8 +14,12 @@ export default async function Page({
   searchParams: Promise<{ session?: string }>;
 }) {
   const { session: id } = await searchParams;
-  let order: { placement: string; product: string; paid: boolean } | null =
-    null;
+  let order: {
+    placement: string;
+    product: string;
+    paid: boolean;
+    page: string;
+  } | null = null;
   if (id && /^cs_[A-Za-z0-9_]+$/.test(id)) {
     try {
       const session = await stripe().checkout.sessions.retrieve(id);
@@ -28,6 +32,8 @@ export default async function Page({
             session.metadata.placement,
           product: session.metadata.product,
           paid: session.payment_status === 'paid',
+          page:
+            '/sponsors/' + sponsorSlug(session.metadata.product, session.id),
         };
       }
     } catch {
@@ -49,14 +55,20 @@ export default async function Page({
         <p>
           {order
             ? order.paid
-              ? `Your ${order.placement} placement is active and appears within minutes. Stripe emails your receipt and a link to manage or cancel the subscription.`
+              ? `Your ${order.placement} placement is active and appears within minutes. We have emailed a confirmation with your sponsor page link; Stripe emails your receipt and a link to manage or cancel the subscription.`
               : 'Your placement activates as soon as Stripe confirms the payment. Stripe emails your receipt.'
             : 'If you completed a checkout, your placement activates as soon as Stripe confirms it. Contact us if you need help.'}
         </p>
         <div className="actions">
-          <Link href="/" className="button primary">
-            View the directory →
-          </Link>
+          {order?.paid && order.placement !== 'Top bar' ? (
+            <Link href={order.page} className="button primary">
+              View your sponsor page →
+            </Link>
+          ) : (
+            <Link href="/" className="button primary">
+              View the directory →
+            </Link>
+          )}
           <Link href="/contact" className="button">
             Contact us
           </Link>

@@ -1,5 +1,10 @@
 import { cache } from 'react';
-import { houseSponsor, type PlacementId, type Sponsor } from '../advertising';
+import {
+  houseSponsor,
+  parseCategories,
+  type PlacementId,
+  type Sponsor,
+} from '../advertising';
 import { adminClient, configured } from '../supabase/server';
 /** Active paid sponsors followed by the house sponsor, which fills any slot
  *  no paid sponsor covers. Any storage problem degrades to the house sponsor
@@ -9,7 +14,7 @@ export const activeSponsors = cache(async (): Promise<Sponsor[]> => {
   try {
     const { data, error } = await adminClient()
       .from('ad_orders')
-      .select('product,tagline,description,cta,url,placement')
+      .select('product,tagline,description,cta,url,placement,categories,slug')
       .eq('status', 'active')
       .eq('livemode', true)
       .order('created_at')
@@ -21,10 +26,20 @@ export const activeSponsors = cache(async (): Promise<Sponsor[]> => {
       description: String(row.description ?? ''),
       cta: String(row.cta ?? ''),
       url: String(row.url),
+      page: '/sponsors/' + encodeURIComponent(String(row.slug)),
       placement: row.placement as PlacementId,
+      categories: parseCategories(row.categories),
     }));
     return [...paid, houseSponsor];
   } catch {
     return [houseSponsor];
   }
 });
+/** One sponsor by its page slug; the house sponsor has a listing page instead. */
+export async function sponsorBySlug(slug: string) {
+  return (
+    (await activeSponsors()).find(
+      (s) => !s.house && s.page === '/sponsors/' + encodeURIComponent(slug),
+    ) ?? null
+  );
+}

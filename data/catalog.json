@@ -42586,5 +42586,64 @@
     "note": "Original editorial summary paraphrasing the publisher’s own description at the evidence URL. Category is an editorial suggestion."
    }
   ]
+ },
+ {
+  "kind": "product",
+  "name": "AstroFabric",
+  "summary": "Agentic AI for business intelligence: autonomous agents that discover, verify, enrich and stream company, person and market intelligence into existing systems.",
+  "description": "Agentic AI for business intelligence: autonomous agents that discover, verify, enrich and stream company, person and market intelligence into existing systems. Its agents turn strategic objectives into verified datasets and live intelligence streams, delivered through REST, MCP and a CLI. Details were read from the publisher’s product pages.",
+  "homepage": "https://www.astrofabric.ai/",
+  "repository": "",
+  "documentation": "",
+  "endpoint": "",
+  "category": "Data & intelligence",
+  "tags": [
+   "mcp",
+   "data",
+   "business intelligence"
+  ],
+  "pricing": "unknown",
+  "transport": "unknown",
+  "authentication": "unknown",
+  "platforms": [],
+  "license": "",
+  "setup": "",
+  "capabilities": [
+   "Company and people discovery",
+   "Record verification and enrichment",
+   "Business and market signal monitoring",
+   "Delivery into CRMs, sheets and messaging tools",
+   "REST, MCP and CLI access"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "slug": "astrofabric",
+  "source": "Publisher documentation",
+  "sourceUrl": "https://www.astrofabric.ai/",
+  "observedAt": "2026-09-09",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-page",
+    "url": "https://www.astrofabric.ai/",
+    "observedAt": "2026-09-09",
+    "httpStatus": 200,
+    "description": "Deploy autonomous AI agents to discover, verify, enrich and stream high-fidelity company, person and market intelligence into your existing systems."
+   },
+   {
+    "kind": "research-snapshot",
+    "url": "https://www.astrofabric.ai/",
+    "observedAt": "2026-09-09",
+    "record": {
+     "metaDescription": "Deploy autonomous AI agents to discover, verify, enrich and stream high-fidelity company, person and market intelligence into your existing systems."
+    },
+    "note": "Summary paraphrases the publisher’s homepage description. AstroFabric is also the directory’s house sponsor; sponsorship does not change this listing’s source label or checks."
+   }
+  ]
  }
 ]

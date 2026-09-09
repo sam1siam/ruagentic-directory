@@ -10,6 +10,7 @@ import {
   emitSubmitState,
   useMediaQuery,
 } from '@/components/design-interactions';
+import HudSelect from '@/components/hud-select';
 import {
   categories,
   emptyListing,
@@ -403,19 +404,12 @@ export default function SubmissionForm({
         <label htmlFor={inputId} className="input-label">
           {label}
         </label>
-        <div className="input-shell select-shell">
-          <select
-            id={inputId}
-            value={String(listing[key])}
-            onChange={(e) => update(key, e.target.value as never)}
-          >
-            {values.map(([value, text]) => (
-              <option key={value} value={value}>
-                {text}
-              </option>
-            ))}
-          </select>
-        </div>
+        <HudSelect
+          id={inputId}
+          value={String(listing[key])}
+          onValueChange={(value) => update(key, value as never)}
+          options={values}
+        />
         {hint && <small>{hint}</small>}
       </div>
     );
@@ -699,20 +693,17 @@ export default function SubmissionForm({
                   <label htmlFor="import-url" className="input-label">
                     Start from a link <b>· optional</b>
                   </label>
-                  <div className="input-shell select-shell">
-                    <select
-                      id="import-type"
-                      aria-label="Link type"
-                      value={sourceType}
-                      onChange={(e) =>
-                        setSourceType(e.target.value as typeof sourceType)
-                      }
-                    >
-                      <option value="repository">Repository</option>
-                      <option value="homepage">Homepage or docs</option>
-                      <option value="endpoint">Remote MCP endpoint</option>
-                    </select>
-                  </div>
+                  <HudSelect
+                    id="import-type"
+                    label="Link type"
+                    value={sourceType}
+                    onValueChange={setSourceType}
+                    options={[
+                      ['repository', 'Repository'],
+                      ['homepage', 'Homepage or docs'],
+                      ['endpoint', 'Remote MCP endpoint'],
+                    ]}
+                  />
                   <div className="input-shell code">
                     <i aria-hidden="true">&gt;</i>
                     <input

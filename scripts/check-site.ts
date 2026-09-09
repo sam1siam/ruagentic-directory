@@ -94,6 +94,12 @@ assert.equal(
   404,
   'unknown categories must be real 404s, not streamed 200s',
 );
+assert.equal(
+  (await fetch(base + '/sponsors/not-a-real-sponsor')).status,
+  404,
+  'unknown sponsors must be real 404s',
+);
+assert.equal((await fetch(base + '/tools/astrofabric')).status, 200);
 {
   const moved = await fetch(base + '/collections', { redirect: 'manual' });
   assert.equal(moved.status, 308);

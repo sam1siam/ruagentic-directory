@@ -72,6 +72,7 @@ export default function DirectoryBrowser({
   lock = {},
   initial = {},
   sponsor = null,
+  categorySponsors = {},
   heading,
 }: {
   listings: CatalogListing[];
@@ -79,6 +80,8 @@ export default function DirectoryBrowser({
   lock?: { kind?: string; category?: string };
   initial?: Filters;
   sponsor?: Sponsor | null;
+  /** Paid sponsors for the home page category sections, by category slug. */
+  categorySponsors?: Record<string, Sponsor>;
   heading?: { title: string; lead: string; count?: number };
 }) {
   const [q, setQ] = useState(initial.q ?? ''),
@@ -359,8 +362,13 @@ export default function DirectoryBrowser({
                       <Link href={categoryHref(c)}>View all →</Link>
                     </header>
                     {grid(
-                      spotlight(c.items, [], 8),
-                      undefined,
+                      spotlight(c.items, [], categorySponsors[c.slug] ? 7 : 8),
+                      categorySponsors[c.slug] ? (
+                        <SponsorCard
+                          sponsor={categorySponsors[c.slug]}
+                          key="sponsor"
+                        />
+                      ) : null,
                       'featured-grid',
                     )}
                   </section>

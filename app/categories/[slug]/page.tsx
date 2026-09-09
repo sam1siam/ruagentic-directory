@@ -61,7 +61,7 @@ async function CategoryListings({
       listings={listings}
       lock={{ category: category.name }}
       initial={query}
-      sponsor={pickSponsor('listing', sponsors)}
+      sponsor={pickSponsor('listing', sponsors, undefined, category.slug)}
       heading={{
         title: category.name + '.',
         lead: category.description,
