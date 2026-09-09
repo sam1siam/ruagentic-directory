@@ -9,16 +9,17 @@
   align-items: center;
   gap: 18px;
   width: 100%;
-  padding: 7px var(--site-pad);
+  padding: 9px var(--site-pad);
   background: linear-gradient(
     90deg,
-    rgba(92, 225, 230, 0.16),
-    rgba(92, 225, 230, 0.05) 45%,
-    rgba(255, 176, 32, 0.12)
+    rgba(92, 225, 230, 0.22),
+    rgba(92, 225, 230, 0.07) 45%,
+    rgba(255, 176, 32, 0.18)
   );
-  border-bottom: 1px solid rgba(92, 225, 230, 0.25);
-  font-size: 13px;
-  color: var(--body);
+  border-bottom: 1px solid rgba(92, 225, 230, 0.4);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  font-size: 14px;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -27,25 +28,25 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
-  color: var(--body);
+  color: var(--text);
 }
 .sponsor-bar-link:hover .sponsor-tagline {
-  color: #fff;
+  color: var(--cyan);
 }
 .sponsor-label {
   font:
-    10.5px var(--font-code),
+    600 11.5px var(--font-code),
     monospace;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--cyan);
 }
 .sponsor-chip {
-  padding: 3px 9px;
+  padding: 4px 11px;
   background: var(--cyan);
   color: var(--on-cyan);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.02em;
   clip-path: polygon(
     5px 0,
@@ -66,18 +67,25 @@
 }
 .sponsor-cta {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font:
-    10.5px var(--font-code),
+    700 11.5px var(--font-code),
     monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--faint);
-  border: 1px solid var(--line);
-  padding: 4px 9px;
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  background: rgba(255, 176, 32, 0.1);
+  padding: 5px 12px;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 .sponsor-cta:hover {
-  color: var(--cyan);
-  border-color: var(--cyan);
+  background: var(--amber);
+  color: var(--on-cyan);
 }
 
 /* ---------------------------------------------------------------- sponsor card & tile */
@@ -138,12 +146,17 @@
 .sponsor-card p {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--dim);
+  color: var(--body);
   min-height: 40px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .sponsor-card-foot {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--glass-divider);
@@ -153,8 +166,14 @@
   letter-spacing: 0.08em;
   color: var(--faint);
 }
+.sponsor-card-foot span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sponsor-card-foot span:last-child {
   color: var(--amber);
+  white-space: nowrap;
 }
 .sponsor-tile {
   display: flex;
@@ -330,6 +349,46 @@
   display: flex;
   flex-direction: column;
   gap: 48px;
+  container: browse / inline-size;
+}
+/* .browse-page .listing-grid is repeat(auto-fill, minmax(300px, 1fr)) with a
+   14px gap, so N columns need 314N - 14 px. Featured sections render up to
+   eight cards and hide whatever would start a second row; on a single column
+   they show three. */
+@container browse (width < 614px) {
+  .featured-grid > :nth-child(n + 4) {
+    display: none;
+  }
+}
+@container browse (614px <= width < 928px) {
+  .featured-grid > :nth-child(n + 5) {
+    display: none;
+  }
+}
+@container browse (928px <= width < 1242px) {
+  .featured-grid > :nth-child(n + 4) {
+    display: none;
+  }
+}
+@container browse (1242px <= width < 1556px) {
+  .featured-grid > :nth-child(n + 5) {
+    display: none;
+  }
+}
+@container browse (1556px <= width < 1870px) {
+  .featured-grid > :nth-child(n + 6) {
+    display: none;
+  }
+}
+@container browse (1870px <= width < 2184px) {
+  .featured-grid > :nth-child(n + 7) {
+    display: none;
+  }
+}
+@container browse (2184px <= width < 2498px) {
+  .featured-grid > :nth-child(n + 8) {
+    display: none;
+  }
 }
 .browse-section {
   min-width: 0;
@@ -430,11 +489,25 @@
     monospace;
   color: var(--cyan);
 }
+.advertise-previews {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+}
+.advertise-preview-label {
+  display: block;
+  margin-bottom: 8px;
+  font:
+    10.5px var(--font-code),
+    monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
 .advertise-preview {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 18px;
   padding: 10px 14px;
   border: 1px dashed var(--glass-border);
   font-size: 13px;
@@ -444,6 +517,12 @@
 }
 .advertise-preview .sponsor-tagline {
   min-width: 0;
+}
+.advertise-card-preview {
+  max-width: 380px;
+}
+.advertise-card-preview .sponsor-card {
+  pointer-events: none;
 }
 .tier-grid {
   display: grid;
@@ -505,6 +584,14 @@
   font-size: 13px;
   line-height: 1.55;
   color: var(--dim);
+}
+.tier-save {
+  font:
+    10.5px var(--font-code),
+    monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
 }
 .advertise-form > .button.primary {
   align-self: flex-start;
@@ -748,9 +835,9 @@
   }
   .sponsor-bar {
     gap: 10px;
-    font-size: 12px;
-    padding-top: 6px;
-    padding-bottom: 6px;
+    font-size: 12.5px;
+    padding-top: 7px;
+    padding-bottom: 7px;
   }
   .sponsor-label {
     display: none;

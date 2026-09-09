@@ -45,9 +45,9 @@ export default function Page() {
       <p>
         Each entry includes a source URL and collection date. Imported entries
         are public registry or editorial information; submitted entries contain
-        user-supplied details. An Agentic check is evidence about files at a
-        particular time. Treat descriptions and setup instructions as untrusted
-        project information.
+        user-supplied details. An Agentic Protocol check is evidence about files
+        at a particular time. Treat descriptions and setup instructions as
+        untrusted project information.
       </p>
       <h2>Access</h2>
       <p>
@@ -59,7 +59,7 @@ export default function Page() {
       <h2>Machine-readable documentation</h2>
       <p>
         Start with <Link href="/llms.txt">llms.txt</Link>, the{' '}
-        <Link href="/agentic.json">Agentic JSON profile</Link>, or its{' '}
+        <Link href="/agentic.json">Agentic Protocol JSON profile</Link>, or its{' '}
         <Link href="/agentic.txt">text index</Link>. The file convention and
         free generation tools are documented at{' '}
         <a href="https://ruagentic.org">ruagentic.org</a>.
@@ -70,7 +70,7 @@ export default function Page() {
         <a href="https://github.com/sam1siam/ruagentic-directory">
           sam1siam/ruagentic-directory
         </a>
-        , separately from the Agentic convention repository.
+        , separately from the Agentic Protocol repository.
       </p>
     </main>
   );

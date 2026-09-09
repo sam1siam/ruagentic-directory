@@ -162,7 +162,7 @@ export function profileLocation(
     ].includes(home.hostname)
   )
     throw new Error(
-      'For free verification, use your project website as the homepage and publish the Agentic files there.',
+      'For free verification, use your project website as the homepage and publish the Agentic Protocol files there.',
     );
   const profile = new URL(
     input.profileUrl ? cleanUrl(input.profileUrl) : '/agentic.json',

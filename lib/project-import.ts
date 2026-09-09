@@ -30,7 +30,7 @@ export const fieldNames: Partial<Record<ImportField, string>> = {
   setup: 'Setup instructions',
   capabilities: 'Capabilities',
   license: 'License',
-  profileUrl: 'Agentic profile',
+  profileUrl: 'Agentic Protocol profile',
   readmeUrl: 'README',
   transport: 'Transport',
   authentication: 'Authentication',

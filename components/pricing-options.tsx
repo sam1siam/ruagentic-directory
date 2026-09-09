@@ -42,7 +42,9 @@ export default function PricingOptions({
             key={value}
             data-plan={value}
             aria-label={
-              value === 'free' ? 'Free with Agentic' : 'One-time listing'
+              value === 'free'
+                ? 'Free with Agentic Protocol'
+                : 'One-time listing'
             }
           >
             <CornerBrackets amber={value === 'paid'} />
@@ -51,7 +53,7 @@ export default function PricingOptions({
               className="plan-select"
               onClick={() => setPlan(value)}
               aria-pressed={plan === value}
-              aria-label={`Select ${value === 'free' ? 'free with Agentic' : 'one-time paid listing'}`}
+              aria-label={`Select ${value === 'free' ? 'free with Agentic Protocol' : 'one-time paid listing'}`}
             >
               {plan === value ? 'SELECTED' : 'SELECT'}
             </button>

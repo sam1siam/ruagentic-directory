@@ -8,11 +8,15 @@ import {
   sameOrigin,
 } from '@/lib/server/http';
 import { stripe } from '@/lib/server/payments';
-import { creativeMetadata, creativeSchema, tierById } from '@/lib/advertising';
+import {
+  creativeMetadata,
+  creativeSchema,
+  placementById,
+} from '@/lib/advertising';
 export const runtime = 'nodejs';
-/** Recurring Stripe prices for each tier, created in the Stripe dashboard. */
-export function tierPrice(tier: string) {
-  return process.env['STRIPE_AD_PRICE_' + tier.toUpperCase()] || '';
+/** Recurring Stripe prices for each placement, created in the Stripe dashboard. */
+export function placementPrice(placement: string) {
+  return process.env['STRIPE_AD_PRICE_' + placement.toUpperCase()] || '';
 }
 function clientKey(request: Request) {
   const address =
@@ -26,8 +30,8 @@ export async function POST(request: Request) {
     sameOrigin(request);
     await rateLimit('advertise:' + clientKey(request), 10);
     const creative = creativeSchema.parse(await body(request, 8192));
-    const tier = tierById(creative.tier)!;
-    const price = tierPrice(tier.id);
+    const placement = placementById(creative.placement)!;
+    const price = placementPrice(placement.id);
     if (!price)
       throw new HttpError(
         503,
@@ -47,11 +51,11 @@ export async function POST(request: Request) {
       custom_text: {
         terms_of_service_acceptance: {
           message:
-            'I agree to the [RUAGENTIC Terms](https://ruagentic.com/terms). Sponsorships follow the listing guidelines and rotate with other sponsors at the same tier.',
+            'I agree to the [RUAGENTIC Terms](https://ruagentic.com/terms). Sponsorships follow the listing guidelines and rotate with other sponsors in the same placement.',
         },
         submit: {
           message:
-            tier.name +
+            placement.name +
             ' for ' +
             creative.product +
             ', billed monthly. Cancel any time from the Stripe billing portal link in your receipt.',

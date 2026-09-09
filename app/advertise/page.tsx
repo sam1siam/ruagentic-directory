@@ -4,7 +4,7 @@ import { directoryStats } from '@/lib/server/stats';
 export const metadata = {
   title: 'Advertise',
   description:
-    'Sponsor RUAGENTIC: monthly Platinum, Gold and Silver placements across the agentic directory.',
+    'Sponsor RUAGENTIC: a site-wide top bar, a featured card in the listing grids, or both, billed monthly.',
 };
 export default async function Page({
   searchParams,
@@ -41,7 +41,7 @@ export default async function Page({
           </div>
           <h2>How it works</h2>
           <ol className="advertise-steps">
-            <li>Choose a sponsor tier and submit your ad creative.</li>
+            <li>Choose a placement and submit your ad creative.</li>
             <li>Pay securely by card through Stripe.</li>
             <li>
               Your placement goes live within minutes and stays live while the
@@ -51,22 +51,24 @@ export default async function Page({
           <h2>Where you appear</h2>
           <ul className="advertise-steps">
             <li>
-              <strong>Platinum</strong> owns the site-wide bar at the top of
-              every page, plus listing and detail placements.
+              <strong>Top bar</strong> puts your name and tagline in the sponsor
+              bar at the top of every page.
             </li>
             <li>
-              <strong>Gold</strong> takes the first card on listing pages and a
-              tile on every listing detail page.
+              <strong>Featured card</strong> takes the first card on the home
+              page and every listing page, plus a tile on every listing detail
+              page. It needs a short description and an optional button label.
             </li>
             <li>
-              <strong>Silver</strong> takes the detail page tile.
+              <strong>Top bar + featured card</strong> combines both for less
+              than buying them separately.
             </li>
           </ul>
           <h2>What sponsorship is not</h2>
           <p>
-            Sponsorship never changes rankings, source labels, or Agentic file
-            checks, and it is labelled as sponsored wherever it appears.
-            Creatives follow the{' '}
+            Sponsorship never changes rankings, source labels, or Agentic
+            Protocol file checks, and it is labelled as sponsored wherever it
+            appears. Creatives follow the{' '}
             <Link href="/guidelines">listing guidelines</Link>. Questions:{' '}
             <Link href="/contact">contact us</Link>.
           </p>

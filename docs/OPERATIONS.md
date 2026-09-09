@@ -72,11 +72,13 @@ Confirmation links are single-use. Opening a link displays an explicit confirmat
 
 ## Sponsorships
 
-`/advertise` sells three monthly placements through Stripe Checkout in subscription mode: Platinum (US$1,299, site-wide bar plus listing and detail slots), Gold (US$699, listing and detail slots) and Silver (US$399, detail slots). Create three recurring monthly prices in the RUAGENTIC Stripe account and put their ids in `STRIPE_AD_PRICE_PLATINUM`, `STRIPE_AD_PRICE_GOLD` and `STRIPE_AD_PRICE_SILVER`. Until they are set, the page renders but checkout answers 503 with a contact prompt.
+`/advertise` sells three monthly placements through Stripe Checkout in subscription mode: Top bar (US$999, the sponsor bar on every page), Featured card (US$499, the first card in the home and listing grids plus a tile on every listing detail page) and Top bar + featured card (US$1,299). Create three recurring monthly prices in the RUAGENTIC Stripe account and put their ids in `STRIPE_AD_PRICE_BAR`, `STRIPE_AD_PRICE_CARD` and `STRIPE_AD_PRICE_BOTH`. Until they are set, the page renders but checkout answers 503 with a contact prompt.
 
-Add `customer.subscription.updated` and `customer.subscription.deleted` to the webhook endpoint so lapsed or cancelled sponsors stop showing; `checkout.session.completed` already covers activation. Apply `supabase/migrations/202609080003_ad_orders.sql`; the `ad_orders` table is written only by the webhook and the thank-you page reconciliation and read to render sponsor slots. Sponsor checkouts carry `metadata.app=ruagentic-ads` and are ignored by the listing payment code. When no paid Platinum sponsor is active the bar shows the house sponsor defined in `lib/advertising.ts`; card and tile slots stay empty rather than showing house content.
+Add `customer.subscription.updated` and `customer.subscription.deleted` to the webhook endpoint so lapsed or cancelled sponsors stop showing; `checkout.session.completed` already covers activation. Apply `supabase/migrations/202609080003_ad_orders.sql`; the `ad_orders` table is written only by the webhook and the thank-you page reconciliation and read to render sponsor slots. Sponsor checkouts carry `metadata.app=ruagentic-ads` and are ignored by the listing payment code. Card placements also carry a description and an optional button label.
 
-Sponsorship never affects ordering, source labels or Agentic checks, and every placement is labelled as sponsored.
+Paid sponsors take a slot ahead of the house sponsor and rotate every ten minutes within a placement. Slots no paid sponsor covers show the house sponsor defined in `lib/advertising.ts` (AstroFabric, whose description is taken from its own product wording). Sponsor links get `ref=ruagentic.com` appended unless the sponsor supplied its own `ref`.
+
+Sponsorship never affects ordering, source labels or Agentic Protocol checks, and every placement is labelled as sponsored.
 
 ## Catalog
 

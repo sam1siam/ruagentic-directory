@@ -47,10 +47,7 @@ export default async function Page({
   const related = (await catalog())
     .filter((p) => p.slug !== item.slug && p.category === item.category)
     .slice(0, 3);
-  const sponsor = pickSponsor(
-    'detail',
-    (await activeSponsors()).filter((s) => !s.house),
-  );
+  const sponsor = pickSponsor('detail', await activeSponsors());
   const remotes = (item.remotes ?? []) as {
     type?: string;
     url?: string;
@@ -215,12 +212,13 @@ export default async function Page({
           </section>
           <section className="source-panel">
             <h2>Sources and checks</h2>
-            <p>
-              <strong>{item.source}.</strong>{' '}
-              {item.imported
-                ? 'This entry was imported from public project information. It does not indicate that the project owner has submitted or adopted Agentic.'
-                : 'These details were supplied through a RUAGENTIC account. They remain the submitter’s assertions.'}
-            </p>
+            {!item.imported && (
+              <p>
+                <strong>{item.source}.</strong> These details were supplied
+                through a RUAGENTIC account. They remain the submitter’s
+                assertions.
+              </p>
+            )}
             <a
               href={item.sourceUrl}
               target="_blank"
@@ -249,7 +247,7 @@ export default async function Page({
             </p>
             {item.agenticCheckedAt && (
               <p>
-                <CheckCircle2 size={16} /> Agentic files checked{' '}
+                <CheckCircle2 size={16} /> Agentic Protocol files checked{' '}
                 {new Date(item.agenticCheckedAt).toLocaleDateString()}. This
                 check covers published files, not ownership or service security.
               </p>

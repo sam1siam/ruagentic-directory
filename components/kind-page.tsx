@@ -31,10 +31,7 @@ export default async function KindPage({
       listings={listings}
       lock={{ kind: page.kind }}
       initial={params}
-      sponsor={pickSponsor(
-        'listing',
-        sponsors.filter((s) => !s.house),
-      )}
+      sponsor={pickSponsor('listing', sponsors)}
       heading={{
         title: page.name + '.',
         lead: page.description,

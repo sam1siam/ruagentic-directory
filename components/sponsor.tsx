@@ -1,11 +1,18 @@
 import Link from 'next/link';
-import type { Sponsor } from '@/lib/advertising';
+import { sponsorHref, type Sponsor } from '@/lib/advertising';
+function hostname(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
 /** Site-wide bar above the telemetry strip. */
 export function SponsorBar({ sponsor }: { sponsor: Sponsor }) {
   return (
     <div className="sponsor-bar">
       <a
-        href={sponsor.url}
+        href={sponsorHref(sponsor.url)}
         target="_blank"
         rel="noopener sponsored"
         className="sponsor-bar-link"
@@ -18,7 +25,7 @@ export function SponsorBar({ sponsor }: { sponsor: Sponsor }) {
         </span>
       </a>
       <Link href="/advertise" className="sponsor-cta">
-        Advertise
+        Advertise with us →
       </Link>
     </div>
   );
@@ -27,7 +34,7 @@ export function SponsorBar({ sponsor }: { sponsor: Sponsor }) {
 export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
   return (
     <a
-      href={sponsor.url}
+      href={sponsorHref(sponsor.url)}
       target="_blank"
       rel="noopener sponsored"
       className="sponsor-card"
@@ -39,10 +46,10 @@ export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
         <span className="sponsor-tag">Sponsored</span>
       </div>
       <h3>{sponsor.name}</h3>
-      <p>{sponsor.tagline}</p>
+      <p>{sponsor.description || sponsor.tagline}</p>
       <div className="sponsor-card-foot">
-        <span>{new URL(sponsor.url).hostname.replace(/^www\./, '')}</span>
-        <span>Visit →</span>
+        <span>{hostname(sponsor.url)}</span>
+        <span>{sponsor.cta || 'Visit'} →</span>
       </div>
     </a>
   );
@@ -51,15 +58,15 @@ export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
 export function SponsorTile({ sponsor }: { sponsor: Sponsor }) {
   return (
     <a
-      href={sponsor.url}
+      href={sponsorHref(sponsor.url)}
       target="_blank"
       rel="noopener sponsored"
       className="sponsor-tile glass"
     >
       <span className="sponsor-tag">Sponsored</span>
       <strong>{sponsor.name}</strong>
-      <p>{sponsor.tagline}</p>
-      <span className="sponsor-tile-link">Visit →</span>
+      <p>{sponsor.description || sponsor.tagline}</p>
+      <span className="sponsor-tile-link">{sponsor.cta || 'Visit'} →</span>
     </a>
   );
 }

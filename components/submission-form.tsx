@@ -284,7 +284,7 @@ export default function SubmissionForm({
     setAudit(data.audit);
     if (data.audit.eligible)
       setNotice(
-        'Your Agentic files qualify this listing for free publication.',
+        'Your Agentic Protocol files qualify this listing for free publication.',
       );
   }
   function projectStepValid() {
@@ -979,8 +979,8 @@ export default function SubmissionForm({
             <>
               <h2 className="step-title">How do agents connect?</h2>
               <p className="step-lead">
-                Point us at the project and your Agentic files. Only public
-                HTTPS links; keep credentials out.
+                Point us at the project and your Agentic Protocol files. Only
+                public HTTPS links; keep credentials out.
               </p>
               <fieldset disabled={locked}>
                 <div className="form-grid">
@@ -1005,7 +1005,7 @@ export default function SubmissionForm({
                     placeholder: 'https://api.yoursite.com/mcp',
                     hint: 'Optional for local servers and clients.',
                   })}
-                  {textField('profileUrl', 'Agentic manifest URL', {
+                  {textField('profileUrl', 'Agentic Protocol manifest URL', {
                     code: true,
                     placeholder: 'https://yoursite.com/agentic.json',
                     hint: 'Leave blank to check /agentic.json on your homepage.',
@@ -1148,7 +1148,7 @@ export default function SubmissionForm({
                     setConsent(false);
                   }}
                 >
-                  <strong>Free with Agentic</strong>
+                  <strong>Free with Agentic Protocol</strong>
                   <span>US$0 · publication checker</span>
                 </button>
                 <button
@@ -1223,7 +1223,7 @@ export default function SubmissionForm({
                           <div>
                             &gt;{' '}
                             {audit.report.errors?.join(' ') ||
-                              'The checker returned no individual checks. Open the Agentic auditor for the full report.'}
+                              'The checker returned no individual checks. Open the Agentic Protocol auditor for the full report.'}
                           </div>
                         )}
                         <div>
@@ -1255,17 +1255,13 @@ export default function SubmissionForm({
                               <div key={c.id}>
                                 <strong>{c.label}</strong>
                                 {c.remedy}{' '}
-                                {c.helpUrl?.startsWith(
-                                  'https://ruagentic.org/',
-                                ) && (
-                                  <a
-                                    href={c.helpUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    Instructions ↗
-                                  </a>
-                                )}
+                                <a
+                                  href="https://ruagentic.org/generate/"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  Instructions ↗
+                                </a>
                               </div>
                             ))}
                         </div>
@@ -1291,7 +1287,7 @@ export default function SubmissionForm({
                         </div>
                         <div>
                           &gt; 3 · add the README section with links to both
-                          Agentic sites and your files
+                          Agentic Protocol sites and your files
                         </div>
                         <div>
                           &gt; the check reads public files; it does not run
@@ -1316,7 +1312,7 @@ export default function SubmissionForm({
               <p className="step-lead">
                 {path === 'agentic'
                   ? eligible
-                    ? 'Checker passed. Your listing is free with Agentic files.'
+                    ? 'Checker passed. Your listing is free with Agentic Protocol files.'
                     : 'The publication checker must pass before a free listing goes live.'
                   : paid
                     ? 'Payment confirmed. Publish when you are ready.'
@@ -1335,7 +1331,7 @@ export default function SubmissionForm({
                   <div className="tile-label">PLAN</div>
                   <strong>
                     {path === 'agentic'
-                      ? 'Free with Agentic'
+                      ? 'Free with Agentic Protocol'
                       : 'One-time listing'}
                   </strong>
                   <div>
@@ -1356,7 +1352,7 @@ export default function SubmissionForm({
                   >
                     {path === 'agentic'
                       ? 'Switch to one-time listing →'
-                      : 'Switch to free with Agentic →'}
+                      : 'Switch to free with Agentic Protocol →'}
                   </button>
                 </div>
                 <div className="review-tile" style={{ gridColumn: '1 / -1' }}>

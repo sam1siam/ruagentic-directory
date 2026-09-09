@@ -7,7 +7,7 @@ export default function Page() {
         <h1>Contact RUAGENTIC.</h1>
         <p>
           Get help with your listing, report a correction, or ask about the
-          Agentic project.
+          Agentic Protocol project.
         </p>
       </div>
       <div className="contact-grid">
@@ -36,12 +36,14 @@ export default function Page() {
           <Link href="/">Find the listing ↗</Link>
         </div>
         <div>
-          <h2>Agentic files</h2>
+          <h2>Agentic Protocol files</h2>
           <p>
             Generate your project files and use the auditor’s report to fix
             publication issues.
           </p>
-          <a href="https://ruagentic.org/audit/">Open the Agentic auditor ↗</a>
+          <a href="https://ruagentic.org/audit/">
+            Open the Agentic Protocol auditor ↗
+          </a>
         </div>
         <div>
           <h2>Directory development</h2>

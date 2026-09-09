@@ -1,57 +1,68 @@
 import { z } from 'zod';
-/** Sponsorship tiers. Placement follows mcp.so's structure: the top bar is
- *  site-wide, listing pages carry a sponsored card, detail pages a sponsor tile. */
-export const tiers = [
+/** Sponsorship placements. The top bar is site-wide; the featured card is the
+ *  first card in listing grids plus a tile on every listing detail page. */
+export const placements = [
   {
-    id: 'platinum',
-    name: 'Platinum Sponsor',
+    id: 'bar',
+    name: 'Top bar',
+    amount: 99900,
+    display: 'US$999',
+    placement:
+      'Your name and tagline in the sponsor bar at the top of every page.',
+    surfaces: ['bar'],
+    save: '',
+  },
+  {
+    id: 'card',
+    name: 'Featured card',
+    amount: 49900,
+    display: 'US$499',
+    placement:
+      'A featured card in the home and listing grids, plus a tile on every listing detail page.',
+    surfaces: ['listing', 'detail'],
+    save: '',
+  },
+  {
+    id: 'both',
+    name: 'Top bar + featured card',
     amount: 129900,
     display: 'US$1,299',
-    placement:
-      'Site-wide: top bar on every page plus listing and detail pages.',
+    placement: 'Both placements together on every page of the directory.',
     surfaces: ['bar', 'listing', 'detail'],
-    rank: 3,
-  },
-  {
-    id: 'gold',
-    name: 'Gold Sponsor',
-    amount: 69900,
-    display: 'US$699',
-    placement: 'Listing pages and detail pages.',
-    surfaces: ['listing', 'detail'],
-    rank: 2,
-  },
-  {
-    id: 'silver',
-    name: 'Silver Sponsor',
-    amount: 39900,
-    display: 'US$399',
-    placement: 'Detail pages only.',
-    surfaces: ['detail'],
-    rank: 1,
+    save: 'Save US$199 a month',
   },
 ] as const;
-export type Tier = (typeof tiers)[number];
-export type TierId = Tier['id'];
+export type Placement = (typeof placements)[number];
+export type PlacementId = Placement['id'];
 export type Surface = 'bar' | 'listing' | 'detail';
-/** Surfaces a tier is entitled to, widened so `includes` accepts any surface. */
-export const tierSurfaces = (tier: Tier): readonly Surface[] => tier.surfaces;
-export const tierById = (id: string) => tiers.find((t) => t.id === id);
+export const placementById = (id: string) =>
+  placements.find((p) => p.id === id);
+/** Surfaces a placement is entitled to, widened so `includes` accepts any surface. */
+export const placementSurfaces = (placement: Placement): readonly Surface[] =>
+  placement.surfaces;
+/** Card and tile placements need a longer description and a call to action. */
+export const includesCard = (id: PlacementId) => id !== 'bar';
 export const adApp = 'ruagentic-ads';
-/** The house sponsor shown whenever no paid Platinum sponsor is active. */
-export const houseSponsor = {
-  name: 'AstroFabric',
-  tagline: 'Agentic AI for Business Intelligence',
-  url: 'https://astrofabric.ai',
-  tier: 'platinum' as TierId,
-  house: true,
-};
 export type Sponsor = {
   name: string;
   tagline: string;
+  description?: string;
+  cta?: string;
   url: string;
-  tier: TierId;
+  placement: PlacementId;
   house?: boolean;
+};
+/** The house sponsor shown in every slot no paid sponsor covers. The
+ *  description is AstroFabric's own product wording. */
+export const houseSponsor: Sponsor = {
+  name: 'AstroFabric',
+  tagline: 'Agentic AI for Business Intelligence',
+  description:
+    'Autonomous data infrastructure that turns strategic objectives into verified datasets and live intelligence streams.',
+  cta: 'Explore AstroFabric',
+  url: 'https://astrofabric.ai',
+  placement: 'both',
+  house: true,
 };
 const httpsUrl = z
   .string()
@@ -67,20 +78,39 @@ const httpsUrl = z
   }, 'Use a public https:// address.');
 export const creativeSchema = z
   .object({
-    tier: z.enum(['platinum', 'gold', 'silver']),
+    placement: z.enum(['bar', 'card', 'both']),
     product: z.string().trim().min(2).max(60),
-    tagline: z.string().trim().min(10).max(160),
+    tagline: z.string().trim().min(10).max(120),
     url: httpsUrl,
+    description: z.string().trim().max(200).default(''),
+    cta: z.string().trim().max(24).default(''),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (includesCard(value.placement) && value.description.length < 20)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['description'],
+        message:
+          'Describe your product in at least 20 characters for the featured card.',
+      });
+    if (value.cta && value.cta.length < 2)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['cta'],
+        message: 'Use at least two characters for the button label.',
+      });
+  });
 export type Creative = z.infer<typeof creativeSchema>;
 /** Stripe metadata is limited to 500 characters per value and 50 keys. */
 export function creativeMetadata(creative: Creative) {
   return {
     app: adApp,
-    tier: creative.tier,
+    placement: creative.placement,
     product: creative.product.slice(0, 120),
     tagline: creative.tagline.slice(0, 400),
+    description: creative.description.slice(0, 500),
+    cta: creative.cta.slice(0, 24),
     url: creative.url.slice(0, 500),
   };
 }
@@ -94,19 +124,31 @@ export function isAdMetadata(
     (metadata as Record<string, unknown>).app === adApp
   );
 }
-/** Pick the sponsor for a surface: highest tier first, rotating within that
- *  tier every ten minutes so every sponsor at the same level gets shown. */
+/** Adds the directory as referrer without disturbing the sponsor's own
+ *  parameters, fragment, or an existing ref value. */
+export function sponsorHref(raw: string) {
+  try {
+    const url = new URL(raw);
+    if (!url.searchParams.has('ref'))
+      url.searchParams.set('ref', 'ruagentic.com');
+    return url.href;
+  } catch {
+    return raw;
+  }
+}
+/** Pick the sponsor for a surface. Paid sponsors take the slot ahead of the
+ *  house sponsor and rotate every ten minutes so each one gets shown. */
 export function pickSponsor(
   surface: Surface,
   sponsors: Sponsor[],
   now = Date.now(),
 ): Sponsor | null {
   const eligible = sponsors.filter((s) => {
-    const tier = tierById(s.tier);
-    return tier ? tierSurfaces(tier).includes(surface) : false;
+    const placement = placementById(s.placement);
+    return placement ? placementSurfaces(placement).includes(surface) : false;
   });
   if (!eligible.length) return null;
-  const top = Math.max(...eligible.map((s) => tierById(s.tier)!.rank));
-  const pool = eligible.filter((s) => tierById(s.tier)!.rank === top);
+  const paid = eligible.filter((s) => !s.house);
+  const pool = paid.length ? paid : eligible;
   return pool[Math.floor(now / 600000) % pool.length];
 }

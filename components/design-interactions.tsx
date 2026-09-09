@@ -136,7 +136,7 @@ export function CornerBrackets({
 }
 
 /* ------------------------------------------------------------------ headline */
-const HEADLINE = 'Mission control for the agentic stack.';
+const HEADLINE = 'Official listing directory for the Agentic Protocol';
 const GLYPHS = '!<>-_\\/[]{}=+*^?#%&';
 export function DecodeHeadline() {
   const [buffer, setBuffer] = useState(HEADLINE);

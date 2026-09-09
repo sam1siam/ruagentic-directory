@@ -1,10 +1,11 @@
 import type Stripe from 'stripe';
 import { adminClient } from '../supabase/server';
-import { isAdMetadata, tierById } from '../advertising';
+import { isAdMetadata, placementById } from '../advertising';
 /** Records a completed sponsorship checkout. Idempotent on the session id. */
 export async function recordAdOrder(session: Stripe.Checkout.Session) {
   const metadata = session.metadata;
-  if (!isAdMetadata(metadata) || !tierById(metadata.tier)) return false;
+  if (!isAdMetadata(metadata) || !placementById(metadata.placement))
+    return false;
   if (session.mode !== 'subscription' || session.status !== 'complete')
     return false;
   const subscription =
@@ -24,9 +25,11 @@ export async function recordAdOrder(session: Stripe.Checkout.Session) {
         stripe_customer_id: customer,
         customer_email:
           session.customer_details?.email ?? session.customer_email ?? null,
-        tier: metadata.tier,
+        placement: metadata.placement,
         product: metadata.product,
         tagline: metadata.tagline,
+        description: metadata.description ?? '',
+        cta: metadata.cta ?? '',
         url: metadata.url,
         status: session.payment_status === 'paid' ? 'active' : 'incomplete',
         livemode: session.livemode,

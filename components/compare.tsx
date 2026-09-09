@@ -113,7 +113,7 @@ export default function Compare({
                 </tr>
               ))}
               <tr>
-                <th scope="row">Agentic files</th>
+                <th scope="row">Agentic Protocol files</th>
                 {items.map((item) => (
                   <td key={item.slug}>
                     {item.agenticCheckedAt

@@ -38,8 +38,9 @@ export default function Page() {
       <p>
         When you import a URL, our server reads public project information. When
         you run the free publication checker, the project profile and optional
-        README URLs are sent to the Agentic auditor at ruagentic.org. We retain
-        its report to explain the result and establish listing eligibility.
+        README URLs are sent to the Agentic Protocol auditor at ruagentic.org.
+        We retain its report to explain the result and establish listing
+        eligibility.
       </p>
       <h2>Service providers</h2>
       <p>

@@ -162,7 +162,7 @@ export function SiteHeader({
                 </Link>
               ))}
               <a href="https://ruagentic.org" className="nav-convention">
-                The convention ↗
+                The Agentic Protocol
               </a>
             </nav>
             <div className="header-actions">
@@ -393,7 +393,7 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
           <Link href="/advertise">Advertise</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
-          <a href="https://ruagentic.org">The convention ↗</a>
+          <a href="https://ruagentic.org">The Agentic Protocol</a>
         </nav>
       </footer>
     );
@@ -409,14 +409,14 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
             RUAGENTIC<span className="brand-label">DIR</span>
           </Link>
           <p>
-            The official Agentic directory for agentic AI MCP servers and tools.
-            Built for an open agentic ecosystem.
+            The official Agentic Protocol directory for agentic AI MCP servers
+            and tools. Built for an open agentic ecosystem.
           </p>
           <button
             type="button"
             className="footer-command"
             data-copied={copied}
-            aria-label="Copy the Agentic profile command"
+            aria-label="Copy the Agentic Protocol profile command"
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(
@@ -455,7 +455,7 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
           <Link href="/advertise">Advertise</Link>
           <Link href="/guidelines">Listing guidelines</Link>
           <a href="https://ruagentic.org/audit/">Publication checker ↗</a>
-          <a href="https://ruagentic.org">The convention ↗</a>
+          <a href="https://ruagentic.org">The Agentic Protocol</a>
           <Link href="/developers">Developer API &amp; MCP</Link>
         </div>
         <div className="footer-column">

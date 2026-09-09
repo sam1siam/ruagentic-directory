@@ -47,7 +47,7 @@ await test('confirmation copy accurately distinguishes payment from the free Age
     assert.doesNotMatch(paid[format], /files passed/);
     assert.match(
       free[format],
-      /Agentic files passed the free listing publication check/,
+      /Agentic Protocol files passed the free listing publication check/,
     );
     assert.doesNotMatch(free[format], /payment is confirmed/);
   }

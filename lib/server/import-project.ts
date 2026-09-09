@@ -235,7 +235,10 @@ export async function importProject(
       if (homepage && new URL(homepage).hostname !== 'github.com') {
         enqueue(homepage, 'Homepage');
         enqueue(new URL('/llms.txt', homepage).href, 'Documentation index');
-        enqueue(new URL('/agentic.json', homepage).href, 'Agentic profile');
+        enqueue(
+          new URL('/agentic.json', homepage).href,
+          'Agentic Protocol profile',
+        );
       }
     } catch (e) {
       result.observations.push({
@@ -267,7 +270,7 @@ export async function importProject(
       enqueue(start.origin + '/', 'Project homepage');
     }
     enqueue(start.origin + '/llms.txt', 'Documentation index');
-    enqueue(start.origin + '/agentic.json', 'Agentic profile');
+    enqueue(start.origin + '/agentic.json', 'Agentic Protocol profile');
     enqueue(start.origin + '/README.md', 'Project README');
     enqueue(start.origin + '/openapi.json', 'OpenAPI document');
   }

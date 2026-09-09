@@ -29,7 +29,7 @@ export default function Page() {
         listing payment cannot be transferred to a different project.
       </p>
       <p>
-        The free option requires matching Agentic JSON, TXT, and README
+        The free option requires matching Agentic Protocol JSON, TXT, and README
         publication checks. The check must pass for the project being listed.
         Recheck the files when publishing an update.
       </p>

@@ -131,8 +131,12 @@ export default function DirectoryBrowser({
     if (!lock.kind) setKind('all');
     if (!lock.category) setCategory(ALL);
   };
-  const grid = (items: CatalogListing[], lead?: ReactNode) => (
-    <div className="listing-grid">
+  const grid = (
+    items: CatalogListing[],
+    lead?: ReactNode,
+    className?: string,
+  ) => (
+    <div className={'listing-grid' + (className ? ' ' + className : '')}>
       {lead}
       {items.map((item) => (
         <ToolCard
@@ -155,7 +159,7 @@ export default function DirectoryBrowser({
             <DecodeHeadline />
             <p>
               MCP servers, clients and agentic products with checked Agentic
-              files, documentation and connection details.
+              Protocol files, documentation and connection details.
             </p>
             <button
               type="button"
@@ -327,11 +331,12 @@ export default function DirectoryBrowser({
                       spotlight(
                         items,
                         featured[k.kind],
-                        sponsor && index === 0 ? 5 : 6,
+                        sponsor && index === 0 ? 7 : 8,
                       ),
                       sponsor && index === 0 ? (
                         <SponsorCard sponsor={sponsor} key="sponsor" />
                       ) : null,
+                      'featured-grid',
                     )}
                   </section>
                 );
@@ -353,7 +358,11 @@ export default function DirectoryBrowser({
                       <p>{c.description}</p>
                       <Link href={categoryHref(c)}>View all →</Link>
                     </header>
-                    {grid(spotlight(c.items, [], 3))}
+                    {grid(
+                      spotlight(c.items, [], 8),
+                      undefined,
+                      'featured-grid',
+                    )}
                   </section>
                 ))}
             </>

@@ -48,9 +48,10 @@ export default function Page() {
       </ol>
       <h2>Free publication</h2>
       <p>
-        The Agentic files must describe the project being submitted. A passing
-        report for another website does not qualify. Publish matching JSON, TXT,
-        and README links, then run the checker in the submission form.
+        The Agentic Protocol files must describe the project being submitted. A
+        passing report for another website does not qualify. Publish matching
+        JSON, TXT, and README links, then run the checker in the submission
+        form.
       </p>
       <h2>What labels mean</h2>
       <p>
@@ -59,10 +60,10 @@ export default function Page() {
         submission” identifies information supplied through a RUAGENTIC account.
       </p>
       <p>
-        An Agentic check reports public file consistency at the displayed time.
-        It does not certify ownership, security, compatibility, uptime, or the
-        behavior of a service. Payment grants listing eligibility and is
-        separate from technical checks.
+        An Agentic Protocol check reports public file consistency at the
+        displayed time. It does not certify ownership, security, compatibility,
+        uptime, or the behavior of a service. Payment grants listing eligibility
+        and is separate from technical checks.
       </p>
       <h2>Corrections and removal</h2>
       <p>

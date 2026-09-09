@@ -35,7 +35,7 @@ export function databaseError(error: { message: string; code?: string }) {
     checkout_in_progress:
       'Finish or cancel the existing checkout before editing.',
     fresh_verification_required:
-      'Run the Agentic checker again before publishing.',
+      'Run the Agentic Protocol checker again before publishing.',
     verified_payment_required: 'A completed payment is required.',
     submission_suspended: 'This listing is unavailable. Contact support.',
     submission_unavailable: 'This listing is unavailable.',

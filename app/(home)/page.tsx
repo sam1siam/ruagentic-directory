@@ -20,10 +20,7 @@ export default async function Home({
       mode="home"
       listings={items.map(toBrowserListing)}
       initial={params}
-      sponsor={pickSponsor(
-        'listing',
-        sponsors.filter((s) => !s.house),
-      )}
+      sponsor={pickSponsor('listing', sponsors)}
     />
   );
 }

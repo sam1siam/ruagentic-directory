@@ -3,7 +3,7 @@ import PricingOptions from '@/components/pricing-options';
 export const metadata = {
   title: 'List your project',
   description:
-    'Publish your project with a one-time US$49.99 listing or a free listing with verified Agentic JSON, TXT and README files.',
+    'Publish your project with a one-time US$49.99 listing or a free listing with verified Agentic Protocol JSON, TXT and README files.',
 };
 const freeFeatures = [
   'Public listing page and permanent URL',
@@ -14,7 +14,7 @@ const freeFeatures = [
 ];
 const paidFeatures = [
   'Everything in the free listing',
-  'No Agentic file requirement',
+  'No Agentic Protocol file requirement',
   'No recurring directory subscription',
   'Updates for the same project included',
   'Payment receipt from Stripe',
@@ -25,8 +25,8 @@ export default function Page() {
       <div className="page-heading">
         <h1>Get your project discovered.</h1>
         <p className="lead">
-          Choose a one-time listing or publish for free with Agentic files. Both
-          options give your project the same listing page.
+          Choose a one-time listing or publish for free with Agentic Protocol
+          files. Both options give your project the same listing page.
         </p>
       </div>
       <PricingOptions
@@ -36,7 +36,10 @@ export default function Page() {
             <div className="price">
               US$0<small>per listing</small>
             </div>
-            <p>Publish your Agentic files and pass the publication checker.</p>
+            <p>
+              Publish your Agentic Protocol files and pass the publication
+              checker.
+            </p>
             <ul className="plan-list">
               {freeFeatures.map((t) => (
                 <li key={t}>
@@ -95,9 +98,9 @@ export default function Page() {
               Does ruagentic.org charge for its generator or convention?
             </summary>
             <p>
-              No. The convention, generator, and auditor at ruagentic.org remain
-              free. The optional US$49.99 fee is for a directory listing on
-              ruagentic.com.
+              No. The Agentic Protocol, its generator, and auditor at
+              ruagentic.org remain free. The optional US$49.99 fee is for a
+              directory listing on ruagentic.com.
             </p>
           </details>
           <details>
@@ -105,7 +108,7 @@ export default function Page() {
             <p>
               Payment establishes listing eligibility. It does not purchase a
               search position, security assessment, ownership check, or Agentic
-              audit result. Listings follow the{' '}
+              Protocol audit result. Listings follow the{' '}
               <Link href="/guidelines">listing guidelines</Link>.
             </p>
           </details>
