@@ -8,6 +8,7 @@ import {
   isAdMetadata,
   parseCategories,
   pickSponsor,
+  pickSponsors,
   placementSurfaces,
   placements,
   quote,
@@ -280,4 +281,47 @@ await test('category billing plan matches the chosen categories', async () => {
       categories: [],
     }).success,
   );
+});
+
+await test('sponsor lists follow manual order, then newest, skip hidden, and fall back to the house', () => {
+  const paid = (
+    name: string,
+    placement: Sponsor['placement'],
+    extra: Partial<Sponsor> = {},
+  ): Sponsor => ({
+    name,
+    tagline: 'Tagline for ' + name,
+    url: 'https://' + name.toLowerCase() + '.example',
+    page: '/sponsors/' + name.toLowerCase(),
+    placement,
+    categories: [],
+    ...extra,
+  });
+  const all = [
+    paid('Old', 'both', { since: '2026-01-01T00:00:00Z' }),
+    paid('New', 'card', { since: '2026-03-01T00:00:00Z' }),
+    paid('Pinned', 'both', { since: '2025-01-01T00:00:00Z', position: 1 }),
+    paid('Hidden', 'both', { since: '2026-06-01T00:00:00Z', hidden: true }),
+    houseSponsor,
+  ];
+  assert.deepEqual(
+    pickSponsors('listing', all).map((s) => s.name),
+    ['Pinned', 'New', 'Old'],
+  );
+  assert.deepEqual(
+    pickSponsors('bar', all).map((s) => s.name),
+    ['Pinned', 'Old'],
+  );
+  assert.deepEqual(
+    pickSponsors('listing', all, undefined, 2).map((s) => s.name),
+    ['Pinned', 'New'],
+  );
+  assert.deepEqual(
+    pickSponsors('bar', [
+      paid('Hidden', 'both', { hidden: true }),
+      houseSponsor,
+    ]).map((s) => s.name),
+    ['AstroFabric'],
+  );
+  assert.deepEqual(pickSponsors('bar', [paid('Card', 'card')]), []);
 });

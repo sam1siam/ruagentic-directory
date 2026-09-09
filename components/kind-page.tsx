@@ -1,7 +1,7 @@
 import DirectoryBrowser from '@/components/directory-browser';
 import { catalog } from '@/lib/server/catalog';
 import { activeSponsors } from '@/lib/server/sponsors';
-import { pickSponsor } from '@/lib/advertising';
+import { pickSponsors } from '@/lib/advertising';
 import { kindBySlug } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
 export function kindMetadata(slug: string) {
@@ -31,7 +31,7 @@ export default async function KindPage({
       listings={listings}
       lock={{ kind: page.kind }}
       initial={params}
-      sponsor={pickSponsor('listing', sponsors)}
+      sponsors={pickSponsors('listing', sponsors)}
       heading={{
         title: page.name + '.',
         lead: page.description,

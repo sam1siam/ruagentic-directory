@@ -7,43 +7,81 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
   const plan = connectPlan(item);
   const docs = item.documentation || item.homepage;
   const questions: { q: string; a: React.ReactNode }[] = [];
+  const known = (answer: string) =>
+    !/^Not specified|^Not applicable/.test(answer);
   if (item.kind === 'server') {
-    questions.push({
-      q: 'What is the endpoint and how does it run?',
-      a: <p>{plan.transportAnswer}</p>,
-    });
-    questions.push({
-      q: 'Does it need authentication?',
-      a: (
-        <>
-          <p>{plan.authAnswer}</p>
-          {plan.requiredHeaders.length > 0 && (
-            <p>
-              Required request headers:{' '}
-              {plan.requiredHeaders.map((h, i) => (
-                <span key={h}>
-                  {i > 0 && ', '}
-                  <code>{h}</code>
-                </span>
-              ))}
-              .
-            </p>
-          )}
-          {plan.requiredEnv.length > 0 && (
-            <p>
-              Required environment variables:{' '}
-              {plan.requiredEnv.map((e, i) => (
-                <span key={e}>
-                  {i > 0 && ', '}
-                  <code>{e}</code>
-                </span>
-              ))}
-              .
-            </p>
-          )}
-        </>
-      ),
-    });
+    if (plan.remote || plan.pkg)
+      questions.push({
+        q: 'What is the endpoint and how does it run?',
+        a: <p>{plan.transportAnswer}</p>,
+      });
+    else
+      questions.push({
+        q: `How do I run ${item.name}?`,
+        a: (
+          <p>
+            {item.repository ? (
+              <>
+                Install and run it from its source repository,{' '}
+                <a
+                  href={item.repository}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {item.repository.replace(/^https?:\/\//, '')}
+                </a>
+                . The README there covers the install command and any
+                credentials it needs.
+              </>
+            ) : (
+              <>
+                The publisher’s{' '}
+                <a href={docs} target="_blank" rel="noopener noreferrer">
+                  documentation
+                </a>{' '}
+                covers how it is run.
+              </>
+            )}
+          </p>
+        ),
+      });
+    if (
+      known(plan.authAnswer) ||
+      plan.requiredHeaders.length ||
+      plan.requiredEnv.length
+    )
+      questions.push({
+        q: 'Does it need authentication?',
+        a: (
+          <>
+            <p>{plan.authAnswer}</p>
+            {plan.requiredHeaders.length > 0 && (
+              <p>
+                Required request headers:{' '}
+                {plan.requiredHeaders.map((h, i) => (
+                  <span key={h}>
+                    {i > 0 && ', '}
+                    <code>{h}</code>
+                  </span>
+                ))}
+                .
+              </p>
+            )}
+            {plan.requiredEnv.length > 0 && (
+              <p>
+                Required environment variables:{' '}
+                {plan.requiredEnv.map((e, i) => (
+                  <span key={e}>
+                    {i > 0 && ', '}
+                    <code>{e}</code>
+                  </span>
+                ))}
+                .
+              </p>
+            )}
+          </>
+        ),
+      });
     if (plan.snippets.length) {
       questions.push({
         q: `How do I add ${item.name} to Claude Code, Cursor or Claude Desktop?`,
@@ -66,20 +104,6 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
                 : ' Add the credentials the publisher documents.'}
             </p>
           </div>
-        ),
-      });
-    } else {
-      questions.push({
-        q: `How do I add ${item.name} to my MCP client?`,
-        a: (
-          <p>
-            Follow the publisher’s instructions in{' '}
-            <a href={docs} target="_blank" rel="noopener noreferrer">
-              the documentation
-            </a>
-            . Once a hosted endpoint or package is published here, this guide
-            shows ready-made client snippets.
-          </p>
         ),
       });
     }
@@ -132,7 +156,8 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
       ),
     });
   }
-  questions.push({ q: 'Is it free?', a: <p>{plan.pricingAnswer}</p> });
+  if (known(plan.pricingAnswer))
+    questions.push({ q: 'Is it free?', a: <p>{plan.pricingAnswer}</p> });
   return (
     <div className="connect-guide">
       {item.setup && (

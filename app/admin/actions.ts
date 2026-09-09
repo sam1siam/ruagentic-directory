@@ -257,3 +257,79 @@ export async function seedDemo(form: FormData) {
   revalidatePath('/dashboard');
   redirect('/admin?notice=' + encodeURIComponent(notice));
 }
+
+/** Top bar rotation interval, in seconds. */
+export async function saveBarSettings(form: FormData) {
+  const admin = await requireAdmin('/admin/sponsors');
+  const seconds = Math.round(Number(text(form, 'seconds', 6)));
+  if (!Number.isFinite(seconds) || seconds < 5 || seconds > 600) return;
+  const { error } = await adminClient()
+    .from('site_settings')
+    .upsert(
+      {
+        key: 'sponsor_bar',
+        value: { intervalSeconds: seconds },
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' },
+    );
+  if (error) throw error;
+  await log(admin.email, 'settings.sponsor_bar', 'interval', seconds + 's');
+  refresh();
+}
+
+/** Hide or show a sponsorship everywhere without touching its subscription. */
+export async function toggleSponsorHidden(form: FormData) {
+  const admin = await requireAdmin('/admin/sponsors');
+  const id = text(form, 'session', 200);
+  const hidden = text(form, 'hidden', 5) === 'true';
+  if (!/^cs_[A-Za-z0-9_]+$/.test(id)) return;
+  const { error } = await adminClient()
+    .from('ad_orders')
+    .update({ hidden, updated_at: new Date().toISOString() })
+    .eq('stripe_session_id', id);
+  if (error) throw error;
+  await log(admin.email, hidden ? 'sponsor.hide' : 'sponsor.show', id);
+  refresh();
+}
+
+/** Move a sponsorship up or down in the manual display order. Positions
+ *  are rewritten 1..n over every approved, active order so gaps never
+ *  matter. */
+export async function moveSponsor(form: FormData) {
+  const admin = await requireAdmin('/admin/sponsors');
+  const id = text(form, 'session', 200);
+  const direction = text(form, 'direction', 5);
+  if (!/^cs_[A-Za-z0-9_]+$/.test(id) || !['up', 'down'].includes(direction))
+    return;
+  const db = adminClient();
+  const { data, error } = await db
+    .from('ad_orders')
+    .select('stripe_session_id,position,created_at')
+    .eq('approval', 'approved')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  const rows = (data ?? []) as {
+    stripe_session_id: string;
+    position: number | null;
+    created_at: string;
+  }[];
+  rows.sort(
+    (a, b) =>
+      (a.position ?? Number.MAX_SAFE_INTEGER) -
+        (b.position ?? Number.MAX_SAFE_INTEGER) ||
+      b.created_at.localeCompare(a.created_at),
+  );
+  const index = rows.findIndex((r) => r.stripe_session_id === id);
+  const target = direction === 'up' ? index - 1 : index + 1;
+  if (index < 0 || target < 0 || target >= rows.length) return;
+  [rows[index], rows[target]] = [rows[target], rows[index]];
+  for (const [i, row] of rows.entries())
+    await db
+      .from('ad_orders')
+      .update({ position: i + 1 })
+      .eq('stripe_session_id', row.stripe_session_id);
+  await log(admin.email, 'sponsor.move-' + direction, id);
+  refresh();
+}

@@ -7,8 +7,8 @@ import {
   LightField,
 } from '@/components/design-interactions';
 import { directoryStats } from '@/lib/server/stats';
-import { activeSponsors } from '@/lib/server/sponsors';
-import { houseSponsor, pickSponsor } from '@/lib/advertising';
+import { activeSponsors, sponsorBarSettings } from '@/lib/server/sponsors';
+import { houseSponsor, pickSponsors } from '@/lib/advertising';
 import { gtmNoscriptSrc, gtmScript } from '@/lib/analytics';
 import './globals.css';
 import './hud.css';
@@ -41,11 +41,13 @@ export default async function RootLayout({
 }) {
   // Stats and sponsors come from the live directory at request time, never from a build snapshot.
   await connection();
-  const [stats, sponsors] = await Promise.all([
+  const [stats, sponsors, bar] = await Promise.all([
     directoryStats(),
     activeSponsors(),
+    sponsorBarSettings(),
   ]);
-  const bar = pickSponsor('bar', sponsors) ?? houseSponsor;
+  const bars = pickSponsors('bar', sponsors);
+  const barSponsors = bars.length ? bars : [houseSponsor];
   return (
     <html lang="en" className="dark">
       <head>
@@ -68,7 +70,11 @@ export default async function RootLayout({
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <SiteHeader stats={stats} sponsor={bar} />
+        <SiteHeader
+          stats={stats}
+          sponsors={barSponsors}
+          barInterval={bar.intervalSeconds}
+        />
         <DesignInteractions />
         <div id="main">
           <LightField />

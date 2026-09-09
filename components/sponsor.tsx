@@ -7,30 +7,6 @@ function hostname(url: string) {
     return '';
   }
 }
-/** Site-wide bar above the telemetry strip. The bar is the one placement
- *  that links straight out, carrying the directory referrer. */
-export function SponsorBar({ sponsor }: { sponsor: Sponsor }) {
-  return (
-    <div className="sponsor-bar">
-      <a
-        href={sponsorHref(sponsor.url)}
-        target="_blank"
-        rel="noopener sponsored"
-        className="sponsor-bar-link"
-      >
-        <span className="sponsor-label">Sponsored by</span>
-        <span className="sponsor-chip">{sponsor.name}</span>
-        <span className="sponsor-tagline">— {sponsor.tagline}</span>
-        <span className="sponsor-arrow" aria-hidden="true">
-          →
-        </span>
-      </a>
-      <Link href="/advertise" className="sponsor-cta">
-        Advertise with us →
-      </Link>
-    </div>
-  );
-}
 /** Card-shaped slot inside listing grids; opens the sponsor's page on the
  *  directory like any other card. */
 export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {

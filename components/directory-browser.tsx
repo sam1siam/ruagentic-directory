@@ -71,17 +71,18 @@ export default function DirectoryBrowser({
   mode = 'list',
   lock = {},
   initial = {},
-  sponsor = null,
-  categorySponsors = {},
+  sponsors = [],
+  sectionSponsors = {},
   heading,
 }: {
   listings: CatalogListing[];
   mode?: 'home' | 'list';
   lock?: { kind?: string; category?: string };
   initial?: Filters;
-  sponsor?: Sponsor | null;
-  /** Paid sponsors for the home page category sections, by category slug. */
-  categorySponsors?: Record<string, Sponsor>;
+  /** Sponsored cards shown ahead of the results on list pages. */
+  sponsors?: Sponsor[];
+  /** Sponsored cards per home section, keyed by kind or category slug. */
+  sectionSponsors?: Record<string, Sponsor[]>;
   heading?: { title: string; lead: string; count?: number };
 }) {
   const [q, setQ] = useState(initial.q ?? ''),
@@ -136,11 +137,11 @@ export default function DirectoryBrowser({
   };
   const grid = (
     items: CatalogListing[],
-    lead?: ReactNode,
+    leads: ReactNode[] = [],
     className?: string,
   ) => (
     <div className={'listing-grid' + (className ? ' ' + className : '')}>
-      {lead}
+      {leads}
       {items.map((item) => (
         <ToolCard
           key={item.slug}
@@ -318,9 +319,11 @@ export default function DirectoryBrowser({
         <div className="browse-main">
           {showFeatured ? (
             <>
-              {kinds.map((k, index) => {
+              {kinds.map((k) => {
                 const items = listings.filter((i) => i.kind === k.kind);
                 if (!items.length) return null;
+                // Up to four most recent sponsored cards lead each section of eight.
+                const leads = (sectionSponsors[k.slug] ?? []).slice(0, 4);
                 return (
                   <section className="browse-section" key={k.slug}>
                     <header className="section-head">
@@ -331,14 +334,10 @@ export default function DirectoryBrowser({
                       <Link href={'/' + k.slug}>View all →</Link>
                     </header>
                     {grid(
-                      spotlight(
-                        items,
-                        featured[k.kind],
-                        sponsor && index === 0 ? 7 : 8,
-                      ),
-                      sponsor && index === 0 ? (
-                        <SponsorCard sponsor={sponsor} key="sponsor" />
-                      ) : null,
+                      spotlight(items, featured[k.kind], 8 - leads.length),
+                      leads.map((s) => (
+                        <SponsorCard sponsor={s} key={'sponsor-' + s.page} />
+                      )),
                       'featured-grid',
                     )}
                   </section>
@@ -351,28 +350,28 @@ export default function DirectoryBrowser({
                 }))
                 .filter((c) => c.items.length >= 3)
                 .sort((a, b) => b.items.length - a.items.length)
-                .slice(0, 5)
-                .map((c) => (
-                  <section className="browse-section" key={c.slug}>
-                    <header className="section-head">
-                      <h2>
-                        {c.name} <b>{c.items.length}</b>
-                      </h2>
-                      <p>{c.description}</p>
-                      <Link href={categoryHref(c)}>View all →</Link>
-                    </header>
-                    {grid(
-                      spotlight(c.items, [], categorySponsors[c.slug] ? 7 : 8),
-                      categorySponsors[c.slug] ? (
-                        <SponsorCard
-                          sponsor={categorySponsors[c.slug]}
-                          key="sponsor"
-                        />
-                      ) : null,
-                      'featured-grid',
-                    )}
-                  </section>
-                ))}
+                .slice(0, 6)
+                .map((c) => {
+                  const leads = (sectionSponsors[c.slug] ?? []).slice(0, 4);
+                  return (
+                    <section className="browse-section" key={c.slug}>
+                      <header className="section-head">
+                        <h2>
+                          {c.name} <b>{c.items.length}</b>
+                        </h2>
+                        <p>{c.description}</p>
+                        <Link href={categoryHref(c)}>View all →</Link>
+                      </header>
+                      {grid(
+                        spotlight(c.items, [], 8 - leads.length),
+                        leads.map((s) => (
+                          <SponsorCard sponsor={s} key={'sponsor-' + s.page} />
+                        )),
+                        'featured-grid',
+                      )}
+                    </section>
+                  );
+                })}
             </>
           ) : (
             <section className="browse-section">
@@ -389,9 +388,9 @@ export default function DirectoryBrowser({
               {results.length ? (
                 grid(
                   results,
-                  sponsor ? (
-                    <SponsorCard sponsor={sponsor} key="sponsor" />
-                  ) : null,
+                  sponsors.map((s) => (
+                    <SponsorCard sponsor={s} key={'sponsor-' + s.page} />
+                  )),
                 )
               ) : (
                 <div className="empty-state">

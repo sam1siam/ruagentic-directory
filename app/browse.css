@@ -488,42 +488,9 @@
   gap: 48px;
   container: browse / inline-size;
 }
-/* .browse-page .listing-grid is repeat(auto-fill, minmax(300px, 1fr)) with a
-   14px gap, so N columns need 314N - 14 px. Featured sections render up to
-   eight cards and hide whatever would start a second row; on a single column
-   they show three. */
+/* Home sections show eight cards; a single column shows four. */
 @container browse (width < 614px) {
-  .featured-grid > :nth-child(n + 4) {
-    display: none;
-  }
-}
-@container browse (614px <= width < 928px) {
   .featured-grid > :nth-child(n + 5) {
-    display: none;
-  }
-}
-@container browse (928px <= width < 1242px) {
-  .featured-grid > :nth-child(n + 4) {
-    display: none;
-  }
-}
-@container browse (1242px <= width < 1556px) {
-  .featured-grid > :nth-child(n + 5) {
-    display: none;
-  }
-}
-@container browse (1556px <= width < 1870px) {
-  .featured-grid > :nth-child(n + 6) {
-    display: none;
-  }
-}
-@container browse (1870px <= width < 2184px) {
-  .featured-grid > :nth-child(n + 7) {
-    display: none;
-  }
-}
-@container browse (2184px <= width < 2498px) {
-  .featured-grid > :nth-child(n + 8) {
     display: none;
   }
 }
@@ -1059,4 +1026,33 @@
 }
 .pending-changes s {
   color: var(--faint);
+}
+
+/* ---------------------------------------------------------------- sponsor bar rotation */
+.sponsor-dots {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: 6px;
+}
+.sponsor-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.sponsor-dots i[data-on='true'] {
+  background: var(--cyan);
+}
+.sponsor-bar-link {
+  animation: sponsor-fade 0.4s ease-out;
+}
+@keyframes sponsor-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-bar-link {
+    animation: none;
+  }
 }

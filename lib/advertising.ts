@@ -67,6 +67,12 @@ export type Sponsor = {
   /** Category slugs the card placement covers; empty means every category. */
   categories: string[];
   house?: boolean;
+  /** ISO time the order was placed; newest first when no manual order is set. */
+  since?: string;
+  /** Manual order set by an admin; lower comes first, unset goes last. */
+  position?: number | null;
+  /** Hidden by an admin without cancelling the subscription. */
+  hidden?: boolean;
 };
 /** The house sponsor shown in every slot no paid sponsor covers. The
  *  description is AstroFabric's own product wording. */
@@ -196,25 +202,45 @@ export function sponsorHref(raw: string) {
     return raw;
   }
 }
-/** Pick the sponsor for a surface, optionally within a category. Paid
- *  sponsors take the slot ahead of the house sponsor and rotate every ten
- *  minutes so each one gets shown. */
-export function pickSponsor(
+/** Every sponsor eligible for a surface, optionally within a category, in
+ *  display order: paid sponsors by manual position, then newest first; the
+ *  house sponsor only when no paid sponsor qualifies. Hidden orders never
+ *  show. */
+export function pickSponsors(
   surface: Surface,
   sponsors: Sponsor[],
-  now = Date.now(),
   category?: string,
-): Sponsor | null {
+  limit?: number,
+): Sponsor[] {
   const eligible = sponsors.filter((s) => {
+    if (s.hidden) return false;
     const placement = placementById(s.placement);
     if (!placement || !placementSurfaces(placement).includes(surface))
       return false;
     if (surface === 'bar' || !category || !s.categories.length) return true;
     return s.categories.includes(category);
   });
-  if (!eligible.length) return null;
-  const paid = eligible.filter((s) => !s.house);
-  const pool = paid.length ? paid : eligible;
+  const paid = eligible
+    .filter((s) => !s.house)
+    .sort(
+      (a, b) =>
+        (a.position ?? Number.MAX_SAFE_INTEGER) -
+          (b.position ?? Number.MAX_SAFE_INTEGER) ||
+        (b.since ?? '').localeCompare(a.since ?? ''),
+    );
+  const list = paid.length ? paid : eligible.filter((s) => s.house);
+  return limit ? list.slice(0, limit) : list;
+}
+/** One sponsor for a single slot (detail tiles): the eligible list rotates
+ *  every ten minutes so each paid sponsor gets shown. */
+export function pickSponsor(
+  surface: Surface,
+  sponsors: Sponsor[],
+  now = Date.now(),
+  category?: string,
+): Sponsor | null {
+  const pool = pickSponsors(surface, sponsors, category);
+  if (!pool.length) return null;
   return pool[Math.floor(now / 600000) % pool.length];
 }
 /** Fields a sponsor may change after buying; the placement itself and the

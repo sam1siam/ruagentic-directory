@@ -4,7 +4,7 @@ import DirectoryBrowser from '@/components/directory-browser';
 import { BrowseSkeleton } from '@/components/skeletons';
 import { catalog } from '@/lib/server/catalog';
 import { activeSponsors } from '@/lib/server/sponsors';
-import { pickSponsor } from '@/lib/advertising';
+import { pickSponsors } from '@/lib/advertising';
 import { categories, categoryBySlug, type Category } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
 export const dynamic = 'force-dynamic';
@@ -61,7 +61,7 @@ async function CategoryListings({
       listings={listings}
       lock={{ category: category.name }}
       initial={query}
-      sponsor={pickSponsor('listing', sponsors, undefined, category.slug)}
+      sponsors={pickSponsors('listing', sponsors, category.slug)}
       heading={{
         title: category.name + '.',
         lead: category.description,

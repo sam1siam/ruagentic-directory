@@ -112,6 +112,8 @@ export type AdOrder = {
   reviewed_by: string | null;
   review_note: string;
   livemode: boolean;
+  hidden?: boolean;
+  position?: number | null;
   owner_id?: string | null;
   pending?: {
     tagline: string;

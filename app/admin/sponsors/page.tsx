@@ -7,7 +7,13 @@ import {
   sponsorHref,
 } from '@/lib/advertising';
 import { categoryBySlug } from '@/lib/categories';
-import { reviewSponsor } from '../actions';
+import {
+  moveSponsor,
+  reviewSponsor,
+  saveBarSettings,
+  toggleSponsorHidden,
+} from '../actions';
+import { sponsorBarSettings } from '@/lib/server/sponsors';
 const when = (iso: string | null) =>
   iso ? iso.slice(0, 16).replace('T', ' ') + ' UTC' : '—';
 function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
@@ -22,6 +28,7 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
           <span className={'badge ' + order.approval}>{order.approval}</span>
           <span className={'badge status ' + order.status}>{order.status}</span>
           {!order.livemode && <span className="badge test">test mode</span>}
+          {order.hidden && <span className="badge rejected">hidden</span>}
         </div>
         <span className="mono">{when(order.created_at)}</span>
       </header>
@@ -171,6 +178,19 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
           </button>
         )}
       </form>
+      {order.approval === 'approved' && order.status === 'active' && (
+        <form action={toggleSponsorHidden} className="admin-actions inline">
+          <input type="hidden" name="session" value={order.stripe_session_id} />
+          <input
+            type="hidden"
+            name="hidden"
+            value={order.hidden ? 'false' : 'true'}
+          />
+          <button className="button" type="submit">
+            {order.hidden ? 'Show everywhere' : 'Hide everywhere'}
+          </button>
+        </form>
+      )}
       {order.approval === 'rejected' && (
         <p className="muted">
           A rejected sponsor keeps paying until the subscription is cancelled.
@@ -182,7 +202,15 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
   );
 }
 export default async function Page() {
-  const orders = await adOrders();
+  const [orders, bar] = await Promise.all([adOrders(), sponsorBarSettings()]);
+  const live = orders
+    .filter((o) => o.approval === 'approved' && o.status === 'active')
+    .sort(
+      (a, b) =>
+        (a.position ?? Number.MAX_SAFE_INTEGER) -
+          (b.position ?? Number.MAX_SAFE_INTEGER) ||
+        b.created_at.localeCompare(a.created_at),
+    );
   const queue = orders.filter(
     (o) =>
       o.status === 'active' &&
@@ -191,6 +219,96 @@ export default async function Page() {
   const rest = orders.filter((o) => !queue.includes(o));
   return (
     <>
+      <section className="admin-section">
+        <div className="admin-section-head">
+          <h2>Top bar and display order</h2>
+          <p>
+            The bar rotates through approved sponsors with a bar placement in
+            the order below, pausing while hovered; the same order decides which
+            cards lead the home page (first four) and the listing pages. Hidden
+            orders stay out of every slot until shown again; a cancelled or
+            lapsed subscription drops out on its own. AstroFabric fills any
+            empty slot.
+          </p>
+        </div>
+        <form action={saveBarSettings} className="admin-actions">
+          <label htmlFor="bar-seconds" className="input-label">
+            Seconds per sponsor in the bar
+          </label>
+          <input
+            id="bar-seconds"
+            name="seconds"
+            type="number"
+            min={5}
+            max={600}
+            defaultValue={bar.intervalSeconds}
+            style={{ flex: '0 0 120px' }}
+          />
+          <button className="button" type="submit">
+            Save interval
+          </button>
+        </form>
+        {live.length ? (
+          <ol className="bar-order">
+            {live.map((o, i) => (
+              <li key={o.stripe_session_id}>
+                <span className="mono">{i + 1}</span>
+                <strong>{o.product}</strong>
+                <span className="badge">
+                  {placementById(o.placement)?.name ?? o.placement}
+                </span>
+                {o.hidden && <span className="badge rejected">hidden</span>}
+                {!o.livemode && <span className="badge test">test</span>}
+                <form action={moveSponsor} className="admin-actions inline">
+                  <input
+                    type="hidden"
+                    name="session"
+                    value={o.stripe_session_id}
+                  />
+                  <button
+                    className="button"
+                    name="direction"
+                    value="up"
+                    disabled={i === 0}
+                  >
+                    Up
+                  </button>
+                  <button
+                    className="button"
+                    name="direction"
+                    value="down"
+                    disabled={i === live.length - 1}
+                  >
+                    Down
+                  </button>
+                </form>
+                <form
+                  action={toggleSponsorHidden}
+                  className="admin-actions inline"
+                >
+                  <input
+                    type="hidden"
+                    name="session"
+                    value={o.stripe_session_id}
+                  />
+                  <input
+                    type="hidden"
+                    name="hidden"
+                    value={o.hidden ? 'false' : 'true'}
+                  />
+                  <button className="button" type="submit">
+                    {o.hidden ? 'Show' : 'Hide'}
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="muted">
+            No approved, active sponsorships yet; the bar shows AstroFabric.
+          </p>
+        )}
+      </section>
       <section className="admin-section">
         <div className="admin-section-head">
           <h2>

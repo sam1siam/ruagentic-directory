@@ -10,7 +10,7 @@ import { browserClient } from '@/lib/supabase/browser';
 import { categories, categoryHref, kinds } from '@/lib/categories';
 import type { DirectoryStats } from '@/lib/server/stats';
 import type { Sponsor } from '@/lib/advertising';
-import { SponsorBar } from '@/components/sponsor';
+import SponsorBar from '@/components/sponsor-bar';
 import {
   CornerBrackets,
   LightField,
@@ -60,10 +60,12 @@ function useAccountState() {
 
 export function SiteHeader({
   stats,
-  sponsor,
+  sponsors,
+  barInterval,
 }: {
   stats: DirectoryStats;
-  sponsor: Sponsor;
+  sponsors: Sponsor[];
+  barInterval: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -98,7 +100,7 @@ export function SiteHeader({
       : pathname === href || pathname.startsWith(href + '/');
   return (
     <>
-      <SponsorBar sponsor={sponsor} />
+      <SponsorBar sponsors={sponsors} intervalSeconds={barInterval} />
       <div className="telemetry-strip" aria-label="Directory telemetry">
         <span className="telemetry-live">
           <i className="live-dot" aria-hidden="true" />
