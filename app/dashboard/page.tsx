@@ -78,6 +78,7 @@ export default async function Page() {
       monthly: orderMonthly(o).display,
       renewsAt: facts[i]?.renewsAt ?? null,
       cancelAtPeriodEnd: facts[i]?.cancelAtPeriodEnd ?? false,
+      hasBilling: Boolean(o.stripe_customer_id),
       createdAt: o.created_at,
     }));
   } catch {

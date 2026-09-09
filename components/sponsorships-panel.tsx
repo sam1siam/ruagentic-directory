@@ -32,6 +32,8 @@ export type SponsorshipView = {
   monthly: string;
   renewsAt: string | null;
   cancelAtPeriodEnd: boolean;
+  /** False for orders without a Stripe customer, such as demo orders. */
+  hasBilling: boolean;
   createdAt: string;
 };
 const date = (iso: string | null) =>
@@ -178,9 +180,11 @@ function EditForm({
         )}
       </div>
       <p className="muted">
-        New monthly total once approved: <b>{total.display}</b>. Changes are
-        reviewed within 24–48 hours; your current creative stays live until
-        then, and category changes are billed with proration from approval.
+        New monthly total: <b>{total.display}</b>. Category changes are charged
+        or credited right away with proration. The wording goes through review
+        within 24–48 hours; your current creative stays live until then, and if
+        the changes are not approved the categories and billing return to what
+        they were.
       </p>
       {error && (
         <div className="notice error" role="alert">
@@ -340,17 +344,23 @@ export default function SponsorshipsPanel({
                         Edit creative
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className="button"
-                      disabled={busy === o.session}
-                      onClick={() => openPortal(o.session)}
-                    >
-                      {busy === o.session && (
-                        <LoaderCircle size={14} className="spin" />
-                      )}
-                      Manage billing
-                    </button>
+                    {o.hasBilling ? (
+                      <button
+                        type="button"
+                        className="button"
+                        disabled={busy === o.session}
+                        onClick={() => openPortal(o.session)}
+                      >
+                        {busy === o.session && (
+                          <LoaderCircle size={14} className="spin" />
+                        )}
+                        Manage billing
+                      </button>
+                    ) : (
+                      <span className="muted">
+                        No billing attached (demo order)
+                      </span>
+                    )}
                     {o.approval === 'approved' &&
                       o.status === 'active' &&
                       includesCard(o.placement) && (

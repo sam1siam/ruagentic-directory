@@ -218,13 +218,6 @@ export default async function Page({
           </section>
           <section className="source-panel">
             <h2>Sources and checks</h2>
-            {!item.imported && (
-              <p>
-                <strong>{item.source}.</strong> These details were supplied
-                through a RUAGENTIC account. They remain the submitter’s
-                assertions.
-              </p>
-            )}
             <a
               href={item.sourceUrl}
               target="_blank"

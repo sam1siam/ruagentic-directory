@@ -83,15 +83,18 @@ export async function reviewSponsor(form: FormData) {
     id,
     note,
   );
-  if (decision === 'approved') {
-    // Billing follows approval: match the extra-category line to the
-    // categories that are now live.
+  if (decision === 'approved' || (changes && decision === 'rejected')) {
+    // Category changes were charged when the sponsor saved them. Approval
+    // confirms the billing matches the live categories; rejecting pending
+    // changes reverts the extra-category line to the categories that stay
+    // live, with a prorated credit.
     const live = {
       stripe_subscription_id: String(order.stripe_subscription_id ?? ''),
       placement: String(order.placement),
-      categories: changes
-        ? pending!.categories.join(',')
-        : String(order.categories ?? ''),
+      categories:
+        changes && decision === 'approved'
+          ? pending!.categories.join(',')
+          : String(order.categories ?? ''),
     };
     try {
       const plan = await reconcileCategoryBilling(live);
