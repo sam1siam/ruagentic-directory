@@ -44,5 +44,17 @@ await test('sponsor emails promise a review and report the decision', () => {
   });
   assert.match(rejected.text, /unverifiable claim/);
   assert.match(rejected.html, /unverifiable claim/);
+  assert.match(rejected.text, /Edit your creative from your dashboard/);
   assert.ok(!rejected.html.includes('<script'));
+  const refunded = sponsorshipDecisionEmail({
+    decision: 'rejected',
+    product: 'Acme',
+    placement: 'Featured card',
+    slug: 'acme-abc123',
+    note: 'Not a fit for the directory.',
+    refunded: { amount: 'US$499' },
+  });
+  assert.match(refunded.subject, /refunded/i);
+  assert.match(refunded.text, /refunded US\$499/);
+  assert.match(refunded.text, /nothing further is due/);
 });

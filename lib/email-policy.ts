@@ -65,6 +65,8 @@ export function sponsorshipDecisionEmail(order: {
   note: string;
   /** True when the decision concerns edits to an already live creative. */
   changes?: boolean;
+  /** Set when the subscription was cancelled and the payment refunded. */
+  refunded?: { amount: string };
 }) {
   const page =
     'https://ruagentic.com/sponsors/' + encodeURIComponent(order.slug);
@@ -86,10 +88,17 @@ export function sponsorshipDecisionEmail(order: {
       text: `${order.product} is now live on RUAGENTIC.\n\nPlacement: ${order.placement}\nYour sponsor page: ${page}\n\nYour placement stays live while the subscription is active. Stripe holds your receipt and a link to manage or cancel. To change your creative, reply to this email.${order.note ? '\n\nNote from the reviewer: ' + order.note : ''}`,
       html: `<h1>Your sponsorship is live</h1><p>${escapeHtml(order.product)} is now live on RUAGENTIC.</p><p><strong>Placement:</strong> ${escapeHtml(order.placement)}<br><strong>Your sponsor page:</strong> <a href="${page}">${page}</a></p><p>Your placement stays live while the subscription is active. Stripe holds your receipt and a link to manage or cancel. To change your creative, reply to this email.</p>${order.note ? '<p><strong>Note from the reviewer:</strong> ' + escapeHtml(order.note) + '</p>' : ''}`,
     };
+  if (order.refunded)
+    return {
+      subject:
+        'Your RUAGENTIC sponsorship was not approved and has been refunded',
+      text: `We reviewed the creative for ${order.product} and could not approve it.${order.note ? '\n\nReason: ' + order.note : ''}\n\nWe have cancelled the subscription${order.refunded.amount ? ' and refunded ' + order.refunded.amount : ''}; the refund reaches your card within a few business days and nothing further is due. You are welcome to submit a new creative at https://ruagentic.com/advertise. Sponsorships follow the listing guidelines: https://ruagentic.com/guidelines`,
+      html: `<h1>Your sponsorship was not approved and has been refunded</h1><p>We reviewed the creative for ${escapeHtml(order.product)} and could not approve it.</p>${order.note ? '<p><strong>Reason:</strong> ' + escapeHtml(order.note) + '</p>' : ''}<p>We have cancelled the subscription${order.refunded.amount ? ' and refunded ' + escapeHtml(order.refunded.amount) : ''}; the refund reaches your card within a few business days and nothing further is due. You are welcome to <a href="https://ruagentic.com/advertise">submit a new creative</a>. Sponsorships follow the <a href="https://ruagentic.com/guidelines">listing guidelines</a>.</p>`,
+    };
   return {
-    subject: 'Your RUAGENTIC sponsorship could not be approved',
-    text: `We reviewed the creative for ${order.product} and could not approve it as submitted.${order.note ? '\n\nReason: ' + order.note : ''}\n\nReply to this email with a revised creative and we will review it again, or ask us to cancel and refund the subscription. Sponsorships follow the listing guidelines: https://ruagentic.com/guidelines`,
-    html: `<h1>Your sponsorship could not be approved</h1><p>We reviewed the creative for ${escapeHtml(order.product)} and could not approve it as submitted.</p>${order.note ? '<p><strong>Reason:</strong> ' + escapeHtml(order.note) + '</p>' : ''}<p>Reply to this email with a revised creative and we will review it again, or ask us to cancel and refund the subscription. Sponsorships follow the <a href="https://ruagentic.com/guidelines">listing guidelines</a>.</p>`,
+    subject: 'Your RUAGENTIC sponsorship needs a change before it goes live',
+    text: `We reviewed the creative for ${order.product} and could not approve it as submitted.${order.note ? '\n\nWhat to change: ' + order.note : ''}\n\nEdit your creative from your dashboard and send it for review again: https://ruagentic.com/dashboard. Your subscription stays active and the placement goes live as soon as the amended creative is approved. If you would rather cancel, reply to this email and we will cancel and refund it. Sponsorships follow the listing guidelines: https://ruagentic.com/guidelines`,
+    html: `<h1>Your sponsorship needs a change before it goes live</h1><p>We reviewed the creative for ${escapeHtml(order.product)} and could not approve it as submitted.</p>${order.note ? '<p><strong>What to change:</strong> ' + escapeHtml(order.note) + '</p>' : ''}<p><a href="https://ruagentic.com/dashboard">Edit your creative from your dashboard</a> and send it for review again. Your subscription stays active and the placement goes live as soon as the amended creative is approved. If you would rather cancel, reply to this email and we will cancel and refund it. Sponsorships follow the <a href="https://ruagentic.com/guidelines">listing guidelines</a>.</p>`,
   };
 }
 function placementWhere(placement: string, categories: string[]) {

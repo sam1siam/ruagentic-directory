@@ -164,3 +164,41 @@ export async function saveCreative(order: OwnedOrder, edit: CreativeEdit) {
 export const orderMonthly = (
   order: Pick<OwnedOrder, 'placement' | 'categories'>,
 ) => quote(order.placement as PlacementId, parseCategories(order.categories));
+/** Cancels a sponsorship's subscription right away and refunds its latest
+ *  payment. Needs Subscriptions (write), Invoices (read) and Refunds (write)
+ *  on the Stripe key. Returns what happened so the reviewer sees it. */
+export async function cancelAndRefund(order: OwnedOrder | AdOrder) {
+  const result = { cancelled: false, refundedCents: 0, note: '' };
+  if (!order.stripe_subscription_id) {
+    result.note = 'No Stripe subscription on this order.';
+    return result;
+  }
+  const service = stripe();
+  const sub = await service.subscriptions.retrieve(
+    order.stripe_subscription_id,
+    {
+      expand: ['latest_invoice.payments'],
+    },
+  );
+  if (sub.status !== 'canceled') {
+    await service.subscriptions.cancel(sub.id, {
+      invoice_now: false,
+      prorate: false,
+    });
+    result.cancelled = true;
+  }
+  const invoice =
+    typeof sub.latest_invoice === 'string' ? null : sub.latest_invoice;
+  const payment = invoice?.payments?.data.find(
+    (p) => p.status === 'paid' && p.payment.payment_intent,
+  );
+  const intent = payment?.payment.payment_intent;
+  const intentId = typeof intent === 'string' ? intent : intent?.id;
+  if (intentId) {
+    const refund = await service.refunds.create({ payment_intent: intentId });
+    result.refundedCents = refund.amount;
+  } else {
+    result.note = 'No paid invoice found to refund.';
+  }
+  return result;
+}

@@ -67,13 +67,11 @@ export async function GET(request: Request) {
     }
     let refreshed = 0;
     for (let i = 0; i < refreshes.length; i += 50) {
-      const batch = refreshes
-        .slice(i, i + 50)
-        .map((r) => ({
-          slug: r.slug,
-          data: r.data,
-          updated_at: new Date().toISOString(),
-        }));
+      const batch = refreshes.slice(i, i + 50).map((r) => ({
+        slug: r.slug,
+        data: r.data,
+        updated_at: new Date().toISOString(),
+      }));
       const { data, error } = await db
         .from('directory_entries')
         .upsert(batch, { onConflict: 'slug' })

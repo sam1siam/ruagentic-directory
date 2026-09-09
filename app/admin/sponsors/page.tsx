@@ -14,6 +14,7 @@ import {
   toggleSponsorHidden,
 } from '../actions';
 import { sponsorBarSettings } from '@/lib/server/sponsors';
+import ConfirmSubmit from '@/components/confirm-submit';
 const when = (iso: string | null) =>
   iso ? iso.slice(0, 16).replace('T', ' ') + ' UTC' : '—';
 function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
@@ -165,12 +166,33 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
               : 'Approve · go live'}
           </button>
         )}
-        {(order.approval !== 'rejected' || order.pending) && (
+        {order.pending && order.approval === 'approved' ? (
           <button className="button secondary" name="decision" value="rejected">
-            {order.pending && order.approval === 'approved'
-              ? 'Reject changes'
-              : 'Reject'}
+            Reject changes
           </button>
+        ) : (
+          <>
+            {order.approval !== 'rejected' && (
+              <button
+                className="button secondary"
+                name="decision"
+                value="rejected"
+                title="Placement stays off; the sponsor keeps paying and can edit and resend. The note is emailed as what to change."
+              >
+                Reject · ask to amend
+              </button>
+            )}
+            {order.status !== 'canceled' && order.stripe_subscription_id && (
+              <ConfirmSubmit
+                className="button secondary"
+                name="decision"
+                value="refunded"
+                message={`Cancel ${order.product}'s subscription and refund its last payment? This cannot be undone.`}
+              >
+                Reject & refund
+              </ConfirmSubmit>
+            )}
+          </>
         )}
         {order.approval !== 'pending' && !order.pending && (
           <button className="button" name="decision" value="pending">
@@ -191,17 +213,26 @@ function Order({ order, queue }: { order: AdOrder; queue: boolean }) {
           </button>
         </form>
       )}
-      {order.approval === 'rejected' && (
+      {order.approval === 'rejected' && order.status !== 'canceled' && (
         <p className="muted">
-          A rejected sponsor keeps paying until the subscription is cancelled.
-          Cancel or refund it in the Stripe dashboard (subscription{' '}
+          Asked to amend: the subscription stays active and the sponsor can edit
+          and resend from their dashboard, which puts the order back in this
+          queue. Use Reject & refund to cancel and refund instead (subscription{' '}
           <code>{order.stripe_subscription_id ?? '—'}</code>).
         </p>
+      )}
+      {order.approval === 'rejected' && order.status === 'canceled' && (
+        <p className="muted">Rejected; subscription cancelled and refunded.</p>
       )}
     </article>
   );
 }
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string }>;
+}) {
+  const { notice } = await searchParams;
   const [orders, bar] = await Promise.all([adOrders(), sponsorBarSettings()]);
   const live = orders
     .filter((o) => o.approval === 'approved' && o.status === 'active')
@@ -219,6 +250,7 @@ export default async function Page() {
   const rest = orders.filter((o) => !queue.includes(o));
   return (
     <>
+      {notice && <output className="notice">{notice.slice(0, 600)}</output>}
       <section className="admin-section">
         <div className="admin-section-head">
           <h2>Top bar and display order</h2>
@@ -315,9 +347,11 @@ export default async function Page() {
             Awaiting approval <b>{queue.length}</b>
           </h2>
           <p>
-            Sponsors are told to expect a decision within 24–48 hours. Approving
-            makes the placement render immediately; rejecting emails the note
-            below to the sponsor.
+            Sponsors are told to expect a decision within 24–48 hours and have
+            already paid the first month at checkout. Approving makes the
+            placement render immediately. Reject · ask to amend keeps the
+            subscription and emails the note as what to change; Reject &amp;
+            refund cancels the subscription and refunds the payment.
           </p>
         </div>
         {queue.length ? (

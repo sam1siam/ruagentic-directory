@@ -48,7 +48,8 @@ function stateLabel(o: SponsorshipView) {
   if (o.status === 'canceled') return ['Cancelled', 'rejected'];
   if (o.status === 'past_due') return ['Payment past due', 'rejected'];
   if (o.status === 'incomplete') return ['Awaiting payment', 'pending'];
-  if (o.approval === 'rejected') return ['Not approved', 'rejected'];
+  if (o.approval === 'rejected')
+    return ['Not approved · edit and resend', 'rejected'];
   if (o.approval === 'pending') return ['In review', 'pending'];
   if (o.cancelAtPeriodEnd)
     return ['Live · cancels ' + date(o.renewsAt), 'pending'];
@@ -304,6 +305,12 @@ export default function SponsorshipsPanel({
                   <p className="muted">
                     We review every creative within 24–48 hours and email you
                     when it goes live.
+                  </p>
+                )}
+                {o.approval === 'rejected' && o.status !== 'canceled' && (
+                  <p className="muted">
+                    We could not approve this creative as submitted; the email
+                    says what to change. Edit it and send it for review again.
                   </p>
                 )}
                 {editing === o.session ? (

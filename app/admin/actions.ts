@@ -6,8 +6,11 @@ import { requireAdmin } from '@/lib/server/admin';
 import { adminClient } from '@/lib/supabase/server';
 import { sendMail } from '@/lib/server/mail';
 import { sponsorshipDecisionEmail } from '@/lib/email-policy';
-import { placementById, type CreativeEdit } from '@/lib/advertising';
-import { reconcileCategoryBilling } from '@/lib/server/sponsorships';
+import { formatUsd, placementById, type CreativeEdit } from '@/lib/advertising';
+import {
+  cancelAndRefund,
+  reconcileCategoryBilling,
+} from '@/lib/server/sponsorships';
 
 const text = (form: FormData, key: string, max = 500) => {
   const value = form.get(key);
@@ -40,7 +43,7 @@ export async function reviewSponsor(form: FormData) {
   const note = text(form, 'note');
   if (
     !/^cs_[A-Za-z0-9_]+$/.test(id) ||
-    !['approved', 'rejected', 'pending'].includes(decision)
+    !['approved', 'rejected', 'refunded', 'pending'].includes(decision)
   )
     return;
   const db = adminClient();
@@ -53,6 +56,34 @@ export async function reviewSponsor(form: FormData) {
   const pending = (order.pending ?? null) as CreativeEdit | null;
   const changes = Boolean(pending) && order.approval === 'approved';
   const now = new Date().toISOString();
+  // "Reject & refund": cancel the subscription and refund the last payment
+  // before recording the rejection. Never applies to pending edits.
+  let refund: { amount: string; note: string; cancelled: boolean } | null =
+    null;
+  if (decision === 'refunded') {
+    if (changes) return;
+    try {
+      const r = await cancelAndRefund(order);
+      refund = {
+        amount: r.refundedCents ? formatUsd(r.refundedCents) : '',
+        cancelled: r.cancelled || String(order.status) === 'canceled',
+        note: r.refundedCents
+          ? `Subscription cancelled and ${formatUsd(r.refundedCents)} refunded.`
+          : (r.cancelled ? 'Subscription cancelled. ' : '') +
+            (r.note || 'Nothing was refunded.'),
+      };
+    } catch (err) {
+      refund = {
+        amount: '',
+        cancelled: false,
+        note:
+          'Stripe refused the cancellation or refund: ' +
+          (err as Error).message.slice(0, 200) +
+          ' Cancel and refund it in the Stripe dashboard.',
+      };
+    }
+  }
+  const outcome = decision === 'refunded' ? 'rejected' : decision;
   const review = {
     reviewed_at: now,
     reviewed_by: admin.email,
@@ -71,7 +102,11 @@ export async function reviewSponsor(form: FormData) {
         }
       : changes && decision === 'rejected'
         ? { ...review, pending: null }
-        : { ...review, approval: decision };
+        : {
+            ...review,
+            approval: outcome,
+            ...(refund?.cancelled ? { status: 'canceled' } : {}),
+          };
   const update = await db
     .from('ad_orders')
     .update(patch)
@@ -81,7 +116,7 @@ export async function reviewSponsor(form: FormData) {
     admin.email,
     'sponsor.' + (changes ? 'changes-' : '') + decision,
     id,
-    note,
+    refund ? refund.note + (note ? ' · ' + note : '') : note,
   );
   if (decision === 'approved' || (changes && decision === 'rejected')) {
     // Category changes were charged when the sponsor saved them. Approval
@@ -117,12 +152,12 @@ export async function reviewSponsor(form: FormData) {
   const notify =
     order.customer_email &&
     decision !== 'pending' &&
-    (changes || order.approval !== decision);
+    (changes || order.approval !== outcome || decision === 'refunded');
   if (notify)
     await sendMail(
       String(order.customer_email),
       sponsorshipDecisionEmail({
-        decision: decision as 'approved' | 'rejected',
+        decision: outcome as 'approved' | 'rejected',
         product: String(order.product),
         placement:
           placementById(String(order.placement))?.name ??
@@ -130,10 +165,13 @@ export async function reviewSponsor(form: FormData) {
         slug: String(order.slug),
         note,
         changes,
+        refunded: refund?.cancelled ? { amount: refund.amount } : undefined,
       }),
       'sponsorship-' + decision + '/' + id + '/' + Date.now(),
     ).catch(() => {});
   refresh();
+  if (refund)
+    redirect('/admin/sponsors?notice=' + encodeURIComponent(refund.note));
 }
 
 /** Close a listing report, optionally hiding the listing it describes. */
