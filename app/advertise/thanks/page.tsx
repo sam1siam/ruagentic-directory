@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { stripe } from '@/lib/server/payments';
 import { recordAdOrder } from '@/lib/server/ads';
 import { isAdMetadata, placementById, sponsorSlug } from '@/lib/advertising';
+import { reviewWindow } from '@/lib/admin-policy';
 import { CornerBrackets } from '@/components/design-interactions';
 export const metadata = {
   title: 'Sponsorship confirmed',
@@ -48,27 +49,21 @@ export default async function Page({
         <h1>
           {order
             ? order.paid
-              ? `${order.product} is sponsoring RUAGENTIC.`
+              ? `Thanks, ${order.product} is booked.`
               : 'Payment is being confirmed.'
             : 'Thank you.'}
         </h1>
         <p>
           {order
             ? order.paid
-              ? `Your ${order.placement} placement is active and appears within minutes. We have emailed a confirmation with your sponsor page link; Stripe emails your receipt and a link to manage or cancel the subscription.`
-              : 'Your placement activates as soon as Stripe confirms the payment. Stripe emails your receipt.'
-            : 'If you completed a checkout, your placement activates as soon as Stripe confirms it. Contact us if you need help.'}
+              ? `We review every creative and approve sponsorships within ${reviewWindow}. Your ${order.placement} placement goes live the moment it is approved, and we email you then. We have sent a confirmation with your sponsor page link; Stripe emails your receipt and a link to manage or cancel the subscription.`
+              : `Once Stripe confirms the payment we review your creative and approve it within ${reviewWindow}. Stripe emails your receipt.`
+            : `If you completed a checkout, we review your creative within ${reviewWindow} and email you when it is live. Contact us if you need help.`}
         </p>
         <div className="actions">
-          {order?.paid && order.placement !== 'Top bar' ? (
-            <Link href={order.page} className="button primary">
-              View your sponsor page →
-            </Link>
-          ) : (
-            <Link href="/" className="button primary">
-              View the directory →
-            </Link>
-          )}
+          <Link href="/" className="button primary">
+            View the directory →
+          </Link>
           <Link href="/contact" className="button">
             Contact us
           </Link>

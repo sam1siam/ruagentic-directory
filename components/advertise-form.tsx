@@ -113,7 +113,9 @@ export default function AdvertiseForm({ cancelled }: { cancelled?: boolean }) {
         </div>
         <p className="muted">
           Billed monthly · cancel anytime through the Stripe billing link in
-          your receipt · sponsors in the same placement rotate evenly.
+          your receipt · sponsors in the same placement rotate evenly · every
+          creative is reviewed and approved within 24–48 hours before it goes
+          live.
         </p>
       </section>
       {card && (

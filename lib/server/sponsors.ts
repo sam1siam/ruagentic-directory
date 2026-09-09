@@ -6,8 +6,9 @@ import {
   type Sponsor,
 } from '../advertising';
 import { adminClient, configured } from '../supabase/server';
-/** Active paid sponsors followed by the house sponsor, which fills any slot
- *  no paid sponsor covers. Any storage problem degrades to the house sponsor
+/** Approved, active paid sponsors followed by the house sponsor, which fills
+ *  any slot no paid sponsor covers. Orders wait for a reviewer's approval
+ *  before they render. Any storage problem degrades to the house sponsor
  *  rather than an error page. */
 export const activeSponsors = cache(async (): Promise<Sponsor[]> => {
   if (!configured()) return [houseSponsor];
@@ -16,6 +17,7 @@ export const activeSponsors = cache(async (): Promise<Sponsor[]> => {
       .from('ad_orders')
       .select('product,tagline,description,cta,url,placement,categories,slug')
       .eq('status', 'active')
+      .eq('approval', 'approved')
       .eq('livemode', true)
       .order('created_at')
       .limit(200);

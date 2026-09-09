@@ -109,6 +109,23 @@ assert.equal((await fetch(base + '/tools/astrofabric')).status, 200);
   );
 }
 {
+  const gated = await fetch(base + '/admin', { redirect: 'manual' });
+  assert.ok(
+    [302, 303, 307, 308].includes(gated.status),
+    'signed-out admin must redirect on the server, got ' + gated.status,
+  );
+  const bootstrap = await fetch(base + '/api/admin/bootstrap', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  });
+  assert.equal(
+    bootstrap.status,
+    401,
+    'admin bootstrap must require the secret',
+  );
+}
+{
   const gated = await fetch(base + '/dashboard', { redirect: 'manual' });
   assert.ok(
     [302, 303, 307, 308].includes(gated.status),

@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import Dashboard from '@/components/dashboard';
+import Link from 'next/link';
 import { configured, userClient, adminClient } from '@/lib/supabase/server';
+import { isAdminEmail } from '@/lib/admin-policy';
 export const metadata = {
   title: 'Your dashboard',
   robots: { index: false, follow: false },
@@ -35,29 +37,38 @@ export default async function Page() {
   if (submissions.error || bookmarks.error || events.error)
     throw new Error('Your dashboard could not be loaded.');
   return (
-    <Dashboard
-      email={user.user.email ?? ''}
-      submissions={(submissions.data ?? []).map((s) => ({
-        ...s,
-        hasUnpublishedChanges: !(events.data ?? []).some(
-          (e) => e.submission_id === s.id && e.revision === s.revision,
-        ),
-      }))}
-      saved={(bookmarks.data ?? []).flatMap((r) =>
-        (
-          r.directory_entries as unknown as {
-            data: { slug: string; name: string; summary: string };
-          } | null
-        )?.data
-          ? [
-              (
-                r.directory_entries as unknown as {
-                  data: { slug: string; name: string; summary: string };
-                }
-              ).data,
-            ]
-          : [],
+    <>
+      {isAdminEmail(user.user.email) && user.user.email_confirmed_at && (
+        <div className="content-page admin-entry">
+          <Link href="/admin" className="button secondary">
+            Open admin →
+          </Link>
+        </div>
       )}
-    />
+      <Dashboard
+        email={user.user.email ?? ''}
+        submissions={(submissions.data ?? []).map((s) => ({
+          ...s,
+          hasUnpublishedChanges: !(events.data ?? []).some(
+            (e) => e.submission_id === s.id && e.revision === s.revision,
+          ),
+        }))}
+        saved={(bookmarks.data ?? []).flatMap((r) =>
+          (
+            r.directory_entries as unknown as {
+              data: { slug: string; name: string; summary: string };
+            } | null
+          )?.data
+            ? [
+                (
+                  r.directory_entries as unknown as {
+                    data: { slug: string; name: string; summary: string };
+                  }
+                ).data,
+              ]
+            : [],
+        )}
+      />
+    </>
   );
 }

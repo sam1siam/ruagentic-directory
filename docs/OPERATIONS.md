@@ -80,6 +80,22 @@ Cards and tiles open the sponsor's page at `/sponsors/<slug>` (noindex), which c
 
 Sponsorship never affects ordering, source labels or Agentic Protocol checks, and every placement is labelled as sponsored.
 
+## Admin
+
+`/admin` is the review console: it requires a confirmed Supabase sign-in whose email is listed in `ADMIN_EMAILS` (default `hello@ruagentic.com`); anyone else gets a 404. Tabs: Overview (accounts created, free and paid listings, submissions and sponsorship orders for today, 7 and 30 days and all time, a daily chart, and the admin action log), Sponsorships (every order with all fields; approve, reject with a note that is emailed, or return to the queue), Submissions (by day range and route, with suspend/restore), Accounts (creations with confirmation state and listing counts), Reports (open and closed listing reports) and Email (the confirmation outbox with retry).
+
+Sponsorships render only when `approval = 'approved'` and the subscription is active; sponsors are told to expect a decision within 24–48 hours. Every admin action is written to `admin_actions`. Apply `supabase/migrations/202609080004_admin.sql`.
+
+To create or reset the admin account without putting a password in the repository, call the bootstrap endpoint with the cron secret (the address must be in `ADMIN_EMAILS`):
+
+```
+curl -X POST https://ruagentic.com/api/admin/bootstrap \
+  -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json" \
+  -d '{"email":"hello@ruagentic.com","password":"<at least 12 characters>"}'
+```
+
+Signing up through `/login` with that address works too; the account only needs to be confirmed.
+
 ## Catalog
 
 `data/catalog.json` bundles source-labelled listings. The public catalog merges database rows with bundled entries the database has not stored yet, and the hourly `/api/cron/seed` cron inserts those rows (never touching existing ones) so bookmarks and reports can reference them.

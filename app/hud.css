@@ -1915,6 +1915,10 @@ select optgroup {
   margin: 0 auto;
   padding: 56px var(--site-gutter) 48px;
 }
+.admin-entry {
+  padding-top: 32px;
+  padding-bottom: 0;
+}
 .content-page.narrow > :not(.confirmation-card) {
   max-width: 880px;
 }

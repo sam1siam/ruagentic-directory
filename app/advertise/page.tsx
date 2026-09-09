@@ -2,6 +2,7 @@ import Link from 'next/link';
 import AdvertiseForm from '@/components/advertise-form';
 import { directoryStats } from '@/lib/server/stats';
 import { categoryExtraAmount, formatUsd } from '@/lib/advertising';
+import { reviewWindow } from '@/lib/admin-policy';
 export const metadata = {
   title: 'Advertise',
   description:
@@ -19,8 +20,8 @@ export default async function Page({
         <h1>Sponsor the directory.</h1>
         <p className="lead">
           Reach the people building with MCP servers, clients and agentic
-          products. Pick a placement, submit your creative, and go live right
-          after payment.
+          products. Pick a placement, submit your creative, and go live once we
+          approve it, within {reviewWindow} of payment.
         </p>
       </div>
       <div className="advertise-layout">
@@ -47,10 +48,9 @@ export default async function Page({
             </li>
             <li>Pay securely by card through Stripe.</li>
             <li>
-              Your placement goes live within minutes and stays live while the
-              subscription is active. You get a confirmation email with your
-              sponsor page link; Stripe sends the receipt and a link to manage
-              or cancel.
+              We review your creative and approve it within {reviewWindow}. Your
+              placement goes live the moment it is approved, and we email you
+              then. Stripe sends the receipt and a link to manage or cancel.
             </li>
           </ol>
           <h2>Where you appear</h2>

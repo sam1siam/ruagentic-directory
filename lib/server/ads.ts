@@ -8,9 +8,11 @@ import {
   sponsorSlug,
 } from '../advertising';
 import { sponsorshipEmail, sponsorshipNotice } from '../email-policy';
-/** Records a completed sponsorship checkout. Idempotent on the session id;
- *  the sponsor and the site owner are emailed the first time a session is
- *  recorded (the provider idempotency key covers a webhook/thank-you race). */
+import { sendMail } from './mail';
+/** Records a completed sponsorship checkout as pending review. Idempotent on
+ *  the session id; the sponsor and the site owner are emailed the first time
+ *  a session is recorded (the provider idempotency key covers a
+ *  webhook/thank-you race). */
 export async function recordAdOrder(session: Stripe.Checkout.Session) {
   const metadata = session.metadata;
   if (!isAdMetadata(metadata) || !placementById(metadata.placement))
@@ -89,8 +91,7 @@ export async function syncAdSubscription(subscription: Stripe.Subscription) {
   if (error) throw error;
   return true;
 }
-/** Confirmation to the sponsor and a notice to the site owner, sent through
- *  the mail provider with an idempotency key per session and recipient. */
+/** "Received, under review" to the sponsor and a notice to the site owner. */
 async function notifySponsorship(order: {
   sessionId: string;
   email: string | null;
@@ -100,7 +101,6 @@ async function notifySponsorship(order: {
   slug: string;
   livemode: boolean;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) return;
   const placement = placementById(order.placement)!;
   const total = quote(placement.id, order.categories);
   const details = {
@@ -111,33 +111,16 @@ async function notifySponsorship(order: {
     slug: order.slug,
     livemode: order.livemode,
   };
-  const messages = [
-    order.email ? { to: order.email, ...sponsorshipEmail(details) } : null,
-    process.env.ADS_NOTIFY_EMAIL
-      ? {
-          to: process.env.ADS_NOTIFY_EMAIL,
-          ...sponsorshipNotice({ ...details, email: order.email }),
-        }
-      : null,
-  ].filter((m): m is NonNullable<typeof m> => Boolean(m));
-  for (const message of messages) {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + process.env.RESEND_API_KEY,
-        'Content-Type': 'application/json',
-        'Idempotency-Key':
-          'sponsorship/' + order.sessionId + '/' + message.to.toLowerCase(),
-      },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM,
-        ...(process.env.SUPPORT_EMAIL
-          ? { reply_to: process.env.SUPPORT_EMAIL }
-          : {}),
-        ...message,
-      }),
-      signal: AbortSignal.timeout(15000),
-      redirect: 'error',
-    });
-  }
+  if (order.email)
+    await sendMail(
+      order.email,
+      sponsorshipEmail(details),
+      'sponsorship/' + order.sessionId + '/' + order.email.toLowerCase(),
+    );
+  if (process.env.ADS_NOTIFY_EMAIL)
+    await sendMail(
+      process.env.ADS_NOTIFY_EMAIL,
+      sponsorshipNotice({ ...details, email: order.email }),
+      'sponsorship/' + order.sessionId + '/owner',
+    );
 }
