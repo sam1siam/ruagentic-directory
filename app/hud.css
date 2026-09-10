@@ -4231,3 +4231,58 @@ legend {
   color: inherit;
   font: inherit;
 }
+
+/* ---------------------------------------------------------------- badge kit */
+.badge-kit {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+.badge-previews {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+}
+.badge-previews img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.badge-previews img:first-child {
+  height: 28px;
+  width: auto;
+}
+.badge-snippets {
+  display: grid;
+  gap: 12px;
+}
+.badge-snippets .snippet .label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.badge-snippets .snippet button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--cyan);
+  font: inherit;
+  letter-spacing: inherit;
+}
+.badge-snippets .snippet button:hover {
+  color: #fff;
+}
+.badge-snippets pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.dashboard-list .badge-panel {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--glass-divider);
+  padding-top: 18px;
+}
+.dashboard-list .badge-panel > p {
+  margin: 0;
+}

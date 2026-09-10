@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Permissions-Policy',
@@ -33,13 +32,30 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Everything except the auth flow and the embed cards refuses framing.
       {
-        source: '/((?!auth/).*)',
+        source: '/((?!auth/|embed/).*)',
         headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
           {
             key: 'Content-Security-Policy',
             value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
+        ],
+      },
+      {
+        source: '/auth/:path*',
+        headers: [{ key: 'X-Frame-Options', value: 'DENY' }],
+      },
+      // Embed cards are made to be framed by other sites.
+      {
+        source: '/embed/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors *; object-src 'none'; base-uri 'self'",
+          },
+          { key: 'X-Robots-Tag', value: 'noindex' },
         ],
       },
       {

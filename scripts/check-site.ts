@@ -39,6 +39,29 @@ assert.equal(list.listings.length, 2);
 assert.ok(list.total >= 160, 'bundled catalog must be served in full');
 assert.equal(list.nextOffset, 2);
 const first = list.listings[0];
+const badge = await fetch(base + '/badge/' + first.slug + '.svg');
+assert.equal(badge.status, 200);
+assert.match(badge.headers.get('content-type') ?? '', /image\/svg\+xml/);
+assert.match(await badge.text(), /LISTED ON RUAGENTIC/);
+const card = await fetch(base + '/embed/' + first.slug + '.svg');
+assert.equal(card.status, 200);
+assert.match(await card.text(), /ruagentic\.com\/tools\//);
+const frame = await fetch(base + '/embed/' + first.slug);
+assert.equal(frame.status, 200);
+assert.match(frame.headers.get('content-type') ?? '', /text\/html/);
+assert.match(
+  frame.headers.get('content-security-policy') ?? '',
+  /frame-ancestors \*/,
+);
+assert.equal(frame.headers.get('x-frame-options'), null);
+assert.equal(frame.headers.get('x-robots-tag'), 'noindex');
+assert.match(await frame.text(), /target="_top"/);
+assert.equal((await fetch(base + '/badge/nope.svg')).status, 404);
+assert.equal((await fetch(base + '/embed/nope')).status, 404);
+assert.equal(
+  (await fetch(base + '/tools/' + first.slug)).headers.get('x-frame-options'),
+  'DENY',
+);
 for (const method of ['GET', 'HEAD']) {
   const confirmation = await fetch(
     base + '/auth/confirm?type=email&token_hash=' + 'a'.repeat(64),

@@ -27,7 +27,10 @@ export default async function Page() {
     { data: user } = await client.auth.getUser();
   if (!user.user) redirect('/login?next=/dashboard');
   const db = adminClient();
-  const [submissions, bookmarks, events] = await Promise.all([
+  const ownedIds =
+    (await client.from('submissions').select('id')).data?.map((r) => r.id) ??
+    [];
+  const [submissions, bookmarks, events, entries] = await Promise.all([
     client
       .from('submissions')
       .select('id,payload,state,slug,revision,updated_at')
@@ -41,15 +44,20 @@ export default async function Page() {
     db
       .from('publication_events')
       .select('submission_id,revision')
-      .in(
-        'submission_id',
-        (await client.from('submissions').select('id')).data?.map(
-          (r) => r.id,
-        ) ?? [],
-      ),
+      .in('submission_id', ownedIds),
+    db
+      .from('directory_entries')
+      .select('submission_id,data')
+      .in('submission_id', ownedIds),
   ]);
-  if (submissions.error || bookmarks.error || events.error)
+  if (submissions.error || bookmarks.error || events.error || entries.error)
     throw new Error('Your dashboard could not be loaded.');
+  const checkedAt = new Map(
+    (entries.data ?? []).map((e) => [
+      e.submission_id as string,
+      (e.data as { agenticCheckedAt?: string } | null)?.agenticCheckedAt,
+    ]),
+  );
   let sponsorships: SponsorshipView[] = [];
   try {
     const orders = await ownedOrders({
@@ -101,6 +109,7 @@ export default async function Page() {
           hasUnpublishedChanges: !(events.data ?? []).some(
             (e) => e.submission_id === s.id && e.revision === s.revision,
           ),
+          agenticCheckedAt: checkedAt.get(s.id) || undefined,
         }))}
         saved={(bookmarks.data ?? []).flatMap((r) =>
           (

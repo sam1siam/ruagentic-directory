@@ -13,6 +13,7 @@ import {
 import { catalog, listingBySlug } from '@/lib/server/catalog';
 import ListingActions from '@/components/listing-actions';
 import ConnectGuide from '@/components/connect-guide';
+import BadgeKit from '@/components/badge-kit';
 import { listingJsonLd } from '@/lib/seo';
 import { SponsorTile } from '@/components/sponsor';
 import { activeSponsors } from '@/lib/server/sponsors';
@@ -241,6 +242,27 @@ export default async function Page({
                 check covers published files, not ownership or service security.
               </p>
             )}
+          </section>
+          <section>
+            <h2>Badge and embed</h2>
+            <p>
+              Show this listing on your website or README. The badge and the
+              card link back to this page
+              {item.agenticCheckedAt
+                ? ' and say that the Agentic Protocol files passed the publication checker'
+                : ''}
+              .
+            </p>
+            <BadgeKit
+              item={{
+                slug: item.slug,
+                name: item.name,
+                kind: item.kind,
+                category: item.category,
+                summary: item.summary,
+                agenticCheckedAt: item.agenticCheckedAt,
+              }}
+            />
           </section>
         </div>
         <aside className="details-sidebar">

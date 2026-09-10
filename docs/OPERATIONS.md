@@ -168,3 +168,9 @@ The importer makes at most six credential-free HTTPS GET requests, two concurren
 Imported values remain editable. Re-import preserves touched fields, including deliberately cleared fields, and presents individual alternatives. Applying a suggestion invalidates the previous audit and consent. An open checkout locks editing and re-import. The preview displays Saved only after persistence and Passed only for the current, unexpired server audit.
 
 Before release, test new and returning magic-link users, cross-device email confirmation, expired/replayed links, GitHub success/cancellation/back navigation, sign-out, and persistence of the selected paid/free option through authentication. The automated suite verifies return URL restrictions, scanner GET/HEAD behavior, explicit POST, callback failure paths, source handling, import budgets, and edit preservation; real provider completion is a separate check.
+
+## Badges and embeds
+
+`/badge/<slug>.svg` serves a 28px badge, `/embed/<slug>.svg` a 480×150 card image and `/embed/<slug>` a self-contained HTML card for iframes. All three are generated in `lib/badge.ts` from the stored listing fields and cached publicly for a day. The "Agentic Protocol verified" wording appears only when the published entry carries `agenticCheckedAt`, i.e. it was published through the publication checker; paid and imported listings read "Listed on RUAGENTIC". Listing pages and the dashboard show copy-paste Markdown and HTML (`components/badge-kit.tsx`).
+
+`next.config.ts` exempts `/embed/` from `X-Frame-Options: DENY` and sets `frame-ancestors *` plus `X-Robots-Tag: noindex` there; every other route keeps the framing block. `scripts/check-site.ts` checks both.

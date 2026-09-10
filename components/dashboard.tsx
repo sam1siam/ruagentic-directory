@@ -5,14 +5,17 @@ import { Plus, ArrowUpRight, Bookmark, FolderOpen } from 'lucide-react';
 import SignOut from './sign-out';
 import { Button } from './ui/button';
 import { api } from '@/lib/client-api';
+import BadgeKit from './badge-kit';
 type Row = {
   id: string;
-  payload: { name: string; summary: string };
+  payload: { name: string; summary: string; kind?: string; category?: string };
   state: string;
   slug: string | null;
   revision: number;
   updated_at: string;
   hasUnpublishedChanges: boolean;
+  /** Set when the published entry passed the Agentic Protocol checker. */
+  agenticCheckedAt?: string;
 };
 export default function Dashboard({
   email,
@@ -29,6 +32,7 @@ export default function Dashboard({
   const [rows, setRows] = useState(submissions),
     [error, setError] = useState(''),
     [confirm, setConfirm] = useState<string | null>(null),
+    [kit, setKit] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
   return (
     <main className="content-page dashboard-page">
@@ -89,12 +93,43 @@ export default function Dashboard({
                       <ArrowUpRight size={15} />
                     </Link>
                   )}
+                  {row.slug && row.state === 'published' && (
+                    <Button
+                      variant="ghost"
+                      aria-expanded={kit === row.id}
+                      onClick={() => setKit(kit === row.id ? null : row.id)}
+                    >
+                      Badge & embed
+                    </Button>
+                  )}
                   {row.state === 'published' && (
                     <Button variant="ghost" onClick={() => setConfirm(row.id)}>
                       Unpublish
                     </Button>
                   )}
                 </div>
+                {kit === row.id && row.slug && (
+                  <div className="badge-panel">
+                    <p>
+                      Add the badge to your README or website. It links to your
+                      listing
+                      {row.agenticCheckedAt
+                        ? ' and says that your Agentic Protocol files passed the publication checker'
+                        : ''}
+                      .
+                    </p>
+                    <BadgeKit
+                      item={{
+                        slug: row.slug,
+                        name: row.payload.name,
+                        kind: row.payload.kind ?? 'server',
+                        category: row.payload.category ?? '',
+                        summary: row.payload.summary,
+                        agenticCheckedAt: row.agenticCheckedAt,
+                      }}
+                    />
+                  </div>
+                )}
                 {confirm === row.id && (
                   <div className="withdraw-confirm">
                     <p>

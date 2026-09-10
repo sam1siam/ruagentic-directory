@@ -34,6 +34,18 @@ export default function Page() {
         Use the slug returned by search. A missing or unpublished listing
         returns HTTP 404.
       </p>
+      <h2>Badges and embed cards</h2>
+      <pre className="setup-code">
+        {
+          'https://ruagentic.com/badge/{slug}.svg     28px badge\nhttps://ruagentic.com/embed/{slug}.svg     480×150 card image\nhttps://ruagentic.com/embed/{slug}         iframe card'
+        }
+      </pre>
+      <p>
+        Every listing page and the dashboard show copy-paste Markdown and HTML
+        for these. The badge reads “Agentic Protocol verified” only for listings
+        published through the publication checker; otherwise it reads “Listed on
+        RUAGENTIC”. Images cache for a day.
+      </p>
       <h2>Connect through MCP</h2>
       <p>
         Add <code>https://ruagentic.com/mcp</code> as a Streamable HTTP MCP
