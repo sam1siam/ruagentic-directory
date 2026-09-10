@@ -4,6 +4,8 @@ import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsors } from '@/lib/advertising';
 import { kindBySlug } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
+import JsonLd from '@/components/json-ld';
+import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo';
 export function kindMetadata(slug: string) {
   const page = kindBySlug(slug)!;
   return {
@@ -26,21 +28,31 @@ export default async function KindPage({
     catalog(),
     activeSponsors(),
   ]);
-  const listings = items
-    .filter((i) => i.kind === page.kind)
-    .map(toBrowserListing);
+  const ofKind = items.filter((i) => i.kind === page.kind);
+  const listings = ofKind.map(toBrowserListing);
   return (
-    <DirectoryBrowser
-      key={JSON.stringify(params)}
-      listings={listings}
-      lock={{ kind: page.kind }}
-      initial={params}
-      sponsors={pickSponsors('listing', sponsors)}
-      heading={{
-        title: page.name + '.',
-        lead: page.description,
-        count: listings.length,
-      }}
-    />
+    <>
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'RUAGENTIC', path: '/' },
+            { name: page.name, path: '/' + page.slug },
+          ]),
+          itemListJsonLd(page.name, ofKind),
+        ]}
+      />
+      <DirectoryBrowser
+        key={JSON.stringify(params)}
+        listings={listings}
+        lock={{ kind: page.kind }}
+        initial={params}
+        sponsors={pickSponsors('listing', sponsors)}
+        heading={{
+          title: page.name + '.',
+          lead: page.description,
+          count: listings.length,
+        }}
+      />
+    </>
   );
 }

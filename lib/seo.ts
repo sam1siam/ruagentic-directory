@@ -74,3 +74,74 @@ export function listingJsonLd(item: PublicListing, canonical: string) {
     ...(additional.length ? { additionalProperty: additional } : {}),
   };
 }
+
+const site = 'https://ruagentic.com';
+
+/** The site itself, with the search box's query parameter. */
+export function websiteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': site + '/#website',
+    name: 'RUAGENTIC',
+    url: site + '/',
+    description:
+      'The official Agentic Protocol directory of MCP servers, clients and AI agents.',
+    publisher: { '@id': site + '/#organization' },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: site + '/?q={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
+/** The organisation behind the directory; only public, verifiable links. */
+export function organizationJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': site + '/#organization',
+    name: 'RUAGENTIC',
+    url: site + '/',
+    logo: site + '/icon-512.png',
+    sameAs: ['https://github.com/ruagentic', 'https://ruagentic.org/'],
+  };
+}
+
+/** Breadcrumb trail; the last item is the current page. */
+export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: site + item.path,
+    })),
+  };
+}
+
+/** An ordered list of listing pages, capped so the block stays small. */
+export function itemListJsonLd(
+  name: string,
+  items: { name: string; slug: string }[],
+  limit = 50,
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    numberOfItems: items.length,
+    itemListElement: items.slice(0, limit).map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      url: site + '/tools/' + item.slug,
+    })),
+  };
+}

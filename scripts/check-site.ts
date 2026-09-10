@@ -26,6 +26,8 @@ const paths = [
   '/agentic.txt',
   '/README.md',
   '/llms.txt',
+  '/llms-full.txt',
+  '/.well-known/security.txt',
   '/openapi.json',
   '/sitemap.xml',
   '/robots.txt',
@@ -49,6 +51,19 @@ for (const [path, type] of [
   assert.match(res.headers.get('content-type') ?? '', new RegExp(type), path);
 }
 const home = await (await fetch(base + '/')).text();
+assert.match(home, /"@type":"WebSite"/);
+assert.match(home, /"@type":"Organization"/);
+const category = await (
+  await fetch(base + '/categories/developer-tools')
+).text();
+assert.match(category, /"@type":"BreadcrumbList"/);
+assert.match(category, /"@type":"ItemList"/);
+const security = await (await fetch(base + '/.well-known/security.txt')).text();
+assert.match(security, /^Contact: mailto:/m);
+assert.match(security, /^Expires: 20/m);
+const full = await (await fetch(base + '/llms-full.txt')).text();
+assert.match(full, /^## Categories$/m);
+assert.match(full, /^## MCP servers \(\d+\)$/m);
 assert.match(home, /<link rel="canonical" href="https:\/\/ruagentic\.com\/"/);
 assert.match(home, /<meta property="og:image" content="[^"]*opengraph-image/);
 assert.match(home, /<meta name="twitter:card" content="summary_large_image"/);

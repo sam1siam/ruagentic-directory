@@ -7,6 +7,8 @@ import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsors } from '@/lib/advertising';
 import { categories, categoryBySlug, type Category } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
+import JsonLd from '@/components/json-ld';
+import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
 export const dynamicParams = false;
 export function generateStaticParams() {
@@ -56,21 +58,32 @@ async function CategoryListings({
     catalog(),
     activeSponsors(),
   ]);
-  const listings = items
-    .filter((i) => i.category === category.name)
-    .map(toBrowserListing);
+  const inCategory = items.filter((i) => i.category === category.name);
+  const listings = inCategory.map(toBrowserListing);
   return (
-    <DirectoryBrowser
-      key={JSON.stringify(query)}
-      listings={listings}
-      lock={{ category: category.name }}
-      initial={query}
-      sponsors={pickSponsors('listing', sponsors, category.slug)}
-      heading={{
-        title: category.name + '.',
-        lead: category.description,
-        count: listings.length,
-      }}
-    />
+    <>
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'RUAGENTIC', path: '/' },
+            { name: 'Categories', path: '/categories' },
+            { name: category.name, path: '/categories/' + category.slug },
+          ]),
+          itemListJsonLd(category.name, inCategory),
+        ]}
+      />
+      <DirectoryBrowser
+        key={JSON.stringify(query)}
+        listings={listings}
+        lock={{ category: category.name }}
+        initial={query}
+        sponsors={pickSponsors('listing', sponsors, category.slug)}
+        heading={{
+          title: category.name + '.',
+          lead: category.description,
+          count: listings.length,
+        }}
+      />
+    </>
   );
 }

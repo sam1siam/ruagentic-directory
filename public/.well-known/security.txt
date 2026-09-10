@@ -1,0 +1,6 @@
+# Security contact for the RUAGENTIC directory (RFC 9116)
+Contact: mailto:hello@ruagentic.com
+Expires: 2027-09-09T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://ruagentic.com/.well-known/security.txt
+Policy: https://ruagentic.com/contact

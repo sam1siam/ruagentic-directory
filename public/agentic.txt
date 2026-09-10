@@ -6,7 +6,7 @@ Profile-Version: 1.1.0
 Type: site
 Origin: https://ruagentic.com
 Name: "RUAGENTIC Directory"
-Description: "RUAGENTIC is the official Agentic directory for agentic AI MCP servers, clients, and tools. Discover project capabilities and connection details, compare tools, and submit a listing with a one-time payment or verified free Agentic publication."
+Description: "RUAGENTIC is the official Agentic directory for MCP servers, clients, and AI agents. Discover project capabilities and connection details, compare tools, and submit a listing with a one-time payment or verified free Agentic publication."
 
 Resource: "website" "https://ruagentic.com/"
 Availability: retrieved
@@ -42,4 +42,4 @@ Reference: "specification" "Agentic" "https://ruagentic.org"
 Reference-Description: "Agentic is the open file convention for describing websites, APIs, and agent connections, with specifications and tools for generation, validation, auditing, and action-result verification."
 
 Reference: "directory" "RUAGENTIC" "https://ruagentic.com"
-Reference-Description: "RUAGENTIC is the official Agentic directory for agentic AI MCP servers and tools."
+Reference-Description: "RUAGENTIC is the official Agentic directory for MCP servers, clients, and AI agents."

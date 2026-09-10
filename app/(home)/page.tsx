@@ -4,6 +4,8 @@ import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsors, type Sponsor } from '@/lib/advertising';
 import { categories, kinds } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
+import JsonLd from '@/components/json-ld';
+import { organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
 export const metadata = { alternates: { canonical: '/' } };
 export default async function Home({
@@ -31,12 +33,15 @@ export default async function Home({
   for (const c of categories)
     sectionSponsors[c.slug] = pickSponsors('listing', paid, c.slug);
   return (
-    <DirectoryBrowser
-      key={JSON.stringify(params)}
-      mode="home"
-      listings={items.map(toBrowserListing)}
-      initial={params}
-      sectionSponsors={sectionSponsors}
-    />
+    <>
+      <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
+      <DirectoryBrowser
+        key={JSON.stringify(params)}
+        mode="home"
+        listings={items.map(toBrowserListing)}
+        initial={params}
+        sectionSponsors={sectionSponsors}
+      />
+    </>
   );
 }

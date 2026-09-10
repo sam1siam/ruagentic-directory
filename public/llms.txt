@@ -1,6 +1,6 @@
 # RUAGENTIC Directory
 
-> RUAGENTIC is the official Agentic Protocol directory for agentic AI MCP servers, clients, and tools. It is an independent directory, separate from the official Model Context Protocol registry.
+> RUAGENTIC is the official Agentic Protocol directory for MCP servers, clients, and AI agents. It is an independent directory, separate from the official Model Context Protocol registry.
 
 ## Discover
 - [Directory](https://ruagentic.com/): Search projects by name, capability, type, and category.
@@ -9,6 +9,7 @@
 - [Categories](https://ruagentic.com/categories): Twenty categories, from developer tools and AI models to security, e-commerce and travel, each with its own page.
 - [Agentic Protocol JSON](https://ruagentic.com/agentic.json): Machine-readable site profile.
 - [Agentic Protocol TXT](https://ruagentic.com/agentic.txt): Text index of the profile.
+- [Full index](https://ruagentic.com/llms-full.txt): This overview plus every category and every public listing, one line each.
 
 ## Publish
 - [Submit](https://ruagentic.com/submit): Sign in with GitHub or an email link, autofill and review project details from a public URL, then choose a one-time US$49.99 listing or verified free publication.

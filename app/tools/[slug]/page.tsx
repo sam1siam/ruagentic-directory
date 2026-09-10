@@ -14,7 +14,9 @@ import { catalog, listingBySlug } from '@/lib/server/catalog';
 import ListingActions from '@/components/listing-actions';
 import ConnectGuide from '@/components/connect-guide';
 import BadgeKit from '@/components/badge-kit';
-import { listingJsonLd } from '@/lib/seo';
+import { breadcrumbJsonLd, listingJsonLd } from '@/lib/seo';
+import JsonLd from '@/components/json-ld';
+import { kindByValue } from '@/lib/categories';
 import { SponsorTile } from '@/components/sponsor';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsor } from '@/lib/advertising';
@@ -77,11 +79,18 @@ export default async function Page({
   );
   return (
     <main className="content-page detail-page">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd).replaceAll('<', '\\u003c'),
-        }}
+      <JsonLd
+        data={[
+          jsonLd,
+          breadcrumbJsonLd([
+            { name: 'RUAGENTIC', path: '/' },
+            {
+              name: kindByValue(item.kind)?.name ?? 'Listings',
+              path: '/' + (kindByValue(item.kind)?.slug ?? ''),
+            },
+            { name: item.name, path: '/tools/' + item.slug },
+          ]),
+        ]}
       />
       <Link href="/" className="back-link">
         <ArrowLeft size={15} />
