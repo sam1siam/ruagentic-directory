@@ -1150,17 +1150,14 @@ select optgroup {
   color: #fff;
 }
 .brand-symbol {
-  min-width: 30px;
-  height: 22px;
-  padding: 0 4px;
-  border: 1.5px solid var(--cyan);
-  display: grid;
-  place-items: center;
-  font:
-    600 11px var(--font-code),
-    monospace;
-  letter-spacing: -0.02em;
+  width: 34px;
+  height: 30px;
+  flex: none;
   color: var(--cyan);
+}
+.brand-symbol.small {
+  width: 22px;
+  height: 20px;
 }
 .brand-label {
   font:
@@ -1440,6 +1437,9 @@ select optgroup {
   color: var(--faint);
 }
 .footer-short .footer-brand-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--body);
   font-weight: 700;
 }

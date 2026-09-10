@@ -141,10 +141,15 @@ export default function SubmissionForm({
     [fields, setFields] = useState<Record<string, string[]>>({}),
     [consent, setConsent] = useState(false),
     [published, setPublished] = useState<string | null>(null),
-    [tagDraft, setTagDraft] = useState(''),
     [reveal, setReveal] = useState(0),
     [scan, setScan] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  /** Text fields are uncontrolled while typing, so React never rewrites a
+   *  field between keystrokes (composition input, text suggestions and
+   *  browser extensions can otherwise lose or reorder characters). This key
+   *  remounts them whenever the listing is replaced from outside the fields. */
+  const [formKey, setFormKey] = useState(0);
+  const tagInput = useRef<HTMLInputElement>(null);
   const touched = useRef<ImportField[]>([]);
   const [imported, setImported] = useState<ImportResult | null>(null);
   const [preserved, setPreserved] = useState<ImportField[]>([]);
@@ -178,7 +183,12 @@ export default function SubmissionForm({
     void api('/api/submissions/' + id, undefined, 'GET')
       .then((data) => {
         if (!active) return;
-        setListing(data.submission.payload);
+        const typed = touched.current;
+        setListing((current) => ({
+          ...data.submission.payload,
+          ...Object.fromEntries(typed.map((key) => [key, current[key]])),
+        }));
+        setFormKey((k) => k + 1);
         touched.current = Object.keys(data.submission.payload) as ImportField[];
         setSaved(data.submission);
         setSavedAt(utc());
@@ -229,6 +239,12 @@ export default function SubmissionForm({
     setConsent(false);
     setFields((p) => ({ ...p, [key]: [] }));
   }
+  /** Replaces the listing from a saved draft or an import and remounts the
+   *  text fields so they show the new values. */
+  function replaceListing(next: ListingInput) {
+    setListing(next);
+    setFormKey((k) => k + 1);
+  }
   async function run(task: () => Promise<void>, label: string) {
     if (busyRef.current || busy) return;
     busyRef.current = true;
@@ -266,7 +282,7 @@ export default function SubmissionForm({
     });
     setSaved(data.submission);
     setSavedAt(utc());
-    setListing(data.submission.payload);
+    replaceListing(data.submission.payload);
     setAudit(null);
     window.history.replaceState(
       null,
@@ -380,8 +396,9 @@ export default function SubmissionForm({
         >
           <i aria-hidden="true">&gt;</i>
           <input
+            key={formKey}
             id={inputId}
-            value={String(listing[key])}
+            defaultValue={String(listing[key])}
             onChange={(e) => update(key, e.target.value as never)}
             aria-invalid={Boolean(fields[key]?.length)}
             placeholder={options.placeholder}
@@ -417,13 +434,10 @@ export default function SubmissionForm({
   }
   function addTag(raw: string) {
     const value = raw.trim().replace(/,+$/, '').trim();
-    if (!value) return;
-    if (listing.tags.length >= 8 || listing.tags.includes(value)) {
-      setTagDraft('');
+    if (tagInput.current) tagInput.current.value = '';
+    if (!value || listing.tags.length >= 8 || listing.tags.includes(value))
       return;
-    }
     update('tags', [...listing.tags, value]);
-    setTagDraft('');
   }
   const slug = saved?.slug || slugify(listing.name);
   const cleared = path === 'agentic' ? eligible : true;
@@ -710,7 +724,7 @@ export default function SubmissionForm({
                     <input
                       type="url"
                       id="import-url"
-                      value={url}
+                      defaultValue={url}
                       onChange={(e) => setUrl(e.target.value)}
                       placeholder={
                         sourceType === 'repository'
@@ -737,7 +751,7 @@ export default function SubmissionForm({
                           result.suggestions,
                           touched.current,
                         );
-                        setListing(merged.listing);
+                        replaceListing(merged.listing);
                         setImported(result);
                         setPreserved(merged.preserved);
                         setAudit(null);
@@ -815,6 +829,7 @@ export default function SubmissionForm({
                               disabled={locked}
                               onClick={() => {
                                 update(key, imported.suggestions[key] as never);
+                                setFormKey((k) => k + 1);
                                 setPreserved((p) => p.filter((x) => x !== key));
                               }}
                             >
@@ -872,8 +887,9 @@ export default function SubmissionForm({
                       }
                     >
                       <input
+                        key={formKey}
                         id="field-summary"
-                        value={listing.summary}
+                        defaultValue={listing.summary}
                         maxLength={240}
                         onChange={(e) => update('summary', e.target.value)}
                         aria-invalid={Boolean(fields.summary?.length)}
@@ -909,8 +925,9 @@ export default function SubmissionForm({
                         </span>
                       ))}
                       <input
+                        ref={tagInput}
                         id="field-tags"
-                        value={tagDraft}
+                        defaultValue=""
                         placeholder={
                           listing.tags.length
                             ? 'add tag…'
@@ -919,20 +936,19 @@ export default function SubmissionForm({
                         onChange={(e) => {
                           if (e.target.value.includes(','))
                             addTag(e.target.value);
-                          else setTagDraft(e.target.value);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            addTag(tagDraft);
+                            addTag(e.currentTarget.value);
                           } else if (
                             e.key === 'Backspace' &&
-                            !tagDraft &&
+                            !e.currentTarget.value &&
                             listing.tags.length
                           )
                             update('tags', listing.tags.slice(0, -1));
                         }}
-                        onBlur={() => addTag(tagDraft)}
+                        onBlur={(e) => addTag(e.currentTarget.value)}
                       />
                     </div>
                     {errorsFor('tags')}
@@ -948,8 +964,9 @@ export default function SubmissionForm({
                       }
                     >
                       <textarea
+                        key={formKey}
                         id="field-description"
-                        value={listing.description}
+                        defaultValue={listing.description}
                         maxLength={6000}
                         rows={5}
                         onChange={(e) => update('description', e.target.value)}
@@ -1075,8 +1092,9 @@ export default function SubmissionForm({
                     <div className="input-shell">
                       <i aria-hidden="true">&gt;</i>
                       <input
+                        key={formKey}
                         id="field-platforms"
-                        value={listing.platforms.join(', ')}
+                        defaultValue={listing.platforms.join(', ')}
                         onChange={(e) =>
                           update(
                             'platforms',
@@ -1095,9 +1113,10 @@ export default function SubmissionForm({
                     </label>
                     <div className="input-shell">
                       <textarea
+                        key={formKey}
                         id="field-capabilities"
                         rows={3}
-                        value={listing.capabilities.join('\n')}
+                        defaultValue={listing.capabilities.join('\n')}
                         onChange={(e) =>
                           update('capabilities', e.target.value.split('\n'))
                         }
@@ -1112,9 +1131,10 @@ export default function SubmissionForm({
                     </label>
                     <div className="input-shell code">
                       <textarea
+                        key={formKey}
                         id="field-setup"
                         rows={5}
-                        value={listing.setup}
+                        defaultValue={listing.setup}
                         onChange={(e) => update('setup', e.target.value)}
                         placeholder={
                           '{\n  "mcpServers": { "brave-search": {\n    "command": "npx", "args": ["-y", "@brave/search-mcp"]\n  } }\n}'

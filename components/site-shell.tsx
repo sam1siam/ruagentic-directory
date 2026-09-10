@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import BrandMark from '@/components/brand-mark';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
@@ -126,9 +127,7 @@ export function SiteHeader({
       </div>
       <header className={`site-header${inSubmit ? ' submission-header' : ''}`}>
         <Link href="/" className="brand" aria-label="RUAGENTIC directory home">
-          <span className="brand-symbol" aria-hidden="true">
-            {'{A}'}
-          </span>
+          <BrandMark />
           RUAGENTIC<span className="brand-label">DIR</span>
         </Link>
         {inSubmit ? (
@@ -385,7 +384,10 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
   if (pathname === '/')
     return (
       <footer className="site-footer footer-short">
-        <span className="footer-brand-mini">{'{A}'} RUAGENTIC</span>
+        <span className="footer-brand-mini">
+          <BrandMark className="brand-symbol small" />
+          RUAGENTIC
+        </span>
         <span>
           Official agentic directory · source and check dates on every listing
         </span>
@@ -405,9 +407,7 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
       <div className="footer-grid">
         <div className="footer-brand">
           <Link href="/" className="brand">
-            <span className="brand-symbol" aria-hidden="true">
-              {'{A}'}
-            </span>
+            <BrandMark />
             RUAGENTIC<span className="brand-label">DIR</span>
           </Link>
           <p>
