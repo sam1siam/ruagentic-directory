@@ -10,11 +10,16 @@ export async function readPublic(
   value: string,
   limit = 262144,
   deadline = Date.now() + 13000,
+  options: { allowQuery?: boolean; timeoutMs?: number } = {},
 ) {
   if (Date.now() >= deadline)
     throw new Error('The import time limit was reached.');
-  const url = new URL(cleanUrl(value)),
-    hostname = url.hostname.replace(/^\[|\]$/g, '');
+  const validationUrl = new URL(value);
+  const search = validationUrl.search;
+  if (options.allowQuery) validationUrl.search = '';
+  const url = new URL(cleanUrl(validationUrl.href));
+  if (options.allowQuery) url.search = search;
+  const hostname = url.hostname.replace(/^\[|\]$/g, '');
   const addresses = ipaddr.isValid(hostname)
     ? [
         {
@@ -106,7 +111,7 @@ export async function readPublic(
     );
     const timer = setTimeout(
       () => req.destroy(new Error('The page took too long to respond.')),
-      Math.max(1, Math.min(8000, deadline - Date.now())),
+      Math.max(1, Math.min(options.timeoutMs ?? 8000, deadline - Date.now())),
     );
     req.on('close', () => clearTimeout(timer));
     req.on('error', reject);

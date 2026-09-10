@@ -54,6 +54,8 @@ npm run build
 - `/mcp` — Streamable HTTP MCP with `search_directory` and `get_listing`; read-only, no key required.
 - `/agentic.json`, `/agentic.txt`, `/llms.txt`, `/openapi.json` — published machine-readable documentation.
 
+Daily discovery and the dedicated new-project outreach workflow are documented in [docs/DISCOVERY.md](docs/DISCOVERY.md). It excludes historical listings, uses private source checkpoints and invitation reservations, and keeps paid contact enrichment behind a separate production control.
+
 ## Agentic publication
 
 - [Agentic JSON profile](https://ruagentic.com/agentic.json)
