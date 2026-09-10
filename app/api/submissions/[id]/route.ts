@@ -4,6 +4,7 @@ import { ownedSubmission, databaseError } from '@/lib/server/submissions';
 import { adminClient } from '@/lib/supabase/server';
 import { fulfill } from '@/lib/server/payments';
 import { deliverEmails } from '@/lib/server/email';
+import { duplicatesFor } from '@/lib/server/duplicates';
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -63,6 +64,7 @@ export async function GET(
       currentRevisionPublished: Boolean(publication),
       audit: audits?.[0] ?? null,
       payments: currentPayments ?? [],
+      duplicates: await duplicatesFor(submission.payload, submission.slug),
     };
   });
 }

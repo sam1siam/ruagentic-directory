@@ -50,6 +50,13 @@ export default function Page() {
           deceptive claims, credential harvesting, malware, and unlawful
           services may be removed.
         </li>
+        <li>
+          <strong>One listing per project.</strong> A listing verified through
+          the publication checker replaces an imported entry for the same
+          project, and the old address redirects to it. Other duplicates are
+          reviewed and merged. Contact us if a listing of your project is not
+          yours.
+        </li>
       </ol>
       <h2>Free publication</h2>
       <p>

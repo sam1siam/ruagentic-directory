@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/server/admin';
+import { dismissDuplicates, mergeListing } from '@/lib/server/duplicates';
 import { adminClient } from '@/lib/supabase/server';
 import { sendMail } from '@/lib/server/mail';
 import { sponsorshipDecisionEmail } from '@/lib/email-policy';
@@ -420,4 +421,48 @@ export async function runHealthNow() {
   refresh();
   revalidatePath('/admin/health');
   redirect('/admin/health?notice=' + encodeURIComponent(notice));
+}
+
+const slugList = (value: string) =>
+  value
+    .split(',')
+    .map((v) => v.trim())
+    .filter((v) => /^[a-z0-9-]{1,120}$/.test(v));
+
+/** Keep one listing and merge the others into it (hide + redirect). */
+export async function mergeDuplicates(form: FormData) {
+  const admin = await requireAdmin('/admin/duplicates');
+  const winner = text(form, 'winner', 120);
+  const losers = slugList(text(form, 'losers', 2000)).filter(
+    (s) => s !== winner,
+  );
+  if (!/^[a-z0-9-]{1,120}$/.test(winner) || !losers.length) return;
+  try {
+    for (const loser of losers)
+      await mergeListing(
+        loser,
+        winner,
+        admin.email,
+        'Merged from the admin console',
+      );
+  } catch {
+    redirect('/admin/duplicates?notice=failed');
+  }
+  refresh();
+  revalidatePath('/admin/duplicates');
+  redirect('/admin/duplicates?notice=merged');
+}
+
+/** Record that these listings are different projects. */
+export async function keepDuplicates(form: FormData) {
+  const admin = await requireAdmin('/admin/duplicates');
+  const slugs = slugList(text(form, 'slugs', 2000));
+  if (slugs.length < 2) return;
+  try {
+    await dismissDuplicates(slugs, admin.email, text(form, 'note'));
+  } catch {
+    redirect('/admin/duplicates?notice=failed');
+  }
+  revalidatePath('/admin/duplicates');
+  redirect('/admin/duplicates?notice=kept');
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listingBySlug } from '@/lib/server/catalog';
+import { listingByAnySlug } from '@/lib/server/catalog';
 import { cardSvg, embedHtml } from '@/lib/badge';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ export async function GET(
 ) {
   const { file } = await params;
   const image = file.endsWith('.svg');
-  const item = await listingBySlug(image ? file.slice(0, -4) : file);
+  const item = (await listingByAnySlug(image ? file.slice(0, -4) : file))?.item;
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return new NextResponse(image ? cardSvg(item) : embedHtml(item), {
     headers: {

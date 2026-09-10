@@ -19,6 +19,7 @@ import {
   agentProtocols,
 } from '@/lib/listing';
 import { api } from '@/lib/client-api';
+import type { DuplicateMatch } from '@/lib/duplicates';
 import {
   mergeSuggestions,
   fieldNames,
@@ -152,6 +153,7 @@ export default function SubmissionForm({
   const tagInput = useRef<HTMLInputElement>(null);
   const touched = useRef<ImportField[]>([]);
   const [imported, setImported] = useState<ImportResult | null>(null);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
   const [preserved, setPreserved] = useState<ImportField[]>([]);
   const busyRef = useRef(false);
   const stepHeading = useRef<HTMLHeadingElement>(null);
@@ -191,6 +193,7 @@ export default function SubmissionForm({
         setFormKey((k) => k + 1);
         touched.current = Object.keys(data.submission.payload) as ImportField[];
         setSaved(data.submission);
+        setDuplicates(data.duplicates ?? []);
         setSavedAt(utc());
         setAudit(data.audit);
         setPaid(
@@ -281,6 +284,7 @@ export default function SubmissionForm({
       listing: parsed.data,
     });
     setSaved(data.submission);
+    setDuplicates(data.duplicates ?? []);
     setSavedAt(utc());
     replaceListing(data.submission.payload);
     setAudit(null);
@@ -675,6 +679,34 @@ export default function SubmissionForm({
             </div>
           )}
           {notice && <output className="notice success">{notice}</output>}
+          {duplicates.length > 0 && step >= 2 && !published && (
+            <output className="notice warning">
+              <AlertCircle size={16} />
+              <span>
+                This project is already listed as{' '}
+                {duplicates.map((d, i) => (
+                  <span key={d.slug}>
+                    {i > 0 ? ', ' : ''}
+                    <a
+                      href={'/tools/' + d.slug}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {d.name}
+                    </a>{' '}
+                    ({d.source}
+                    {d.verified ? ', verified' : ''})
+                  </span>
+                ))}
+                .{' '}
+                {duplicates.some((d) => d.submitted && d.verified)
+                  ? 'Its verified owner has already listed it. If that is you, use that account; otherwise publishing will be refused.'
+                  : path === 'agentic'
+                    ? 'A listing verified through the publication checker replaces an imported entry, and the old address will redirect here.'
+                    : 'It will be reviewed as a possible duplicate after publishing.'}
+              </span>
+            </output>
+          )}
           {busy && !running && (
             <output className="busy-status">
               <LoaderCircle size={14} className="spin" />

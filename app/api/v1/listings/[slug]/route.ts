@@ -1,4 +1,4 @@
-import { listingBySlug } from '@/lib/server/catalog';
+import { listingByAnySlug } from '@/lib/server/catalog';
 export const dynamic = 'force-dynamic';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +13,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const item = await listingBySlug((await params).slug);
+  const item = (await listingByAnySlug((await params).slug))?.item;
   if (!item)
     return Response.json({ error: 'Listing not found.' }, { status: 404 });
   const { sources: _sources, ...listing } = item;

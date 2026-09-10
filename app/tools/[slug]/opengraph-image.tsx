@@ -1,5 +1,5 @@
 import { ogContentType, ogImage, ogSize } from '@/lib/server/og';
-import { listingBySlug } from '@/lib/server/catalog';
+import { listingByAnySlug } from '@/lib/server/catalog';
 import { kindLabel } from '@/lib/badge';
 export const alt = 'Listing on RUAGENTIC';
 export const size = ogSize;
@@ -10,7 +10,7 @@ export default async function Image({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const item = await listingBySlug((await params).slug);
+  const item = (await listingByAnySlug((await params).slug))?.item;
   if (!item)
     return ogImage({
       eyebrow: 'RUAGENTIC directory',

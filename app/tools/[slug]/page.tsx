@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react';
-import { catalog, listingBySlug } from '@/lib/server/catalog';
+import { catalog, listingByAnySlug } from '@/lib/server/catalog';
 import ListingActions from '@/components/listing-actions';
 import ConnectGuide from '@/components/connect-guide';
 import BadgeKit from '@/components/badge-kit';
@@ -28,7 +28,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const item = await listingBySlug((await params).slug);
+  const item = (await listingByAnySlug((await params).slug))?.item;
   return item
     ? {
         title: item.name,
@@ -51,8 +51,11 @@ export default async function Page({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const item = await listingBySlug((await params).slug);
-  if (!item) notFound();
+  const found = await listingByAnySlug((await params).slug);
+  if (!found) notFound();
+  // A merged duplicate's old address moves permanently to the survivor.
+  if (found.moved) permanentRedirect('/tools/' + found.item.slug);
+  const item = found.item;
   const related = (await catalog())
     .filter((p) => p.slug !== item.slug && p.category === item.category)
     .slice(0, 3);

@@ -90,7 +90,7 @@ Lifecycle: an unpublished (withdrawn) listing answers 404 with a page saying it 
 
 ## Admin
 
-`/admin` is the review console: it requires a confirmed Supabase sign-in whose email is listed in `ADMIN_EMAILS` (default `hello@ruagentic.com`); anyone else gets a 404. Tabs: Overview (accounts created, free and paid listings, submissions and sponsorship orders for today, 7 and 30 days and all time, a daily chart, and the admin action log), Sponsorships (every order with all fields; approve, reject with a note that is emailed, or return to the queue), Submissions (by day range and route, with suspend/restore), Accounts (creations with confirmation state and listing counts), Reports (open and closed listing reports) and Email (the confirmation outbox with retry).
+`/admin` is the review console: it requires a confirmed Supabase sign-in whose email is listed in `ADMIN_EMAILS` (default `hello@ruagentic.com`); anyone else gets a 404. Tabs: Overview (accounts created, free and paid listings, submissions and sponsorship orders for today, 7 and 30 days and all time, a daily chart, and the admin action log), Sponsorships (every order with all fields; approve, reject with a note that is emailed, or return to the queue), Submissions (by day range and route, with suspend/restore), Accounts (creations with confirmation state and listing counts), Reports (open and closed listing reports), Email (the confirmation outbox with retry), Data health and Duplicates (listings sharing a homepage or repository, with merge and keep-apart decisions).
 
 Sponsorships render only when `approval = 'approved'` and the subscription is active; sponsors are told to expect a decision within 24–48 hours. Every admin action is written to `admin_actions`. Apply `supabase/migrations/202609080004_admin.sql`.
 
@@ -186,3 +186,15 @@ The root layout sets `openGraph` (type, site name, locale) and `twitter` (large 
 `lib/seo.ts` builds the JSON-LD blocks: WebSite (with the search action) and Organization on the home page, BreadcrumbList and ItemList on the type and category pages, and SoftwareApplication plus BreadcrumbList on listing pages. `components/json-ld.tsx` renders them. Only stored fields are emitted; there are no ratings, review counts or invented affiliations.
 
 `/llms-full.txt` (app/llms-full.txt/route.ts) is `public/llms.txt` followed by every category and every public listing, regenerated hourly from the catalog. `public/.well-known/security.txt` follows RFC 9116; its `Expires` line must be moved forward before it lapses (currently September 2027).
+
+## Duplicates
+
+A project is identified by its homepage's service identity (origin, or the repository path for GitHub homepages) and its normalised repository path (`lib/duplicates.ts`); "www." is ignored. Within one account the database already refuses a second submission for the same identity. Across the directory:
+
+- Saving or opening a submission returns `duplicates`, and the form warns which existing listing matches and what publishing will do.
+- Publishing is refused with HTTP 409 when another account's listing for the same project passed the publication checker (that check proves control of the domain).
+- A publication through the checker merges imported entries for the same project automatically (`mergeListing`: hidden everywhere, `listing_redirects` row, admin action `listing.merge` by `system`). Listings other people paid for are left alone and appear in the admin Duplicates tab.
+- The admin Duplicates tab lists every group of visible listings sharing a key; "Keep this one" merges the rest into it, "Keep all as different projects" records dismissals in `duplicate_dismissals`.
+- A merged slug keeps working: listing pages answer with a permanent redirect, and the API, badge, card and social-image routes resolve it to the survivor.
+
+Apply `supabase/migrations/202609080008_duplicates.sql`; until then merges and dismissals fail and the tab says so, while detection and the publish refusal still work.

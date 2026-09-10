@@ -8,6 +8,7 @@ import {
   type ListingInput,
 } from '../listing';
 import { HttpError } from './http';
+import { duplicatesFor, mergeListing } from './duplicates';
 import {
   Client,
   StreamableHTTPClientTransport,
@@ -152,6 +153,28 @@ export async function publishSubmission(owner: string, input: unknown) {
     })
     .strict()
     .parse(input);
+  const s = await ownedSubmission(owner, parsed.id);
+  // Another account's listing that passed the publication checker proves
+  // control of the project's domain, so it cannot be duplicated.
+  const matches = await duplicatesFor(s.payload, s.slug);
+  const claimed = matches.filter((m) => m.submitted && m.verified);
+  if (claimed.length) {
+    const { data: owners } = await adminClient()
+      .from('submissions')
+      .select('slug,owner_id')
+      .in(
+        'slug',
+        claimed.map((m) => m.slug),
+      );
+    const other = claimed.find((m) =>
+      (owners ?? []).some((o) => o.slug === m.slug && o.owner_id !== owner),
+    );
+    if (other)
+      throw new HttpError(
+        409,
+        `This project is already listed by its verified owner at ruagentic.com/tools/${other.slug}. If that is you, sign in with that account; otherwise contact support.`,
+      );
+  }
   const { data, error } = await adminClient().rpc('publish_submission', {
     p_owner: owner,
     p_id: parsed.id,
@@ -160,5 +183,25 @@ export async function publishSubmission(owner: string, input: unknown) {
     p_evidence: parsed.evidenceId,
   });
   if (error) databaseError(error);
-  return { slug: data.slug, url: 'https://ruagentic.com/tools/' + data.slug };
+  const merged: string[] = [];
+  if (parsed.method === 'agentic')
+    // A verified publication replaces imported entries for the same project;
+    // listings other people paid for stay and go to the review queue.
+    for (const m of matches.filter((x) => !x.submitted))
+      try {
+        await mergeListing(
+          m.slug,
+          data.slug,
+          'system',
+          'Replaced by the verified listing ' + data.slug,
+        );
+        merged.push(m.slug);
+      } catch {
+        /* the admin queue still shows the pair */
+      }
+  return {
+    slug: data.slug,
+    url: 'https://ruagentic.com/tools/' + data.slug,
+    merged,
+  };
 }

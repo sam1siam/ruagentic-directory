@@ -10,13 +10,16 @@ const tabs = [
   ['/admin/reports', 'Reports'],
   ['/admin/email', 'Email'],
   ['/admin/health', 'Data health'],
+  ['/admin/duplicates', 'Duplicates'],
 ] as const;
 export default function AdminTabs({
   pending,
   openReports,
+  duplicates = 0,
 }: {
   pending: number;
   openReports: number;
+  duplicates?: number;
 }) {
   const pathname = usePathname();
   return (
@@ -27,7 +30,9 @@ export default function AdminTabs({
             ? pending
             : href === '/admin/reports'
               ? openReports
-              : 0;
+              : href === '/admin/duplicates'
+                ? duplicates
+                : 0;
         const current =
           href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
         return (

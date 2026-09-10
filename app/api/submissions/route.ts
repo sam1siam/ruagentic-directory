@@ -6,6 +6,7 @@ import {
   rateLimit,
 } from '@/lib/server/http';
 import { saveSubmission } from '@/lib/server/submissions';
+import { duplicatesFor } from '@/lib/server/duplicates';
 import { adminClient } from '@/lib/supabase/server';
 export async function GET() {
   return respond(async () => {
@@ -25,8 +26,13 @@ export async function POST(request: Request) {
     sameOrigin(request);
     const user = await signedIn();
     await rateLimit('save:' + user.id, 100);
+    const submission = await saveSubmission(
+      user.id,
+      await body(request, 131072),
+    );
     return {
-      submission: await saveSubmission(user.id, await body(request, 131072)),
+      submission,
+      duplicates: await duplicatesFor(submission.payload, submission.slug),
     };
   });
 }

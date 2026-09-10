@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireAdmin, adOrders, reportRows } from '@/lib/server/admin';
 import AdminTabs from '@/components/admin-tabs';
+import { openDuplicateGroups } from '@/lib/server/duplicates';
 import './admin.css';
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -14,9 +15,11 @@ export default async function AdminLayout({
 }) {
   const admin = await requireAdmin();
   // Badges only; the tabs themselves report a missing migration in detail.
-  const [orders, reports] = await Promise.all([adOrders(), reportRows()]).catch(
-    () => [[], []] as const,
-  );
+  const [orders, reports, duplicates] = await Promise.all([
+    adOrders().catch(() => []),
+    reportRows().catch(() => []),
+    openDuplicateGroups().catch(() => []),
+  ]);
   const pending = orders.filter(
     (o) =>
       o.status === 'active' &&
@@ -35,7 +38,11 @@ export default async function AdminLayout({
           <Link href="/dashboard">Your dashboard →</Link>
         </div>
       </header>
-      <AdminTabs pending={pending} openReports={open} />
+      <AdminTabs
+        pending={pending}
+        openReports={open}
+        duplicates={duplicates.length}
+      />
       {children}
     </main>
   );

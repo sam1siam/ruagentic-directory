@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listingBySlug } from '@/lib/server/catalog';
+import { listingByAnySlug } from '@/lib/server/catalog';
 import { badgeSvg, isVerified } from '@/lib/badge';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,7 @@ export async function GET(
   const { file } = await params;
   if (!file.endsWith('.svg'))
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const item = await listingBySlug(file.slice(0, -4));
+  const item = (await listingByAnySlug(file.slice(0, -4)))?.item;
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return new NextResponse(badgeSvg(isVerified(item)), { headers: svgHeaders });
 }

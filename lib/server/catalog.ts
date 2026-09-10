@@ -50,6 +50,29 @@ export const catalog = cache(async (): Promise<PublicListing[]> => {
 export async function listingBySlug(slug: string) {
   return (await catalog()).find((item) => item.slug === slug);
 }
+/** Where a merged listing's old address now points, if anywhere. */
+export const redirectFor = cache(async (slug: string) => {
+  if (!configured()) return null;
+  try {
+    const { data } = await adminClient()
+      .from('listing_redirects')
+      .select('target')
+      .eq('slug', slug)
+      .maybeSingle();
+    return (data?.target as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+});
+/** A listing by its current slug, or by a slug that was merged into it;
+ *  `moved` tells callers to redirect to the current address. */
+export async function listingByAnySlug(slug: string) {
+  const item = await listingBySlug(slug);
+  if (item) return { item, moved: false };
+  const target = await redirectFor(slug);
+  const moved = target ? await listingBySlug(target) : undefined;
+  return moved ? { item: moved, moved: true } : null;
+}
 /** The fields whose change means an imported database row should be
  *  refreshed from the bundle. */
 export const fingerprint = (item: PublicListing) =>
