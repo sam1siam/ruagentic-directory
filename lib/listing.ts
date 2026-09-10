@@ -105,6 +105,10 @@ export const listingSchema = z
     capabilities: z.array(z.string().trim().min(2).max(100)).max(20),
     profileUrl: url.default(''),
     readmeUrl: url.default(''),
+    /** For agents other programs can call: an A2A agent card or the endpoint
+     *  a client connects to. Optional, products only in practice. */
+    agentCard: url.default(''),
+    agentProtocol: z.enum(['', 'a2a', 'acp', 'openai', 'custom']).default(''),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -117,7 +121,14 @@ export const listingSchema = z
       });
   });
 export type ListingInput = z.infer<typeof listingSchema>;
-export type PublicListing = ListingInput & {
+/** Public listings predate the optional agent fields, so those stay optional
+ *  on the read side; the schema fills them in on write. */
+export type PublicListing = Omit<
+  ListingInput,
+  'agentCard' | 'agentProtocol'
+> & {
+  agentCard?: string;
+  agentProtocol?: ListingInput['agentProtocol'];
   slug: string;
   source: string;
   sourceUrl: string;
@@ -152,6 +163,8 @@ export const emptyListing: ListingInput = {
   capabilities: [],
   profileUrl: '',
   readmeUrl: '',
+  agentCard: '',
+  agentProtocol: '',
 };
 export function serviceIdentity(input: Pick<ListingInput, 'homepage'>) {
   const u = new URL(cleanUrl(input.homepage));
@@ -217,3 +230,13 @@ export const listingPrice = {
   display: 'US$49.99',
   termsVersion: '2026-09-08',
 } as const;
+
+export const agentProtocols = [
+  ['', 'Not specified'],
+  ['a2a', 'A2A (agent card)'],
+  ['acp', 'ACP'],
+  ['openai', 'OpenAI Agents / Responses API'],
+  ['custom', 'Custom or documented API'],
+] as const;
+export const agentProtocolLabel = (value: string) =>
+  agentProtocols.find(([v]) => v === value)?.[1] ?? 'Not specified';

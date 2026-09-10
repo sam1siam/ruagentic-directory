@@ -2,7 +2,7 @@
  *  Every answer is derived from fields the publisher or registry supplied;
  *  when a field is empty the guide says so instead of guessing. Pure so it
  *  can be unit tested. */
-import type { PublicListing } from './listing';
+import { agentProtocolLabel, type PublicListing } from './listing.ts';
 
 export type Remote = {
   type?: string;
@@ -28,6 +28,8 @@ export type Snippet = {
 export type ConnectPlan = {
   /** Short identifier used as the server name in client configs. */
   key: string;
+  /** Agent card or endpoint for products other programs can call. */
+  agent: { url: string; protocol: string; label: string } | null;
   remote: { url: string; type: string } | null;
   pkg: { registryType: string; identifier: string; version: string } | null;
   transportAnswer: string;
@@ -87,7 +89,7 @@ export function connectPlan(
     | 'pricing'
     | 'remotes'
     | 'packages'
-  >,
+  > & { agentCard?: string; agentProtocol?: string },
 ): ConnectPlan {
   const key = keyFor(item.name);
   const remotes = ((item.remotes ?? []) as Remote[]).filter((r) => r.url);
@@ -184,8 +186,16 @@ export function connectPlan(
       : item.kind === 'server'
         ? 'The publisher has not listed a hosted endpoint or a package. Check the documentation for how it is run.'
         : '';
+  const agent = item.agentCard
+    ? {
+        url: item.agentCard,
+        protocol: item.agentProtocol || '',
+        label: agentProtocolLabel(item.agentProtocol || ''),
+      }
+    : null;
   return {
     key,
+    agent,
     remote,
     pkg,
     transportAnswer,

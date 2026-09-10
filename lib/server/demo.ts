@@ -37,6 +37,8 @@ const published: ListingInput = {
   capabilities: ['Directory search', 'Listing details'],
   profileUrl: '',
   readmeUrl: '',
+  agentCard: '',
+  agentProtocol: '',
 };
 const draft: ListingInput = {
   kind: 'product',
@@ -64,6 +66,8 @@ const draft: ListingInput = {
   ],
   profileUrl: '',
   readmeUrl: '',
+  agentCard: '',
+  agentProtocol: '',
 };
 export const demoSessionId = (ownerId: string) =>
   'cs_demo_' + ownerId.replace(/-/g, '').slice(0, 16);

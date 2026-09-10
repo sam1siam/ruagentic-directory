@@ -127,6 +127,37 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
       ),
     });
   } else {
+    if (plan.agent)
+      questions.push({
+        q: `How do other agents or clients connect to ${item.name}?`,
+        a: (
+          <div className="snippet-list">
+            <p>
+              {plan.agent.protocol === 'a2a'
+                ? 'It publishes an A2A agent card. Fetch the card to discover its skills and task endpoint, then send tasks with any A2A client:'
+                : plan.agent.protocol === 'acp'
+                  ? 'It speaks ACP. Connect to the endpoint below with an ACP client:'
+                  : plan.agent.protocol === 'openai'
+                    ? 'It is reachable through the OpenAI Agents or Responses API at the endpoint below:'
+                    : 'It exposes an agent endpoint; the publisher documents the protocol:'}
+            </p>
+            <div className="snippet">
+              <span className="label">
+                {plan.agent.protocol === 'a2a' ? 'Agent card' : 'Endpoint'} ·{' '}
+                {plan.agent.label}
+              </span>
+              <pre>
+                <code>
+                  {plan.agent.protocol === 'a2a'
+                    ? 'curl ' + plan.agent.url
+                    : plan.agent.url}
+                </code>
+              </pre>
+            </div>
+            {known(plan.authAnswer) && <p>{plan.authAnswer}</p>}
+          </div>
+        ),
+      });
     questions.push({
       q: `Where do I start with ${item.name}?`,
       a: (

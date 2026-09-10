@@ -133,3 +133,36 @@ await test('structured data carries only stored facts and never ratings', () => 
   });
   assert.equal(free.isAccessibleForFree, true);
 });
+
+await test('products with an agent card get a connect answer and structured data', () => {
+  const product = {
+    ...base,
+    kind: 'product' as const,
+    name: 'Helper Agent',
+    endpoint: '',
+    remotes: [],
+    packages: [],
+    transport: 'not-applicable' as const,
+    authentication: 'api-key' as const,
+    agentCard: 'https://agent.example.com/.well-known/agent.json',
+    agentProtocol: 'a2a' as const,
+  };
+  const plan = connectPlan(product);
+  assert.deepEqual(plan.agent, {
+    url: 'https://agent.example.com/.well-known/agent.json',
+    protocol: 'a2a',
+    label: 'A2A (agent card)',
+  });
+  assert.equal(connectPlan({ ...product, agentCard: '' }).agent, null);
+  const ld = listingJsonLd(
+    product,
+    'https://ruagentic.com/tools/helper-agent',
+  ) as Record<string, unknown>;
+  const props = ld.additionalProperty as { name: string; value: string }[];
+  assert.ok(
+    props.some((p) => p.name === 'Agent card' && p.value === product.agentCard),
+  );
+  assert.ok(
+    props.some((p) => p.name === 'Agent protocol' && p.value === 'a2a'),
+  );
+});

@@ -34,6 +34,17 @@ export function listingJsonLd(item: PublicListing, canonical: string) {
       ),
     ),
     ...(item.license ? [property('License', item.license)] : []),
+    ...(item.agentCard
+      ? [
+          property(
+            item.agentProtocol === 'a2a' ? 'Agent card' : 'Agent endpoint',
+            item.agentCard,
+          ),
+          ...(item.agentProtocol
+            ? [property('Agent protocol', item.agentProtocol)]
+            : []),
+        ]
+      : []),
   ];
   return {
     '@context': 'https://schema.org',

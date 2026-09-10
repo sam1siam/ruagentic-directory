@@ -16,6 +16,7 @@ import {
   emptyListing,
   listingSchema,
   type ListingInput,
+  agentProtocols,
 } from '@/lib/listing';
 import { api } from '@/lib/client-api';
 import {
@@ -996,6 +997,22 @@ export default function SubmissionForm({
                     placeholder: 'https://api.yoursite.com/mcp',
                     hint: 'Optional for local servers and clients. Listings with an endpoint and authentication details get a generated connect guide with client snippets, which ranks for setup searches.',
                   })}
+                  {listing.kind === 'product' && (
+                    <>
+                      {textField('agentCard', 'Agent card or endpoint URL', {
+                        code: true,
+                        placeholder:
+                          'https://agent.yoursite.com/.well-known/agent.json',
+                        hint: 'Optional. For agents other programs can call: an A2A agent card, or the endpoint a client connects to. Shown in the connect guide.',
+                      })}
+                      {selectField(
+                        'agentProtocol',
+                        'Agent protocol',
+                        agentProtocols.map(([v, l]) => [v, l] as const),
+                        'How other agents or clients talk to it.',
+                      )}
+                    </>
+                  )}
                   {textField('profileUrl', 'Agentic Protocol manifest URL', {
                     code: true,
                     placeholder: 'https://yoursite.com/agentic.json',
