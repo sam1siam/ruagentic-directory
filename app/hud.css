@@ -6,6 +6,19 @@
 * {
   box-sizing: border-box;
 }
+/* JetBrains Mono ships ligatures for pairs such as // and ://. Editable
+   fields reshape them around the caret, so typed characters render as gaps
+   or vanish until the next keystroke. Ligatures are off everywhere; the
+   font shorthand resets font-feature-settings, hence the priority. */
+*,
+::before,
+::after,
+::placeholder {
+  font-feature-settings:
+    'liga' 0,
+    'calt' 0 !important;
+  font-variant-ligatures: none !important;
+}
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 96px;
