@@ -28,7 +28,7 @@ export type Snippet = {
 export type ConnectPlan = {
   /** Short identifier used as the server name in client configs. */
   key: string;
-  /** Agent card or endpoint for products other programs can call. */
+  /** Agent card or endpoint for AI agents other programs can call. */
   agent: { url: string; protocol: string; label: string } | null;
   remote: { url: string; type: string } | null;
   pkg: { registryType: string; identifier: string; version: string } | null;

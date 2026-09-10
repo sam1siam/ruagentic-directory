@@ -162,8 +162,8 @@ export default function DirectoryBrowser({
           <div className="hero-copy">
             <DecodeHeadline />
             <p>
-              MCP servers, clients and agentic products with checked Agentic
-              Protocol files, documentation and connection details.
+              MCP servers, clients and AI agents with checked Agentic Protocol
+              files, documentation and connection details.
             </p>
             <button
               type="button"

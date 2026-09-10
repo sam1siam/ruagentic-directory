@@ -8,7 +8,7 @@ export function kindMetadata(slug: string) {
   const page = kindBySlug(slug)!;
   return { title: page.name, description: page.description };
 }
-/** Shared server component behind /servers, /clients and /products. */
+/** Shared server component behind /servers, /clients and /ai-agents. */
 export default async function KindPage({
   slug,
   searchParams,

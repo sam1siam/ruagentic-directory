@@ -17,7 +17,7 @@ export default function Page() {
       </pre>
       <p>
         Optional parameters: <code>q</code> searches names, summaries, and tags;{' '}
-        <code>kind</code> accepts server, client, or product;{' '}
+        <code>kind</code> accepts server, client, or product (AI agents);{' '}
         <code>category</code> matches a displayed category; <code>limit</code>{' '}
         is 1–100; <code>offset</code> selects a page.
       </p>

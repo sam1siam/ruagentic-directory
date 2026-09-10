@@ -24,7 +24,7 @@ const navigation = [
   ['Discover', '/'],
   ['Servers', '/servers'],
   ['Clients', '/clients'],
-  ['Products', '/products'],
+  ['AI agents', '/ai-agents'],
   ['Categories', '/categories'],
   ['Advertise', '/advertise'],
   ['List your project', '/submit'],
@@ -35,7 +35,7 @@ const actions = [
   ['Advertise', '/advertise', 'SPONSOR'],
   ['All MCP servers', '/servers', 'BROWSE'],
   ['All clients', '/clients', 'BROWSE'],
-  ['All agentic products', '/products', 'BROWSE'],
+  ['All AI agents', '/ai-agents', 'BROWSE'],
   ['Browse categories', '/categories', 'BROWSE'],
   ['Compare tools', '/compare', 'SIDE BY SIDE'],
   ['Your dashboard', '/dashboard', 'ACCOUNT'],
@@ -117,13 +117,10 @@ export function SiteHeader({
           CLIENTS <b>{pad(stats.clients)}</b>
         </span>
         <span>
-          PRODUCTS <b>{pad(stats.products)}</b>
+          AI AGENTS <b>{pad(stats.products)}</b>
         </span>
         <span className="telemetry-gap" />
         <UtcClock />
-        {stats.lastIndexed && (
-          <span className="telemetry-amber">INDEX {stats.lastIndexed}</span>
-        )}
       </div>
       <header className={`site-header${inSubmit ? ' submission-header' : ''}`}>
         <Link href="/" className="brand" aria-label="RUAGENTIC directory home">
@@ -478,7 +475,6 @@ export function SiteFooter({ stats }: { stats: DirectoryStats }) {
         <span>
           LISTINGS <b>{pad(stats.total)}</b>
         </span>
-        {stats.lastIndexed && <span>LAST INDEX {stats.lastIndexed}</span>}
         <span className="telemetry-gap" />
         <span>
           © {year} RUAGENTIC · Source information and check dates are shown on

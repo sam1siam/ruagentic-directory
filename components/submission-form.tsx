@@ -88,7 +88,7 @@ const kindLabel = (kind: string) =>
     ? 'MCP server'
     : kind === 'client'
       ? 'MCP client'
-      : 'Agentic product';
+      : 'AI agent';
 const slugify = (value: string) =>
   value
     .toLowerCase()
@@ -856,7 +856,7 @@ export default function SubmissionForm({
                         [
                           ['server', 'MCP server'],
                           ['client', 'Client'],
-                          ['product', 'Product'],
+                          ['product', 'AI agent'],
                         ] as const
                       ).map(([value, label]) => (
                         <button
@@ -1070,7 +1070,7 @@ export default function SubmissionForm({
                   ])}
                   {selectField(
                     'pricing',
-                    'Product pricing',
+                    'Pricing model',
                     [
                       ['unknown', 'Not specified'],
                       ['free', 'Free'],
@@ -1079,7 +1079,7 @@ export default function SubmissionForm({
                       ['open-source', 'Open source'],
                       ['contact', 'Contact'],
                     ],
-                    'Your product’s price model, separate from the directory fee.',
+                    'Your project’s price model, separate from the directory fee.',
                   )}
                   {textField('license', 'License', {
                     placeholder: 'MIT',

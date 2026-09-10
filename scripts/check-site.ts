@@ -8,7 +8,7 @@ const paths = [
   '/',
   '/servers',
   '/clients',
-  '/products',
+  '/ai-agents',
   '/categories',
   '/categories/developer-tools',
   '/advertise',

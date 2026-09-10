@@ -91,7 +91,7 @@ export default async function Page({
               ? 'MCP SERVER'
               : item.kind === 'client'
                 ? 'MCP CLIENT'
-                : 'AGENTIC PRODUCT'}
+                : 'AI AGENT'}
           </span>
           <h1>{item.name}</h1>
           <p>{item.summary}</p>

@@ -133,10 +133,10 @@ export const kinds = [
       'Editors, terminals, desktop apps and assistants that connect to MCP servers.',
   },
   {
-    slug: 'products',
+    slug: 'ai-agents',
     kind: 'product',
-    name: 'Agentic products',
-    singular: 'Agentic product',
+    name: 'AI agents',
+    singular: 'AI agent',
     description: 'Agents, frameworks and platforms built for autonomous work.',
   },
 ] as const;

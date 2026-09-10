@@ -3,7 +3,7 @@
   "info": {
     "title": "RUAGENTIC Directory API",
     "version": "1.0.0",
-    "description": "Read-only public discovery for MCP servers, clients, and agentic products."
+    "description": "Read-only public discovery for MCP servers, clients, and AI agents (kind product)."
   },
   "servers": [
     {

@@ -59,10 +59,9 @@ export function NetworkRail({ stats }: { stats: DirectoryStats }) {
       <div className="rail-title">{'// NETWORK'}</div>
       <div>{stats.total.toLocaleString()} listings indexed</div>
       <div>
-        {stats.servers} servers · {stats.clients} clients · {stats.products}{' '}
-        products
+        {stats.servers} servers · {stats.clients} clients · {stats.products} AI
+        agents
       </div>
-      {stats.lastIndexed && <div>last index {stats.lastIndexed}</div>}
     </aside>
   );
 }

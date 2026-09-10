@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: '%s · RUAGENTIC',
   },
   description:
-    'Discover MCP servers, clients, and agentic AI products. Compare capabilities, find connection details, and submit your project with a paid or verified free listing.',
+    'Discover MCP servers, clients, and AI agents. Compare capabilities, find connection details, and submit your project with a paid or verified free listing.',
 };
 export default async function RootLayout({
   children,

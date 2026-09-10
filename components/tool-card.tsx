@@ -40,7 +40,7 @@ export default function ToolCard({
             ? 'MCP SERVER'
             : kind === 'client'
               ? 'MCP CLIENT'
-              : 'AGENTIC PRODUCT'}
+              : 'AI AGENT'}
         </span>
       </div>
       <h3 className={styles.title}>{name}</h3>

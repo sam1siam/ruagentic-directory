@@ -134,7 +134,7 @@ await test('structured data carries only stored facts and never ratings', () => 
   assert.equal(free.isAccessibleForFree, true);
 });
 
-await test('products with an agent card get a connect answer and structured data', () => {
+await test('AI agents with an agent card get a connect answer and structured data', () => {
   const product = {
     ...base,
     kind: 'product' as const,

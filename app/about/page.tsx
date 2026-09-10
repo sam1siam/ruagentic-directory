@@ -10,7 +10,7 @@ export default function Page() {
       <h1>Find the right connection for your agents.</h1>
       <p>
         RUAGENTIC is the official Agentic Protocol directory for agentic AI MCP
-        servers and tools. Discover servers, clients, and products by what they
+        servers and tools. Discover servers, clients, and AI agents by what they
         do, compare their published capabilities, and find the documentation you
         need to get started.
       </p>

@@ -106,7 +106,7 @@ export const listingSchema = z
     profileUrl: url.default(''),
     readmeUrl: url.default(''),
     /** For agents other programs can call: an A2A agent card or the endpoint
-     *  a client connects to. Optional, products only in practice. */
+     *  a client connects to. Optional, AI agents only in practice. */
     agentCard: url.default(''),
     agentProtocol: z.enum(['', 'a2a', 'acp', 'openai', 'custom']).default(''),
   })
