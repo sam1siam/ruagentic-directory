@@ -31,6 +31,48 @@ import {
 import { leadPayload, Smartlead } from '../lib/discovery/smartlead.ts';
 import { DiscoveryStore, type Contact } from '../lib/discovery/store.ts';
 import { ProviderError, apiJson } from '../lib/discovery/http.ts';
+import { mcpSoMetadata } from '../lib/discovery/mcp-so.ts';
+
+void test('MCP.so reshuffled and renamed old entries use their exact original creation date', () => {
+  const html = `<h1>ExampleVerifiedFeatured</h1><script>const page={server:$R[16]={slug:'new-slug',previousSlug:'old-slug',name:'Example',description:'createdAt: a misleading string',createdAt:$R[17]=new Date('2025-07-21T09:03:18.907Z'),updatedAt:new Date('2026-09-10T10:00:00Z')},related:[{slug:'other',createdAt:new Date('2026-09-10T10:00:00Z')}]};</script>`;
+  const parsed = parseDetail(
+    { ...item, source: 'mcp-so', sourceUrl: 'https://mcp.so/servers/new-slug' },
+    html,
+  );
+  assert.equal(parsed.name, 'Example');
+  assert.equal(parsed.publishedAt, '2025-07-21T09:03:18.907Z');
+  assert.equal(isNew(parsed, new Set(), true, '2026-09-10T15:00:00Z'), false);
+  assert.equal(mcpSoMetadata(html, 'unrelated'), undefined);
+  assert.equal(
+    mcpSoMetadata(html, 'old-slug')?.publishedAt,
+    parsed.publishedAt,
+  );
+});
+
+void test('MCP.so dates are read without running JavaScript and ambiguous dates are held', () => {
+  const script = `<script>throw new Error('must never execute'); const page={server:{slug:'new',name:'New',createdAt:new Date('${CUTOFF}')}};</script>`;
+  assert.equal(mcpSoMetadata(script, 'new')?.publishedAt, CUTOFF);
+  assert.equal(
+    mcpSoMetadata(
+      `<script>const page={server:{slug:'new',createdAt:guessDate()}};</script>`,
+      'new',
+    ),
+    undefined,
+  );
+  assert.equal(
+    mcpSoMetadata(
+      script +
+        `<script>const other={server:{slug:'new',createdAt:new Date('2025-01-01')}};</script>`,
+      'new',
+    ),
+    undefined,
+  );
+  const unknown = parseDetail(
+    { ...item, source: 'mcp-so', sourceUrl: 'https://mcp.so/servers/new' },
+    '<h1>New</h1>',
+  );
+  assert.equal(unknown.dateEvidence, undefined);
+});
 
 const item: Candidate = {
   source: 'cline',

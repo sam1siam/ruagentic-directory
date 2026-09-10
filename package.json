@@ -23,6 +23,7 @@
     "@shadcn/react": "0.3.0",
     "@supabase/ssr": "0.12.6",
     "@supabase/supabase-js": "2.116.0",
+    "acorn": "8.18.0",
     "cheerio": "1.2.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",

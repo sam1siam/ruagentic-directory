@@ -11,7 +11,7 @@ The permanent cutoff is **September 10, 2026, 00:00 America/Toronto** (`2026-09-
 | Source | Discovery method | How newness is established |
 | --- | --- | --- |
 | Official MCP Registry | Public v0.1 API, paginated | Earliest publication across the complete server version history; a new version of an old server is excluded |
-| MCP.so | Public server and agent sitemaps, then new detail pages | Absent from a previous complete baseline; `lastmod` is ignored |
+| MCP.so | Public server and agent sitemaps, then new detail pages | New URL plus the exact server record's original `createdAt`; sitemap order can change, so absence alone never authorizes outreach |
 | PulseMCP | Public sitemap and allowed detail pages | Absent from a previous complete baseline; `lastmod` is ignored |
 | Cline | Official published `catalog.json`, MCP entries only | New catalog ID after a complete baseline |
 | Docker | Official v3 catalog | Original `dateAdded` |
@@ -23,6 +23,8 @@ The permanent cutoff is **September 10, 2026, 00:00 America/Toronto** (`2026-09-
 An undated site's first successful full snapshot is a baseline, not a lead list. This deliberately excludes entries already present at setup, including those whose exact publication time cannot be established. Failed, empty, or incomplete full catalogs do not replace a baseline. Source failures leave the other sources operational. A public feed can expose only its current window; an outage longer than that window can miss entries. A site that renames URLs without publication evidence may require manual review. No scraper can guarantee that an undated source's newly appearing URL represents a newly created company.
 
 Public crawling checks robots.txt, uses the identified RUAGENTIC user agent, pins public DNS addresses, caps bytes and time, and never uses browser sessions, executes a submitted command, or bypasses a bot wall.
+
+MCP.so's public server-rendered metadata is parsed as JavaScript syntax without execution, matching the exact server slug and reading only its name and original creation date. Unreadable or conflicting dates are held as `needs_publication_evidence`; old renamed or promoted entries are skipped. Product Hunt's feed currently returns HTTP 403 from Vercel, and Cursor returns HTTP 429. These failures are recorded independently. Product Hunt's [API documentation](https://api.producthunt.com/v2/docs) requires permission for commercial use; API access is not enabled pending that permission.
 
 ## Contacts and campaign
 

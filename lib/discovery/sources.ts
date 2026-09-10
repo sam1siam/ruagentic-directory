@@ -8,6 +8,7 @@ import {
   type Source,
 } from './policy.ts';
 import { readPage } from './http.ts';
+import { mcpSoMetadata } from './mcp-so.ts';
 import {
   clineCatalog,
   dockerCatalog,
@@ -287,6 +288,19 @@ export function parseDetail(item: Candidate, html: string): Candidate {
         }
       }
     } catch {}
+  }
+  if (item.source === 'mcp-so') {
+    const slug = decodeURIComponent(
+      new URL(item.sourceUrl).pathname.split('/').filter(Boolean).at(-1)!,
+    );
+    const metadata = mcpSoMetadata(html, slug);
+    // This source's paginated sitemap can reshuffle old entries between reads.
+    // Absence alone is not publication evidence; the exact server's date is required.
+    next.publishedAt = metadata?.publishedAt;
+    next.dateEvidence = metadata
+      ? 'MCP.so exact server record createdAt (not updatedAt or sitemap position)'
+      : undefined;
+    if (metadata?.name) next.name = bounded(metadata.name, 200);
   }
   return next;
 }

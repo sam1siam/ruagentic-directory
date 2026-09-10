@@ -221,11 +221,25 @@ export async function runDiscovery(
               (await readPage(item.sourceUrl, deadline)).text,
             );
           }
+          if (
+            item.source === 'mcp-so' &&
+            (!item.publishedAt || !item.dateEvidence)
+          ) {
+            await store.update(row.id, {
+              status: 'needs_publication_evidence',
+              reason:
+                'MCP.so sitemap changes do not establish a new listing; exact publication date is required',
+              data: item,
+            });
+            report.candidates.skipped++;
+            continue;
+          }
           // A later detail-page date can disqualify an apparent new sitemap entry.
           if (
             item.publishedAt &&
             (Date.parse(item.publishedAt) < Date.parse(CUTOFF) ||
-              !Number.isFinite(Date.parse(item.publishedAt)))
+              !Number.isFinite(Date.parse(item.publishedAt)) ||
+              Date.parse(item.publishedAt) > now.getTime())
           ) {
             await store.update(row.id, {
               status: 'skipped',
