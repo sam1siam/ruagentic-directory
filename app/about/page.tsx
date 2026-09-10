@@ -1,8 +1,9 @@
 import Link from 'next/link';
 export const metadata = {
-  title: 'About RUAGENTIC',
+  title: 'About',
   description:
-    'The official Agentic Protocol directory for agentic AI MCP servers, clients and tools.',
+    'The official Agentic Protocol directory for MCP servers, clients and AI agents, and how its listings are sourced and checked.',
+  alternates: { canonical: '/about' },
 };
 export default function Page() {
   return (

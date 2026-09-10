@@ -10,6 +10,7 @@ export const metadata = {
   title: 'Categories',
   description:
     'Browse MCP servers, clients and AI agents by category, from developer tools and data to automation and finance.',
+  alternates: { canonical: '/categories' },
 };
 /** The skeleton lives inside the page rather than in a loading file so it
  *  never wraps the category child routes, whose unknown slugs must 404. */

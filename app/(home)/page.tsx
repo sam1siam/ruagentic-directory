@@ -5,6 +5,7 @@ import { pickSponsors, type Sponsor } from '@/lib/advertising';
 import { categories, kinds } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
 export const dynamic = 'force-dynamic';
+export const metadata = { alternates: { canonical: '/' } };
 export default async function Home({
   searchParams,
 }: {

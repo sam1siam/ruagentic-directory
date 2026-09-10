@@ -174,3 +174,9 @@ Before release, test new and returning magic-link users, cross-device email conf
 `/badge/<slug>.svg` serves a 28px badge, `/embed/<slug>.svg` a 480×150 card image and `/embed/<slug>` a self-contained HTML card for iframes. All three are generated in `lib/badge.ts` from the stored listing fields and cached publicly for a day. The "Agentic Protocol verified" wording appears only when the published entry carries `agenticCheckedAt`, i.e. it was published through the publication checker; paid and imported listings read "Listed on RUAGENTIC". Listing pages and the dashboard show copy-paste Markdown and HTML (`components/badge-kit.tsx`).
 
 `next.config.ts` exempts `/embed/` from `X-Frame-Options: DENY` and sets `frame-ancestors *` plus `X-Robots-Tag: noindex` there; every other route keeps the framing block. `scripts/check-site.ts` checks both.
+
+## Social images, icons and page metadata
+
+`lib/server/og.tsx` renders the Open Graph and Twitter images with `next/og` in the HUD style; `app/opengraph-image.tsx` covers the site, `app/{servers,clients,ai-agents}/`, `app/categories/[slug]/` and `app/tools/[slug]/` carry their own (listing images show the name, type, category, summary and the "Agentic Protocol verified" chip only when `agenticCheckedAt` is set). Images revalidate hourly. Fonts are fetched from Google Fonts once per server instance; when that fetch fails the built-in font is used, so an image is always returned.
+
+The root layout sets `openGraph` (type, site name, locale) and `twitter` (large card) without titles so every page's own title and description are inherited; pages set `alternates.canonical`. Icons follow the App Router file conventions: `app/icon.svg`, `app/favicon.ico` (16/32/48), `app/apple-icon.png` (180) and `app/manifest.ts` pointing at `public/icon-192.png` and `public/icon-512.png`. Regenerate the raster icons from the SVG mark when the mark changes; `scripts/check-site.ts` checks that all of them are served.

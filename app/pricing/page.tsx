@@ -4,6 +4,7 @@ export const metadata = {
   title: 'List your project',
   description:
     'Publish your project with a one-time US$49.99 listing or a free listing with verified Agentic Protocol JSON, TXT and README files.',
+  alternates: { canonical: '/pricing' },
 };
 const freeFeatures = [
   'Public listing page and permanent URL',

@@ -9,6 +9,7 @@ export const metadata = {
   title: 'Advertise',
   description:
     'Sponsor RUAGENTIC: a site-wide top bar, a featured card in the categories you choose, or both, billed monthly.',
+  alternates: { canonical: '/advertise' },
 };
 export default async function Page({
   searchParams,

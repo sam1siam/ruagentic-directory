@@ -6,7 +6,11 @@ import { kindBySlug } from '@/lib/categories';
 import { toBrowserListing } from '@/lib/browse';
 export function kindMetadata(slug: string) {
   const page = kindBySlug(slug)!;
-  return { title: page.name, description: page.description };
+  return {
+    title: page.name,
+    description: page.description,
+    alternates: { canonical: '/' + slug },
+  };
 }
 /** Shared server component behind /servers, /clients and /ai-agents. */
 export default async function KindPage({

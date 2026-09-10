@@ -33,6 +33,9 @@ export async function generateMetadata({
         description: item.summary,
         alternates: { canonical: '/tools/' + item.slug },
         openGraph: {
+          type: 'website',
+          siteName: 'RUAGENTIC',
+          url: '/tools/' + item.slug,
           title: item.name + ' on RUAGENTIC',
           description: item.summary,
         },

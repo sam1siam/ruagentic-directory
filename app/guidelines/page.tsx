@@ -1,4 +1,9 @@
-export const metadata = { title: 'Listing guidelines' };
+export const metadata = {
+  title: 'Listing guidelines',
+  description:
+    'What makes a good RUAGENTIC listing: a factual summary, the right type and category, documented capabilities and working links.',
+  alternates: { canonical: '/guidelines' },
+};
 export default function Page() {
   return (
     <main className="content-page prose-page">

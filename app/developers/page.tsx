@@ -1,5 +1,10 @@
 import Link from 'next/link';
-export const metadata = { title: 'Developer documentation' };
+export const metadata = {
+  title: 'Developer documentation',
+  description:
+    'Read public listings through the JSON API or MCP, search by capability, and link to full listing pages, badges and embed cards.',
+  alternates: { canonical: '/developers' },
+};
 export default function Page() {
   return (
     <main className="content-page prose-page">

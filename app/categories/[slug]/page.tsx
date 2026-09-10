@@ -19,7 +19,11 @@ export async function generateMetadata({
 }) {
   const category = categoryBySlug((await params).slug);
   return category
-    ? { title: category.name, description: category.description }
+    ? {
+        title: category.name,
+        description: category.description,
+        alternates: { canonical: '/categories/' + category.slug },
+      }
     : { title: 'Category not found' };
 }
 type Query = { q?: string; kind?: string };

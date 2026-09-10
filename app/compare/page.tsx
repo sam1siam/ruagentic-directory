@@ -2,6 +2,8 @@ import Compare from '@/components/compare';
 import { catalog } from '@/lib/server/catalog';
 export const metadata = {
   title: 'Compare tools',
+  description:
+    'Compare MCP servers, clients and AI agents side by side: transport, authentication, pricing, platforms and checked files.',
   robots: { index: false, follow: true },
 };
 export default async function Page({

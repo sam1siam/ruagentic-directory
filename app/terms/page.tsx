@@ -1,5 +1,10 @@
 import Link from 'next/link';
-export const metadata = { title: 'Terms of service' };
+export const metadata = {
+  title: 'Terms of service',
+  description:
+    'The terms that apply to accounts, listings, payments and sponsorships on RUAGENTIC.',
+  alternates: { canonical: '/terms' },
+};
 export default function Page() {
   return (
     <main className="content-page prose-page">

@@ -1,5 +1,10 @@
 import Link from 'next/link';
-export const metadata = { title: 'Contact and support' };
+export const metadata = {
+  title: 'Contact and support',
+  description:
+    'Get help with a listing, report a correction, or ask about the Agentic Protocol project.',
+  alternates: { canonical: '/contact' },
+};
 export default function Page() {
   return (
     <main className="content-page">

@@ -34,11 +34,38 @@ for (const path of paths) {
   const res = await fetch(base + path, { signal: AbortSignal.timeout(30000) });
   assert.equal(res.status, 200, path);
 }
+for (const [path, type] of [
+  ['/favicon.ico', 'image/x-icon'],
+  ['/apple-icon.png', 'image/png'],
+  ['/icon-192.png', 'image/png'],
+  ['/icon-512.png', 'image/png'],
+  ['/manifest.webmanifest', 'application/manifest\\+json'],
+  ['/opengraph-image', 'image/png'],
+  ['/servers/opengraph-image', 'image/png'],
+  ['/categories/developer-tools/opengraph-image', 'image/png'],
+]) {
+  const res = await fetch(base + path, { signal: AbortSignal.timeout(60000) });
+  assert.equal(res.status, 200, path);
+  assert.match(res.headers.get('content-type') ?? '', new RegExp(type), path);
+}
+const home = await (await fetch(base + '/')).text();
+assert.match(home, /<link rel="canonical" href="https:\/\/ruagentic\.com\/"/);
+assert.match(home, /<meta property="og:image" content="[^"]*opengraph-image/);
+assert.match(home, /<meta name="twitter:card" content="summary_large_image"/);
+assert.match(home, /<link rel="icon" href="\/favicon\.ico"/);
+assert.match(home, /<link rel="apple-touch-icon" href="\/apple-icon/);
+assert.match(home, /<link rel="manifest" href="\/manifest\.webmanifest"/);
 const list = await (await fetch(base + '/api/v1/listings?limit=2')).json();
 assert.equal(list.listings.length, 2);
 assert.ok(list.total >= 160, 'bundled catalog must be served in full');
 assert.equal(list.nextOffset, 2);
 const first = list.listings[0];
+const listingImage = await fetch(
+  base + '/tools/' + first.slug + '/opengraph-image',
+  { signal: AbortSignal.timeout(60000) },
+);
+assert.equal(listingImage.status, 200);
+assert.match(listingImage.headers.get('content-type') ?? '', /image\/png/);
 const badge = await fetch(base + '/badge/' + first.slug + '.svg');
 assert.equal(badge.status, 200);
 assert.match(badge.headers.get('content-type') ?? '', /image\/svg\+xml/);

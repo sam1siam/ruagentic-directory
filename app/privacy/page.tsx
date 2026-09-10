@@ -1,5 +1,10 @@
 import Link from 'next/link';
-export const metadata = { title: 'Privacy policy' };
+export const metadata = {
+  title: 'Privacy policy',
+  description:
+    'How the RUAGENTIC directory uses account, listing and payment information.',
+  alternates: { canonical: '/privacy' },
+};
 export default function Page() {
   return (
     <main className="content-page prose-page">
