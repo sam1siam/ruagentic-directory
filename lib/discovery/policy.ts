@@ -13,6 +13,8 @@ export const SOURCES = [
   'microsoft',
   'litellm',
   'producthunt',
+  'hackernews',
+  'github',
 ] as const;
 export type Source = (typeof SOURCES)[number];
 export type Candidate = {
@@ -191,7 +193,15 @@ export function isNew(
       Boolean(item.dateEvidence)
     );
   }
-  if (['official-registry', 'docker', 'producthunt'].includes(item.source))
+  if (
+    [
+      'official-registry',
+      'docker',
+      'producthunt',
+      'hackernews',
+      'github',
+    ].includes(item.source)
+  )
     return false;
   return initialized; // absent from a previously completed, full source snapshot
 }

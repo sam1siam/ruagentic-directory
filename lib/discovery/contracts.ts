@@ -83,6 +83,32 @@ export const prospeoRecord = z.object({
     .nullish(),
 });
 export const prospeoSearch = z.object({ results: z.array(prospeoRecord) });
+export const hackerNewsItem = z.object({
+  id: z.number(),
+  type: text,
+  time: z.number().nullish(),
+  title: text,
+  url: text,
+  text,
+  dead: z.boolean().nullish(),
+  deleted: z.boolean().nullish(),
+});
+export const githubSearch = z.object({
+  total_count: z.number(),
+  items: z.array(
+    z.object({
+      full_name: z.string().min(1),
+      name: z.string().min(1),
+      html_url: z.string(),
+      description: text,
+      homepage: text,
+      fork: z.boolean().nullish(),
+      archived: z.boolean().nullish(),
+      created_at: z.string(),
+      topics: z.array(z.string()).nullish(),
+    }),
+  ),
+});
 export function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as Record<string, unknown>;

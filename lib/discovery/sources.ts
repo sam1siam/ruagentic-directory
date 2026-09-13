@@ -8,11 +8,14 @@ import {
   type Snapshot,
   type Source,
 } from './policy.ts';
-import { ProviderError, readPage } from './http.ts';
+import { z } from 'zod';
+import { ProviderError, apiJson, readPage } from './http.ts';
 import { mcpSoMetadata } from './mcp-so.ts';
 import {
   clineCatalog,
   dockerCatalog,
+  githubSearch,
+  hackerNewsItem,
   liteCatalog,
   registryCatalog,
 } from './contracts.ts';
@@ -27,6 +30,8 @@ const labels: Record<Source, string> = {
   microsoft: 'Microsoft MCP list',
   litellm: 'LiteLLM',
   producthunt: 'Product Hunt',
+  hackernews: 'Hacker News (Show HN)',
+  github: 'GitHub',
 };
 export const sourceName = (source: Source) => labels[source];
 export const SOURCE_URLS: Record<Source, string> = {
@@ -40,6 +45,8 @@ export const SOURCE_URLS: Record<Source, string> = {
   litellm:
     'https://raw.githubusercontent.com/BerriAI/litellm/main/litellm/proxy/mcp_registry.json',
   producthunt: 'https://www.producthunt.com/feed',
+  hackernews: 'https://hacker-news.firebaseio.com/v0/showstories.json',
+  github: 'https://api.github.com/search/repositories',
 };
 const optional = (value: unknown) => publicUrl(value);
 const bounded = (s: unknown, n = 2000) =>
@@ -512,6 +519,179 @@ export async function officialSnapshot(
       }
     : { items, complete: true };
 }
+/** A Show HN post from the official Hacker News API, dated by its submission
+ *  time. Posts without a title, dead or deleted posts and other story types
+ *  are ignored; a GitHub link counts as the repository, not a company site. */
+export function parseHackerNewsItem(value: unknown): Candidate | undefined {
+  const parsed = hackerNewsItem.safeParse(value);
+  if (!parsed.success) return;
+  const post = parsed.data;
+  if (
+    post.type !== 'story' ||
+    post.dead ||
+    post.deleted ||
+    !post.time ||
+    !post.title ||
+    !/^show hn\b/i.test(post.title)
+  )
+    return;
+  const link = optional(post.url);
+  const onGithub = Boolean(
+    link && /^https:\/\/github\.com\/[^/]+\/[^/]+/.test(link),
+  );
+  const title = post.title.replace(/^show hn\s*[:–—-]?\s*/i, '').trim();
+  const body = post.text ? load(`<div>${post.text}</div>`)('div').text() : '';
+  return {
+    source: 'hackernews',
+    id: String(post.id),
+    name: bounded(title.split(/\s+[–—:|-]\s+/)[0] || title, 200),
+    description: bounded(`${title}. ${body}`.trim()),
+    sourceUrl: `https://news.ycombinator.com/item?id=${post.id}`,
+    homepage: onGithub ? undefined : link,
+    repository: onGithub ? link : undefined,
+    publishedAt: new Date(post.time * 1000).toISOString(),
+    dateEvidence: 'Hacker News submission time',
+  };
+}
+/** The latest Show HN posts (the official API keeps about 200, several days'
+ *  worth), reading only posts not seen before, eight at a time. */
+export async function hackerNewsSnapshot(
+  deadline: number,
+  known: Set<string>,
+  read: RegistryRead = readRegistry,
+): Promise<{ items: Candidate[]; complete: boolean; error?: string }> {
+  const ids = z
+    .array(z.number())
+    .parse(JSON.parse((await read(SOURCE_URLS.hackernews, deadline)).text));
+  const queue = ids.filter((id) => !known.has(digest(String(id))));
+  const items: Candidate[] = [];
+  let next = 0,
+    failed = 0,
+    outOfTime = false;
+  const worker = async () => {
+    while (next < queue.length) {
+      if (Date.now() > deadline - 15_000) {
+        outOfTime = true;
+        return;
+      }
+      const id = queue[next++]!;
+      try {
+        const item = parseHackerNewsItem(
+          JSON.parse(
+            (
+              await read(
+                `https://hacker-news.firebaseio.com/v0/item/${id}.json`,
+                deadline,
+              )
+            ).text,
+          ),
+        );
+        if (item) items.push(item);
+      } catch {
+        failed++;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(8, queue.length) }, worker));
+  if (outOfTime)
+    return {
+      items,
+      complete: false,
+      error: 'Hacker News read stopped at the time limit; progress saved',
+    };
+  return failed
+    ? {
+        items,
+        complete: false,
+        error: `${failed} Hacker News post${failed === 1 ? '' : 's'} could not be read; progress saved`,
+      }
+    : { items, complete: true };
+}
+const GITHUB_TOPICS = ['mcp-server', 'model-context-protocol'] as const;
+/** New, non-fork, non-archived repositories from one search results page,
+ *  dated by their creation time. */
+export function parseGithubSearch(value: unknown, topic: string): Candidate[] {
+  return githubSearch
+    .parse(value)
+    .items.filter(
+      (repo) =>
+        !repo.fork &&
+        !repo.archived &&
+        Date.parse(repo.created_at) >= Date.parse(CUTOFF),
+    )
+    .map((repo) => ({
+      source: 'github',
+      id: repo.full_name.toLowerCase(),
+      name: bounded(repo.name, 200),
+      description: bounded(repo.description ?? ''),
+      kind:
+        topic === 'mcp-server' || repo.topics?.includes('mcp-server')
+          ? 'mcp-server'
+          : undefined,
+      sourceUrl: repo.html_url,
+      repository: optional(repo.html_url),
+      homepage: optional(repo.homepage),
+      publishedAt: repo.created_at,
+      dateEvidence: 'GitHub repository creation time',
+    }));
+}
+type GithubApi = (
+  url: string,
+  init: RequestInit,
+  deadline: number,
+) => Promise<unknown>;
+/** Repositories tagged as MCP servers created since `since`, through GitHub's
+ *  repository search API. Paced by the provider pacer (10 searches a minute
+ *  without GITHUB_TOKEN); stops with a partial result on errors. */
+export async function githubSnapshot(
+  deadline: number,
+  known: Set<string>,
+  since: string,
+  api: GithubApi = apiJson,
+): Promise<{ items: Candidate[]; complete: boolean; error?: string }> {
+  const found = new Map<string, Candidate>();
+  const created = new Date(since).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'RUAGENTIC-Directory/1.0 (+https://ruagentic.com/about)',
+    ...(process.env.GITHUB_TOKEN
+      ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+      : {}),
+  };
+  try {
+    for (const topic of GITHUB_TOPICS) {
+      for (let page = 1; page <= 10; page++) {
+        const u = new URL(SOURCE_URLS.github);
+        u.searchParams.set(
+          'q',
+          `topic:${topic} created:>=${created} fork:false archived:false`,
+        );
+        u.searchParams.set('sort', 'updated');
+        u.searchParams.set('per_page', '100');
+        u.searchParams.set('page', String(page));
+        const data = githubSearch.parse(
+          await api(u.href, { headers }, deadline),
+        );
+        if (data.total_count > 1000)
+          throw new Error(
+            `GitHub topic ${topic} has more than 1,000 new repositories in the window`,
+          );
+        for (const item of parseGithubSearch(data, topic))
+          if (!known.has(digest(item.id)) && !found.has(item.id))
+            found.set(item.id, item);
+        if (data.items.length < 100) break;
+      }
+    }
+  } catch (error) {
+    return {
+      items: [...found.values()],
+      complete: false,
+      error: (error as Error).message.slice(0, 200),
+    };
+  }
+  return { items: [...found.values()], complete: true };
+}
 export async function fetchSnapshot(
   source: Source,
   deadline: number,
@@ -520,8 +700,17 @@ export async function fetchSnapshot(
 ): Promise<Snapshot> {
   try {
     let items: Candidate[];
-    if (source === 'official-registry') {
-      const result = await officialSnapshot(deadline, known, since);
+    if (
+      source === 'official-registry' ||
+      source === 'hackernews' ||
+      source === 'github'
+    ) {
+      const result =
+        source === 'official-registry'
+          ? await officialSnapshot(deadline, known, since)
+          : source === 'hackernews'
+            ? await hackerNewsSnapshot(deadline, known)
+            : await githubSnapshot(deadline, known, since);
       return result.complete
         ? { source, items: result.items, complete: true }
         : {

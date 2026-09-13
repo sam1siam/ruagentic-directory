@@ -142,7 +142,9 @@ export class DiscoveryStore {
   async commitPartial(snapshot: Snapshot, state: SourceState, now: string) {
     if (
       !snapshot.partial ||
-      snapshot.source !== 'official-registry' ||
+      !['official-registry', 'hackernews', 'github'].includes(
+        snapshot.source,
+      ) ||
       snapshot.items.some((i) => !i.publishedAt || !i.dateEvidence)
     )
       throw new Error('Only dated sources can save partial progress');

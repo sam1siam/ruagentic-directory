@@ -1,6 +1,6 @@
 # Daily project discovery
 
-The directory checks nine sources once a day at **11:17 UTC** (07:17 Toronto during daylight saving time, 06:17 in winter). Vercel calls `/api/cron/discovery` with the existing `CRON_SECRET`. This is private prospecting infrastructure, not a public crawler endpoint or a mechanism for automatically publishing directory listings.
+The directory checks eleven sources once a day at **11:17 UTC** (07:17 Toronto during daylight saving time, 06:17 in winter). Vercel calls `/api/cron/discovery` with the existing `CRON_SECRET`. This is private prospecting infrastructure, not a public crawler endpoint or a mechanism for automatically publishing directory listings.
 
 ## Selection and dates
 
@@ -19,6 +19,8 @@ The permanent cutoff is **September 10, 2026, 00:00 America/Toronto** (`2026-09-
 | Microsoft MCP list | `microsoft/mcp` README | New listed entry after a complete baseline; this repository covers Microsoft's MCP servers |
 | LiteLLM | Public `mcp_registry.json` | New catalog ID after a complete baseline; package/registry metadata resolves project links without executing install commands |
 | Product Hunt | Public Atom feed | Original `published`, never `updated`; only agent/MCP products qualify |
+| Hacker News | Official HN API `showstories` (the latest ~200 Show HN posts, several days' worth) | Original submission `time`; only posts that mention MCP or AI agents qualify |
+| GitHub | Repository search API for topics `mcp-server` and `model-context-protocol` | Repository `created_at`; forks and archived repositories are excluded, and a repository without its own website is skipped |
 
 An undated site's first successful full snapshot is a baseline, not a lead list. This deliberately excludes entries already present at setup, including those whose exact publication time cannot be established. Failed, empty, or incomplete full catalogs do not replace a baseline. Source failures leave the other sources operational. A public feed can expose only its current window; an outage longer than that window can miss entries. A site that renames URLs without publication evidence may require manual review. No scraper can guarantee that an undated source's newly appearing URL represents a newly created company.
 
@@ -30,15 +32,16 @@ MCP.so's public server-rendered metadata is parsed as JavaScript syntax without 
 
 The dedicated Smartlead campaign is **3932154**, “RUAGENTIC | New MCP & AI agent listings | Since 2026-09-10”. Its one email introduces ruagentic.com and the Agentic Protocol at ruagentic.org, and explains the actual free path: generate and publish matching `agentic.json`, `agentic.txt`, and README additions, then pass the directory submission checker. It does not promise rankings, endorsement, or automatic approval.
 
-Contact policy: **founder work emails only.** Support and role mailboxes such as support@, hello@ or team@ are never enrolled, and addresses are never guessed.
+Contact policy: **a founder's work email first, then a published hello@ or support@ address.** Addresses are never guessed.
 
-1. Prospeo founder search on the exact company domain (current titles containing Founder or Co-founder, at most two people), then a verified work-email reveal for each. The returned company, current title and email domain must match.
+1. Prospeo founder search on the exact company domain (current titles containing Founder or Co-founder, at most two people), then a verified work-email reveal for each. The returned company, current title and email domain must match, and founder lookups accept only personal mailboxes.
 2. If Prospeo names a founder without a verified email, Findymail looks that founder up by name and domain.
 3. If Prospeo finds no founder, Findymail searches the company's current founders itself and looks up their emails.
+4. If no founder email is found, a hello@ or support@ address on the company's own domain that the homepage or its contact page publishes (hello@ first) is verified through Findymail. Pages that refuse marketing or unsolicited contact are skipped. This step never runs while a Prospeo lookup is unresolved.
 
-A candidate without a verified founder email is recorded as `no_verified_contact` and is never enrolled.
+A candidate with none of these is recorded as `no_verified_contact` and is never enrolled.
 
-The default ceiling is **25 prospects and 25 enrollments per Toronto calendar day**, with at most 100 paid API attempts across providers. Failed and ambiguous paid calls still consume this internal allowance; provider pricing determines actual credits. No mobile-number enrichment is requested. Missing keys, unavailable duplicate checks, and provider account/quota errors stop dependent work. Projects lacking a verifiable contact are recorded without enrollment.
+The default ceiling is **50 prospects and 50 enrollments per Toronto calendar day**, with at most 200 paid API attempts across providers. Failed and ambiguous paid calls still consume this internal allowance; provider pricing determines actual credits. No mobile-number enrichment is requested. Missing keys, unavailable duplicate checks, and provider account/quota errors stop dependent work. Projects lacking a verifiable contact are recorded without enrollment.
 
 Smartlead imports retain its global block list, unsubscribe list, bounce suppression, and duplicate checks across other campaigns. The campaign stops on replies, offers unsubscribe, disables click/open tracking, and sends weekdays 09:00–17:00 America/Toronto. Campaign enrollment and campaign activation are separate: a verified sender must be connected before sending starts. The cron never starts a paused campaign or changes existing campaigns/mailboxes.
 
@@ -56,10 +59,10 @@ Apply `supabase/migrations/202609100001_discovery.sql`. All four tables are serv
 
 - `DISCOVERY_ENABLED=true`: enable source collection.
 - `DISCOVERY_ENRICHMENT_ENABLED=true`: allow paid enrichment and Smartlead enrollment. Leave false while establishing baselines or completing sender/key setup.
-- `DISCOVERY_DAILY_LIMIT=25`: integer 1–50; also update the Smartlead campaign's sending limit when intentionally increasing volume.
+- `DISCOVERY_DAILY_LIMIT=50`: integer 1–50; also update the Smartlead campaign's sending limit when intentionally increasing volume.
 - `PROSPEO_API_KEY`, `FINDYMAIL_API_KEY`, `SMARTLEAD_API_KEY`: sensitive credentials. Findymail is optional for founder-only Prospeo operation, but required for the published-contact fallback.
 - Existing Supabase URL/secret and `CRON_SECRET`.
-- Optional `GITHUB_TOKEN` for public repository API quota.
+- Optional `GITHUB_TOKEN` for public repository API quota. Without it GitHub allows 10 repository searches a minute and 60 other API calls an hour; with it, 30 and 5,000. A GitHub limit holds only the candidate that hit it, never the day's outreach.
 
 The cron has a 300-second maximum. Sources load in the background while the candidates already queued are processed, so a slow source no longer uses up the candidates' time, and it leaves remaining candidates queued when its processing budget is exhausted. Each complete source is checkpointed. The Official MCP Registry reads up to four version histories at a time. It publishes no rate limit and answers bursts with HTTP 429, so a 429 or 503 pauses every reader for 2, 4, 8 then 16 seconds and retries the same read; a server whose read fails is left for the next run, and when time runs short the servers already read and their new candidates are saved (`partial` in the report). Its window start stays put until a complete pass, so the next run lists the same window again and reads only what is left. Partial saving is limited to dated sources; undated sources still establish newness only from a complete snapshot. It has a ten-minute database lease and one completed run per day. A process crash cannot blindly duplicate an invitation: reserve the project/company/email and persist `enrollment_uncertain` before calling Smartlead. Explicitly acknowledged imports become `enrolled` or `suppressed`; unknown outcomes stay held for review.
 

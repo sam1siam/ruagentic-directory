@@ -111,7 +111,7 @@ export async function directoryAliases(store: DiscoveryStore) {
 export const duplicate = (item: Candidate, known: Set<string>) =>
   aliases(item).some((a) => known.has(a));
 export function dailyLimit() {
-  const n = Number(process.env.DISCOVERY_DAILY_LIMIT || 25);
+  const n = Number(process.env.DISCOVERY_DAILY_LIMIT || 50);
   if (!Number.isInteger(n) || n < 1 || n > 50)
     throw new Error('DISCOVERY_DAILY_LIMIT must be an integer from 1 to 50');
   return n;
@@ -452,11 +452,20 @@ export async function runDiscovery(
                 : error instanceof ProviderError
                   ? error.retryAfterSeconds
                   : 0;
+            const provider =
+              error instanceof ProviderCooldown ||
+              error instanceof ProviderError
+                ? error.provider
+                : '';
+            // A GitHub limit only holds this candidate; paid-provider limits
+            // or account problems stop outreach for the day.
+            const paidProvider = !provider.includes('github');
             const accountProblem =
               error instanceof ProviderError && error.status !== 429;
             if (
-              accountProblem ||
-              Date.now() + seconds * 1000 > deadline - 45_000
+              paidProvider &&
+              (accountProblem ||
+                Date.now() + seconds * 1000 > deadline - 45_000)
             ) {
               report.issues.push(
                 `${message}; remaining candidates left queued${!accountProblem && seconds ? ` (limit resets in about ${Math.max(1, Math.ceil(seconds / 60))} min)` : ''}`,

@@ -7,6 +7,7 @@ type Bucket = {
   blocked: number;
   dailyLeft?: number;
   minuteLeft?: number;
+  remaining?: number;
 };
 
 /** Thrown when a provider stays blocked for longer than the job has left. */
@@ -31,20 +32,29 @@ export class ProviderPacer {
     this.clock = clock;
   }
   private key(url: URL) {
-    return url.hostname === 'api.prospeo.io'
-      ? `prospeo:${url.pathname.startsWith('/search-') ? 'search' : 'enrich'}`
-      : url.hostname === 'app.findymail.com'
-        ? 'findymail'
-        : undefined;
+    if (url.hostname === 'api.prospeo.io')
+      return `prospeo:${url.pathname.startsWith('/search-') ? 'search' : 'enrich'}`;
+    if (url.hostname === 'app.findymail.com') return 'findymail';
+    if (url.hostname === 'api.github.com')
+      return url.pathname.startsWith('/search/')
+        ? 'github:search'
+        : 'github:core';
+    return undefined;
   }
   private bucket(key: string) {
     let b = this.buckets.get(key);
     if (!b) {
-      b = {
-        next: 0,
-        interval: key.startsWith('prospeo:') ? 3100 : 1100,
-        blocked: 0,
-      };
+      // GitHub search allows 10 requests a minute without a token, 30 with one.
+      const interval = key.startsWith('prospeo:')
+        ? 3100
+        : key === 'github:search'
+          ? process.env.GITHUB_TOKEN
+            ? 2100
+            : 6500
+          : key === 'github:core'
+            ? 750
+            : 1100;
+      b = { next: 0, interval, blocked: 0 };
       this.buckets.set(key, b);
     }
     return b;
@@ -91,6 +101,13 @@ export class ProviderPacer {
         }
       }
     }
+    if (key.startsWith('github:')) {
+      const remaining = number('x-ratelimit-remaining'),
+        reset = number('x-ratelimit-reset');
+      b.remaining = remaining ?? b.remaining;
+      if (remaining === 0 && reset)
+        b.blocked = Math.max(b.blocked, reset * 1000 + 1000);
+    }
     if (status === 429) {
       const retry = headers.get('retry-after');
       const milliseconds =
@@ -121,6 +138,7 @@ export class ProviderPacer {
           blockedForSeconds: Math.max(0, Math.ceil((b.blocked - now) / 1000)),
           ...(b.dailyLeft !== undefined ? { dailyLeft: b.dailyLeft } : {}),
           ...(b.minuteLeft !== undefined ? { minuteLeft: b.minuteLeft } : {}),
+          ...(b.remaining !== undefined ? { remaining: b.remaining } : {}),
         },
       ]),
     );

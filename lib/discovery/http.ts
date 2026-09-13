@@ -30,9 +30,11 @@ const PAID_PROVIDERS = new Set([
   'api.prospeo.io',
   'app.findymail.com',
   'server.smartlead.ai',
+  'api.github.com',
 ]);
-/** Rate limits, cooldowns and account problems at a paid provider are not a
- *  candidate's fault: callers put the candidate back instead of failing it. */
+/** Rate limits, cooldowns and account problems at a paid provider or the
+ *  GitHub API are not a candidate's fault: callers put the candidate back
+ *  instead of failing it. */
 export function providerHold(error: unknown) {
   return (
     error instanceof ProviderCooldown ||

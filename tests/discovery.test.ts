@@ -11,6 +11,7 @@ import {
   qualify,
   repositoryKey,
   validEmail,
+  SOURCES,
   type Candidate,
 } from '../lib/discovery/policy.ts';
 import {
@@ -22,6 +23,10 @@ import {
   parseMicrosoft,
   parseLiteLLM,
   officialSnapshot,
+  githubSnapshot,
+  hackerNewsSnapshot,
+  parseGithubSearch,
+  parseHackerNewsItem,
 } from '../lib/discovery/sources.ts';
 import {
   belongsToCompany,
@@ -29,6 +34,7 @@ import {
   founderEmail,
   founderRecord,
   isFounderTitle,
+  publishedContacts,
   verifiedFounder,
 } from '../lib/discovery/contacts.ts';
 import { leadPayload, Smartlead } from '../lib/discovery/smartlead.ts';
@@ -290,7 +296,7 @@ void test('Enrichment rejects mismatched companies, former founders and unverifi
     null,
   );
 });
-void test('Only founder work emails qualify; support and role mailboxes never do', () => {
+void test('Founder lookups accept only personal founder mailboxes', () => {
   assert.equal(founderEmail('pat@example.com', 'example.com'), true);
   for (const email of [
     'support@example.com',
@@ -854,7 +860,7 @@ void test('Candidates start before the slowest source finishes, and a partial re
   }
   assert.equal(events[0], 'candidates started');
   assert.ok(events.includes('partial saved'));
-  assert.equal(finished?.sources.length, 9);
+  assert.equal(finished?.sources.length, SOURCES.length);
   assert.equal(
     finished?.sources.find((s) => s.source === 'official-registry')?.status,
     'partial',
@@ -921,4 +927,219 @@ void test('Registry throttling pauses the readers and retries instead of failing
   assert.equal(attempts, 5);
   assert.equal(stuck.complete, false);
   assert.match(stuck.error ?? '', /^1 registry server could not be read/);
+});
+void test('Published hello@ and support@ addresses on the company domain are the fallback', () => {
+  const html =
+    '<body><a href="mailto:support@example.com">Support</a> <a href="mailto:hello@example.com?subject=hi">Say hi</a> <a href="mailto:sales@example.com">Sales</a> <a href="mailto:hello@other.com">Partner</a><footer>Or write to support@example.com</footer></body>';
+  assert.deepEqual(
+    publishedContacts(html, 'https://example.com', 'example.com').map(
+      (c) => c.email,
+    ),
+    ['hello@example.com', 'support@example.com'],
+  );
+  assert.deepEqual(
+    publishedContacts(
+      '<body><p>No unsolicited sales emails.</p><a href="mailto:hello@example.com">Hi</a></body>',
+      'https://example.com/contact',
+      'example.com',
+    ),
+    [],
+  );
+});
+void test('Without a founder, a published hello@ address verified by Findymail is used', async () => {
+  const previous = [process.env.PROSPEO_API_KEY, process.env.FINDYMAIL_API_KEY];
+  process.env.PROSPEO_API_KEY = 'fixture';
+  process.env.FINDYMAIL_API_KEY = 'fixture';
+  try {
+    const calls: string[] = [];
+    const found = await findContact(
+      item,
+      Date.now() + 60_000,
+      async () => true,
+      async (url, init) => {
+        const u = new URL(url);
+        calls.push(u.hostname + u.pathname);
+        if (u.pathname === '/search-person') return { results: [] };
+        if (u.pathname === '/api/search/employees') return [];
+        if (u.pathname === '/api/verify')
+          return {
+            email:
+              typeof init?.body === 'string' ? JSON.parse(init.body).email : '',
+            verified: true,
+          };
+        throw new Error('unexpected ' + url);
+      },
+      (async (url: string) => ({
+        url,
+        status: 200,
+        contentType: 'text/html',
+        text: '<body><a href="mailto:hello@example.com">Hello</a></body>',
+      })) as unknown as Parameters<typeof findContact>[4],
+    );
+    assert.equal(found?.email, 'hello@example.com');
+    assert.equal(
+      found?.provider,
+      'Published business contact, Findymail verified',
+    );
+    assert.deepEqual(calls, [
+      'api.prospeo.io/search-person',
+      'app.findymail.com/api/search/employees',
+      'app.findymail.com/api/verify',
+    ]);
+  } finally {
+    process.env.PROSPEO_API_KEY = previous[0];
+    process.env.FINDYMAIL_API_KEY = previous[1];
+    if (previous[0] === undefined) delete process.env.PROSPEO_API_KEY;
+    if (previous[1] === undefined) delete process.env.FINDYMAIL_API_KEY;
+  }
+});
+void test('Show HN posts become dated candidates; other stories are ignored', async () => {
+  const time = Date.parse('2026-09-12T15:00:00Z') / 1000;
+  const repo = parseHackerNewsItem({
+    id: 101,
+    type: 'story',
+    time,
+    title: 'Show HN: Astah Pro MCP – Enabling AI-powered UML modeling',
+    url: 'https://github.com/takaakit/astah-pro-mcp',
+  });
+  assert.equal(repo?.name, 'Astah Pro MCP');
+  assert.equal(repo?.repository, 'https://github.com/takaakit/astah-pro-mcp');
+  assert.equal(repo?.homepage, undefined);
+  assert.equal(repo?.publishedAt, '2026-09-12T15:00:00.000Z');
+  assert.equal(repo?.sourceUrl, 'https://news.ycombinator.com/item?id=101');
+  const site = parseHackerNewsItem({
+    id: 102,
+    type: 'story',
+    time,
+    title: 'Show HN: Clawfight – MCP-driven agentic game play',
+    url: 'https://clawfight.ai/agents.md',
+    text: '<p>Built with <i>agents</i></p>',
+  });
+  assert.equal(site?.homepage, 'https://clawfight.ai/agents.md');
+  assert.match(site?.description ?? '', /Built with agents/);
+  for (const value of [
+    { id: 103, type: 'story', time, title: 'Ask HN: Which MCP servers?' },
+    { id: 104, type: 'story', time, title: 'Show HN: X', dead: true },
+    { id: 105, type: 'comment', time, title: 'Show HN: Y' },
+    null,
+  ])
+    assert.equal(parseHackerNewsItem(value), undefined);
+  const posts: Record<string, unknown> = {
+    '101': {
+      id: 101,
+      type: 'story',
+      time,
+      title: 'Show HN: A',
+      url: 'https://a.example.com',
+    },
+    '103': { id: 103, type: 'story', time, title: 'Ask HN: B' },
+  };
+  const read = async (url: string) => ({
+    text: url.endsWith('showstories.json')
+      ? '[101, 103, 104]'
+      : JSON.stringify(posts[url.match(/item\/(\d+)\.json/)![1]!] ?? null),
+  });
+  const snap = await hackerNewsSnapshot(
+    Date.now() + 60_000,
+    new Set([digest('104')]),
+    read,
+  );
+  assert.equal(snap.complete, true);
+  assert.deepEqual(
+    snap.items.map((i) => i.id),
+    ['101'],
+  );
+});
+void test('GitHub topic search yields new, non-fork repositories once each', async () => {
+  const repo = (full: string, extra: Record<string, unknown> = {}) => ({
+    full_name: full,
+    name: full.split('/')[1],
+    html_url: `https://github.com/${full}`,
+    description: 'An MCP server',
+    homepage: null,
+    fork: false,
+    archived: false,
+    created_at: '2026-09-12T10:00:00Z',
+    topics: [],
+    ...extra,
+  });
+  const urls: string[] = [];
+  const api = async (url: string) => {
+    urls.push(url);
+    const topic = new URL(url).searchParams.get('q')!.split(' ')[0];
+    return topic === 'topic:mcp-server'
+      ? {
+          total_count: 2,
+          items: [
+            repo('Acme/Tool', { homepage: 'https://acme.dev' }),
+            repo('old/one', { created_at: '2025-01-01T00:00:00Z' }),
+          ],
+        }
+      : {
+          total_count: 3,
+          items: [
+            repo('acme/tool'),
+            repo('fork/copy', { fork: true }),
+            repo('new/client', { topics: ['mcp-client'] }),
+          ],
+        };
+  };
+  const snap = await githubSnapshot(
+    Date.now() + 60_000,
+    new Set(),
+    '2026-09-11T11:17:00.000Z',
+    api,
+  );
+  assert.equal(snap.complete, true);
+  assert.deepEqual(
+    snap.items.map((i) => i.id),
+    ['acme/tool', 'new/client'],
+  );
+  assert.equal(snap.items[0]!.kind, 'mcp-server');
+  assert.equal(snap.items[0]!.homepage, 'https://acme.dev');
+  assert.equal(snap.items[1]!.kind, undefined);
+  assert.equal(
+    new URL(urls[0]!).searchParams.get('q'),
+    'topic:mcp-server created:>=2026-09-11T11:17:00Z fork:false archived:false',
+  );
+  assert.equal(
+    parseGithubSearch(
+      { total_count: 1, items: [repo('x/y')] },
+      'mcp-server',
+    )[0]!.dateEvidence,
+    'GitHub repository creation time',
+  );
+  const tooMany = await githubSnapshot(
+    Date.now() + 60_000,
+    new Set(),
+    '2026-09-11T11:17:00.000Z',
+    async () => ({ total_count: 1500, items: [] }),
+  );
+  assert.equal(tooMany.complete, false);
+});
+void test('GitHub limits pace searches and hold candidates without stopping outreach', async () => {
+  let now = 5_000_000;
+  const sleeps: number[] = [];
+  const pacer = new ProviderPacer({
+    now: () => now,
+    sleep: async (ms) => {
+      sleeps.push(ms);
+      now += ms;
+    },
+  });
+  const search = new URL('https://api.github.com/search/repositories');
+  await pacer.wait(search, now + 600_000);
+  await pacer.wait(search, now + 600_000);
+  assert.deepEqual(sleeps, [process.env.GITHUB_TOKEN ? 2100 : 6500]);
+  pacer.observe(
+    search,
+    new Headers({
+      'x-ratelimit-remaining': '0',
+      'x-ratelimit-reset': String(Math.ceil(now / 1000) + 120),
+    }),
+    403,
+  );
+  await assert.rejects(pacer.wait(search, now + 60_000), ProviderCooldown);
+  assert.equal(pacer.snapshot()['github:search']?.remaining, 0);
+  assert.equal(providerHold(new ProviderError('api.github.com', 403)), true);
 });

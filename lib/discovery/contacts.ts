@@ -93,6 +93,8 @@ export async function resolveHomepage(
   deadline: number,
 ): Promise<Candidate> {
   if (companyDomain(item.homepage)) return item;
+  // A GitHub search result already carries the repository's own homepage.
+  if (item.source === 'github') return item;
   if (item.registryUrl) {
     const u = new URL(item.registryUrl);
     if (
@@ -177,6 +179,7 @@ export async function findContact(
   deadline: number,
   budget: () => Promise<boolean>,
   api: Api = apiJson,
+  reader: typeof readPage = readPage,
 ): Promise<Contact | null> {
   const domain = companyDomain(item.homepage);
   if (!domain) return null;
@@ -346,7 +349,125 @@ export async function findContact(
     if (contact) return contact;
   }
   if (prospeoFailure) throw prospeoFailure; // Retry unresolved provider failures, not a false "no match".
+  // No founder email: a hello@ or support@ address published on the company's
+  // own site, verified by Findymail, is the fallback. Addresses are never guessed.
+  const home = publicUrl(item.homepage);
+  if (!home) return null;
+  const pages: { url: string; text: string }[] = [];
+  try {
+    const page = await reader(home, deadline, true, 500_000);
+    pages.push({ url: page.url, text: page.text });
+    const $ = load(page.text);
+    const contactUrl = $('a[href]')
+      .toArray()
+      .map((el) => ({
+        href: $(el).attr('href') ?? '',
+        label: $(el).text().trim(),
+      }))
+      .filter((link) =>
+        /^(contact|contact us|get in touch|support|help)$/i.test(link.label),
+      )
+      .map((link) => {
+        try {
+          return publicUrl(new URL(link.href, page.url).href);
+        } catch {
+          return undefined;
+        }
+      })
+      .find((url) => {
+        if (!url || url === publicUrl(page.url)) return false;
+        const host = new URL(url).hostname;
+        return host === domain || host.endsWith('.' + domain);
+      });
+    if (contactUrl)
+      try {
+        const contactPage = await reader(contactUrl, deadline, true, 500_000);
+        pages.push({ url: contactPage.url, text: contactPage.text });
+      } catch {
+        /* the homepage's own address can still be used */
+      }
+  } catch {
+    return null; // an unreadable site offers no published address
+  }
+  const seen = new Set<string>();
+  const published = pages
+    .flatMap((page) => publishedContacts(page.text, page.url, domain))
+    .filter((c) => !seen.has(c.email) && seen.add(c.email))
+    .sort(
+      (a, b) =>
+        PUBLISHED_MAILBOXES.indexOf(a.email.split('@')[0]!) -
+        PUBLISHED_MAILBOXES.indexOf(b.email.split('@')[0]!),
+    );
+  for (const candidate of published.slice(0, 2)) {
+    const result = object(
+      await paid('https://app.findymail.com/api/verify', finderHeaders, {
+        email: candidate.email,
+      }),
+    );
+    if (
+      result.verified === true &&
+      typeof result.email === 'string' &&
+      result.email.toLowerCase() === candidate.email
+    )
+      return {
+        email: candidate.email,
+        firstName: '',
+        fullName: '',
+        companyDomain: domain,
+        provider: 'Published business contact, Findymail verified',
+        evidence: candidate.evidence,
+        verifiedAt: new Date().toISOString(),
+        role: candidate.email.startsWith('support@')
+          ? 'Support mailbox'
+          : 'General mailbox',
+      };
+  }
   return null;
+}
+const PUBLISHED_MAILBOXES = ['hello', 'support'];
+/** hello@ and support@ addresses on the company's own domain that a page
+ *  publishes, as mailto links or plain text, hello@ first. A page that
+ *  refuses marketing or unsolicited contact yields nothing. */
+export function publishedContacts(
+  html: string,
+  pageUrl: string,
+  domain: string,
+) {
+  const $ = load(html);
+  const text = $('body').length ? $('body').text() : $.root().text();
+  if (
+    /no (?:unsolicited|marketing|sales)\b|do not (?:contact|email) us for|not for (?:sales|marketing)/i.test(
+      text,
+    )
+  )
+    return [];
+  const addresses = [
+    ...$('a[href^="mailto:"]')
+      .toArray()
+      .map((el) => {
+        try {
+          return decodeURIComponent(
+            ($(el).attr('href') ?? '').slice(7).split('?')[0]!,
+          );
+        } catch {
+          return '';
+        }
+      }),
+    ...(text.match(/\b(?:hello|support)@[a-z0-9.-]+\.[a-z]{2,}\b/gi) ?? []),
+  ].map((email) => email.trim().toLowerCase());
+  return [...new Set(addresses)]
+    .filter(
+      (email) =>
+        validEmail(email) &&
+        PUBLISHED_MAILBOXES.includes(email.split('@')[0]!) &&
+        companyDomain('https://' + email.split('@')[1]) === domain,
+    )
+    .sort(
+      (a, b) =>
+        PUBLISHED_MAILBOXES.indexOf(a.split('@')[0]!) -
+        PUBLISHED_MAILBOXES.indexOf(b.split('@')[0]!),
+    )
+    .map((email) => ({ email, evidence: pageUrl }));
 }
 
 export type ProspeoAccount = {
