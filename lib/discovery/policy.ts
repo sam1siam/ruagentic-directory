@@ -37,6 +37,9 @@ export type Snapshot = {
   items: Candidate[];
   complete: boolean;
   error?: string;
+  /** Dated items read before the source stopped early. They can be saved
+   *  without moving the source's window, so nothing unread is skipped. */
+  partial?: boolean;
 };
 export const digest = (s: string) =>
   createHash('sha256').update(s).digest('hex');

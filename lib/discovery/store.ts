@@ -134,6 +134,53 @@ export class DiscoveryStore {
       baseline: !state.initialized_at,
     };
   }
+  /** Saves what a dated source read before stopping early: its new
+   *  candidates and the items already read, so they are not read again. The
+   *  window start (`last_success_at`) and the baseline stay put, so nothing
+   *  unread is skipped. Undated sources establish newness from a complete
+   *  snapshot and are refused. */
+  async commitPartial(snapshot: Snapshot, state: SourceState, now: string) {
+    if (
+      !snapshot.partial ||
+      snapshot.source !== 'official-registry' ||
+      snapshot.items.some((i) => !i.publishedAt || !i.dateEvidence)
+    )
+      throw new Error('Only dated sources can save partial progress');
+    const seen = new Set(state.seen_keys),
+      candidates = snapshot.items.filter((i) =>
+        isNew(i, seen, Boolean(state.initialized_at), now),
+      );
+    // Candidates first: if the progress write then fails, the same servers are
+    // simply read again next run and the duplicate inserts are ignored.
+    if (candidates.length) {
+      const { error } = await this.db.from('discovery_candidates').upsert(
+        candidates.map((item) => ({
+          id: digest(`${item.source}:${item.id}`),
+          source: item.source,
+          source_id: item.id,
+          published_at: item.publishedAt,
+          data: item,
+        })),
+        { onConflict: 'id', ignoreDuplicates: true },
+      );
+      if (error) throw new Error('Could not save partial discovery candidates');
+    }
+    for (const item of snapshot.items) seen.add(digest(item.id));
+    const { error } = await this.db
+      .from('discovery_sources')
+      .update({
+        seen_keys: [...seen],
+        last_error: snapshot.error?.slice(0, 200) ?? null,
+      })
+      .eq('source', snapshot.source);
+    if (error) throw new Error('Could not save partial discovery progress');
+    return {
+      observed: snapshot.items.length,
+      newCandidates: candidates.length,
+      baseline: false,
+      partial: true,
+    };
+  }
   /** Work order: candidates whose contact is already found (their credits are
    *  spent), then at most five failed candidates last tried 20 or more hours
    *  ago, then new candidates oldest first. Retries can no longer crowd out

@@ -338,78 +338,153 @@ async function sitemapSnapshot(
     );
   return [...new Map(items.map((i) => [i.id, i])).values()];
 }
-async function officialSnapshot(
+type RegistryRead = (
+  url: string,
+  deadline: number,
+) => Promise<{ text: string }>;
+type RegistryEntry = ReturnType<
+  typeof registryCatalog.parse
+>['servers'][number];
+const readRegistry: RegistryRead = (url, deadline) =>
+  readPage(url, deadline, false);
+const HISTORY_CONCURRENCY = 6;
+/** One server's first publication, from its complete version history.
+ *  Undefined when any version is undated, so first publication is unproven. */
+async function registryItem(
+  entry: RegistryEntry,
+  deadline: number,
+  read: RegistryRead,
+): Promise<Candidate | undefined> {
+  const s = entry.server;
+  const dates: string[] = [];
+  let cursor = '',
+    pages = 0;
+  do {
+    const u = new URL(
+      `${SOURCE_URLS['official-registry']}/${encodeURIComponent(s.name)}/versions`,
+    );
+    if (cursor) u.searchParams.set('cursor', cursor);
+    const versions = registryCatalog.parse(
+      JSON.parse((await read(u.href, deadline)).text),
+    );
+    for (const row of versions.servers) {
+      const published =
+        row._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt;
+      if (typeof published !== 'string') return;
+      dates.push(published);
+    }
+    cursor = versions.metadata?.nextCursor || '';
+    if (++pages > 20)
+      throw new Error('Registry version history did not terminate');
+  } while (cursor);
+  if (!dates.length) return;
+  const earliest = dates.sort((a, b) => Date.parse(a) - Date.parse(b))[0]!;
+  return {
+    source: 'official-registry',
+    id: s.name,
+    name: bounded(s.title || s.name.split('/').at(-1), 200),
+    description: bounded(s.description),
+    kind: 'mcp-server',
+    sourceUrl: `https://registry.modelcontextprotocol.io/servers/${encodeURIComponent(s.name)}`,
+    homepage: optional(s.websiteUrl),
+    repository: optional(s.repository?.url),
+    endpoint: optional(s.remotes?.[0]?.url),
+    publishedAt: earliest,
+    dateEvidence:
+      'Earliest publishedAt across complete registry version history',
+  };
+}
+/** Official registry servers updated since `since`. Each new server's full
+ *  version history is read, up to six at a time, to find its first
+ *  publication. A server whose read fails is left for the next run; when time
+ *  runs short the servers already read come back as a partial result. */
+export async function officialSnapshot(
   deadline: number,
   known: Set<string>,
   since: string,
-): Promise<Candidate[]> {
+  read: RegistryRead = readRegistry,
+): Promise<{ items: Candidate[]; complete: boolean; error?: string }> {
   const items: Candidate[] = [],
     cursors = new Set<string>();
-  let cursor = '';
-  do {
-    const u = new URL(SOURCE_URLS['official-registry']);
-    u.searchParams.set('limit', '100');
-    u.searchParams.set('version', 'latest');
-    u.searchParams.set('updated_since', since);
-    if (cursor) u.searchParams.set('cursor', cursor);
-    const data = registryCatalog.parse(
-      JSON.parse((await readPage(u.href, deadline, false)).text),
-    );
-    for (const entry of data.servers) {
-      const s = entry.server,
-        m = entry._meta?.['io.modelcontextprotocol.registry/official'];
-      if (!s?.name || m?.status !== 'active' || known.has(digest(s.name)))
-        continue;
-      const published = m.publishedAt;
-      if (!published || Date.parse(published) < Date.parse(CUTOFF)) continue;
-      // The latest version publication is NOT the first listing date. Check all versions.
-      const versions = registryCatalog.parse(
-        JSON.parse(
-          (
-            await readPage(
-              `${SOURCE_URLS['official-registry']}/${encodeURIComponent(s.name)}/versions`,
-              deadline,
-              false,
-            )
-          ).text,
+  let cursor = '',
+    failed = 0;
+  const timeUp = () => Date.now() > deadline - 15_000;
+  const stopped = () => ({
+    items,
+    complete: false,
+    error: 'Registry read stopped at the time limit; progress saved',
+  });
+  try {
+    do {
+      if (timeUp()) return stopped();
+      const u = new URL(SOURCE_URLS['official-registry']);
+      u.searchParams.set('limit', '100');
+      u.searchParams.set('version', 'latest');
+      u.searchParams.set('updated_since', since);
+      if (cursor) u.searchParams.set('cursor', cursor);
+      const data = registryCatalog.parse(
+        JSON.parse((await read(u.href, deadline)).text),
+      );
+      const queue = data.servers.filter((entry) => {
+        const name = entry.server?.name,
+          meta = entry._meta?.['io.modelcontextprotocol.registry/official'];
+        return (
+          name &&
+          meta?.status === 'active' &&
+          !known.has(digest(name)) &&
+          meta.publishedAt &&
+          Date.parse(meta.publishedAt) >= Date.parse(CUTOFF)
+        );
+      });
+      let next = 0,
+        outOfTime = false;
+      const worker = async () => {
+        while (next < queue.length) {
+          if (timeUp()) {
+            outOfTime = true;
+            return;
+          }
+          const entry = queue[next++]!;
+          // The latest version publication is NOT the first listing date.
+          try {
+            const item = await registryItem(entry, deadline, read);
+            if (item) {
+              items.push(item);
+              known.add(digest(item.id));
+            }
+          } catch {
+            failed++;
+          }
+        }
+      };
+      await Promise.all(
+        Array.from(
+          { length: Math.min(HISTORY_CONCURRENCY, queue.length) },
+          worker,
         ),
       );
-      const rows = versions.servers;
-      if (!Array.isArray(rows) || versions.metadata?.nextCursor)
-        throw new Error('Registry version history incomplete');
-      const dates = rows
-        .map(
-          (r) =>
-            r._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt,
-        )
-        .filter((d): d is string => typeof d === 'string');
-      if (dates.length !== rows.length || !dates.length) continue;
-      const earliest = dates.sort(
-        (a: string, b: string) => Date.parse(a) - Date.parse(b),
-      )[0];
-      items.push({
-        source: 'official-registry',
-        id: s.name,
-        name: bounded(s.title || s.name.split('/').at(-1), 200),
-        description: bounded(s.description),
-        kind: 'mcp-server',
-        sourceUrl: `https://registry.modelcontextprotocol.io/servers/${encodeURIComponent(s.name)}`,
-        homepage: optional(s.websiteUrl),
-        repository: optional(s.repository?.url),
-        endpoint: optional(s.remotes?.[0]?.url),
-        publishedAt: earliest,
-        dateEvidence:
-          'Earliest publishedAt across complete registry version history',
-      });
-    }
-    cursor = data.metadata?.nextCursor || '';
-    if (cursor) {
-      if (cursors.has(cursor) || cursors.size >= 100)
-        throw new Error('Registry cursor did not terminate');
-      cursors.add(cursor);
-    }
-  } while (cursor);
-  return items;
+      if (outOfTime) return stopped();
+      cursor = data.metadata?.nextCursor || '';
+      if (cursor) {
+        if (cursors.has(cursor) || cursors.size >= 100)
+          throw new Error('Registry cursor did not terminate');
+        cursors.add(cursor);
+      }
+    } while (cursor);
+  } catch (error) {
+    return {
+      items,
+      complete: false,
+      error: (error as Error).message.slice(0, 200),
+    };
+  }
+  return failed
+    ? {
+        items,
+        complete: false,
+        error: `${failed} registry server${failed === 1 ? '' : 's'} could not be read; progress saved`,
+      }
+    : { items, complete: true };
 }
 export async function fetchSnapshot(
   source: Source,
@@ -419,9 +494,18 @@ export async function fetchSnapshot(
 ): Promise<Snapshot> {
   try {
     let items: Candidate[];
-    if (source === 'official-registry')
-      items = await officialSnapshot(deadline, known, since);
-    else if (['mcp-so', 'pulsemcp', 'cursor'].includes(source))
+    if (source === 'official-registry') {
+      const result = await officialSnapshot(deadline, known, since);
+      return result.complete
+        ? { source, items: result.items, complete: true }
+        : {
+            source,
+            items: result.items,
+            complete: false,
+            partial: true,
+            error: result.error,
+          };
+    } else if (['mcp-so', 'pulsemcp', 'cursor'].includes(source))
       items = await sitemapSnapshot(source, deadline);
     else {
       const page = await readPage(

@@ -21,6 +21,7 @@ import {
   parseDetail,
   parseMicrosoft,
   parseLiteLLM,
+  officialSnapshot,
 } from '../lib/discovery/sources.ts';
 import {
   belongsToCompany,
@@ -32,6 +33,7 @@ import {
 } from '../lib/discovery/contacts.ts';
 import { leadPayload, Smartlead } from '../lib/discovery/smartlead.ts';
 import { DiscoveryStore, type Contact } from '../lib/discovery/store.ts';
+import { runDiscovery } from '../lib/discovery/run.ts';
 import {
   ProviderCooldown,
   ProviderError,
@@ -613,4 +615,248 @@ void test('Work order puts found contacts first and caps cooled-down retries ahe
   assert.ok(filters.includes('attempts<3'));
   assert.ok(filters.includes('updated_at<2026-09-12T16:00:00.000Z'));
   assert.ok(filters.includes('retry limit 5'));
+});
+void test('Registry histories are read several at a time and failed reads are left for the next run', async () => {
+  const servers = Array.from({ length: 9 }, (_, i) => `io.example/server-${i}`);
+  const meta = (publishedAt: string) => ({
+    'io.modelcontextprotocol.registry/official': {
+      status: 'active',
+      publishedAt,
+    },
+  });
+  const listing = (names: string[], nextCursor = '') =>
+    JSON.stringify({
+      servers: names.map((name) => ({
+        server: {
+          name,
+          title: name,
+          description: 'An MCP server',
+          websiteUrl: `https://${name.split('/')[1]}.example.com`,
+        },
+        _meta: meta('2026-09-12T10:00:00Z'),
+      })),
+      metadata: nextCursor ? { nextCursor } : {},
+    });
+  const history = (dates: string[]) =>
+    JSON.stringify({
+      servers: dates.map((d) => ({ server: { name: 'x' }, _meta: meta(d) })),
+    });
+  let active = 0,
+    peak = 0;
+  const histories: string[] = [];
+  const read = async (url: string) => {
+    const u = new URL(url);
+    if (u.pathname === '/v0.1/servers')
+      return {
+        text: u.searchParams.get('cursor')
+          ? listing(servers.slice(5))
+          : listing(servers.slice(0, 5), 'page-2'),
+      };
+    const name = decodeURIComponent(
+      u.pathname.replace('/v0.1/servers/', '').replace('/versions', ''),
+    );
+    active++;
+    peak = Math.max(peak, active);
+    histories.push(name);
+    await new Promise((r) => setTimeout(r, 5));
+    active--;
+    if (name.endsWith('-7'))
+      throw new Error('The page took too long to respond.');
+    return {
+      text: history(
+        name.endsWith('-3')
+          ? ['2026-09-12T10:00:00Z', '2025-01-01T00:00:00Z']
+          : ['2026-09-12T10:00:00Z'],
+      ),
+    };
+  };
+  const result = await officialSnapshot(
+    Date.now() + 60_000,
+    new Set([digest('io.example/server-0')]),
+    CUTOFF,
+    read,
+  );
+  assert.ok(peak > 1 && peak <= 6, `peak concurrency ${peak}`);
+  assert.equal(histories.includes('io.example/server-0'), false);
+  assert.equal(result.complete, false);
+  assert.match(result.error ?? '', /^1 registry server could not be read/);
+  assert.deepEqual(
+    result.items.map((i) => i.id).sort(),
+    servers
+      .slice(1)
+      .filter((n) => !n.endsWith('-7'))
+      .sort(),
+  );
+  assert.equal(
+    result.items.find((i) => i.id.endsWith('-3'))?.publishedAt,
+    '2025-01-01T00:00:00Z',
+  );
+  const done = await officialSnapshot(
+    Date.now() + 60_000,
+    new Set(servers.map(digest)),
+    CUTOFF,
+    read,
+  );
+  assert.deepEqual(done, { items: [], complete: true });
+  const late = await officialSnapshot(
+    Date.now() + 10_000,
+    new Set(),
+    CUTOFF,
+    read,
+  );
+  assert.equal(late.complete, false);
+  assert.match(late.error ?? '', /time limit/);
+});
+void test('Partial progress saves new dated candidates without moving the source window', async () => {
+  const writes: { table: string; op: string; value: unknown }[] = [];
+  const db = {
+    from: (table: string) => ({
+      upsert: async (value: unknown) => {
+        writes.push({ table, op: 'upsert', value });
+        return { error: null };
+      },
+      update: (value: unknown) => ({
+        eq: async () => {
+          writes.push({ table, op: 'update', value });
+          return { error: null };
+        },
+      }),
+    }),
+  } as unknown as ConstructorParameters<typeof DiscoveryStore>[0];
+  const store = new DiscoveryStore(db);
+  const state = {
+    source: 'official-registry' as const,
+    initialized_at: CUTOFF,
+    last_success_at: CUTOFF,
+    seen_keys: [digest('io.example/already-seen')],
+  };
+  const fresh = {
+    ...item,
+    source: 'official-registry' as const,
+    id: 'io.example/new',
+    publishedAt: '2026-09-12T10:00:00Z',
+    dateEvidence:
+      'Earliest publishedAt across complete registry version history',
+  };
+  const old = {
+    ...fresh,
+    id: 'io.example/old',
+    publishedAt: '2025-01-01T00:00:00Z',
+  };
+  const saved = await store.commitPartial(
+    {
+      source: 'official-registry',
+      items: [fresh, old],
+      complete: false,
+      partial: true,
+      error: 'Registry read stopped at the time limit; progress saved',
+    },
+    state,
+    '2026-09-13T12:00:00Z',
+  );
+  assert.equal(saved.newCandidates, 1);
+  assert.deepEqual(
+    writes.map((w) => `${w.op} ${w.table}`),
+    ['upsert discovery_candidates', 'update discovery_sources'],
+  );
+  assert.equal((writes[0]!.value as unknown[]).length, 1);
+  const progress = writes[1]!.value as Record<string, unknown>;
+  assert.equal('last_success_at' in progress, false);
+  assert.equal('initialized_at' in progress, false);
+  assert.equal((progress.seen_keys as string[]).length, 3);
+  await assert.rejects(
+    store.commitPartial(
+      { source: 'pulsemcp', items: [item], complete: false, partial: true },
+      { ...state, source: 'pulsemcp' },
+      CUTOFF,
+    ),
+    /Only dated sources/,
+  );
+});
+void test('Candidates start before the slowest source finishes, and a partial registry read is kept', async () => {
+  const keys = [
+    'DISCOVERY_ENRICHMENT_ENABLED',
+    'PROSPEO_API_KEY',
+    'SMARTLEAD_API_KEY',
+  ] as const;
+  const previous = keys.map((k) => process.env[k]);
+  process.env.DISCOVERY_ENRICHMENT_ENABLED = 'true';
+  process.env.PROSPEO_API_KEY = 'fixture';
+  process.env.SMARTLEAD_API_KEY = 'fixture';
+  const events: string[] = [];
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let finished:
+    | { status?: string; sources: { source: string; status: string }[] }
+    | undefined;
+  const table = {
+    select: () => table,
+    order: () => table,
+    range: async () => ({ data: [], error: null }),
+  };
+  const store = {
+    db: { from: () => table },
+    claim: async () => 'owner',
+    source: async (source: string) => ({
+      source,
+      initialized_at: CUTOFF,
+      last_success_at: CUTOFF,
+      seen_keys: [],
+    }),
+    sourceError: async () => {},
+    commit: async () => ({ observed: 1, newCandidates: 0, baseline: false }),
+    commitPartial: async () => {
+      events.push('partial saved');
+      return { observed: 1, newCandidates: 1, baseline: false, partial: true };
+    },
+    outreach: async () => [],
+    pending: async () => {
+      events.push('candidates started');
+      release();
+      return [];
+    },
+    finish: async (_day: string, _owner: string, report: typeof finished) => {
+      finished = report;
+    },
+  } as unknown as DiscoveryStore;
+  try {
+    await runDiscovery({
+      store,
+      now: new Date('2026-09-13T12:00:00Z'),
+      account: async () => null,
+      snapshot: async (source) => {
+        await released;
+        events.push('source ' + source);
+        return source === 'official-registry'
+          ? {
+              source,
+              items: [
+                {
+                  ...item,
+                  source,
+                  id: 'io.example/new',
+                  publishedAt: CUTOFF,
+                  dateEvidence: 'history',
+                },
+              ],
+              complete: false,
+              partial: true,
+              error: 'Registry read stopped at the time limit; progress saved',
+            }
+          : { source, items: [item], complete: true };
+      },
+    });
+  } finally {
+    keys.forEach((k, i) => {
+      if (previous[i] === undefined) delete process.env[k];
+      else process.env[k] = previous[i];
+    });
+  }
+  assert.equal(events[0], 'candidates started');
+  assert.ok(events.includes('partial saved'));
+  assert.equal(finished?.sources.length, 9);
+  assert.equal(
+    finished?.sources.find((s) => s.source === 'official-registry')?.status,
+    'partial',
+  );
 });

@@ -40,6 +40,7 @@ type DiscoveryReport = {
     observed?: number;
     newCandidates?: number;
     baseline?: boolean;
+    partial?: boolean;
   }[];
   candidates: Record<
     | 'checked'
@@ -116,7 +117,14 @@ export function dailyLimit() {
   return n;
 }
 export async function runDiscovery(
-  options: { baselineOnly?: boolean; now?: Date; store?: DiscoveryStore } = {},
+  options: {
+    baselineOnly?: boolean;
+    now?: Date;
+    store?: DiscoveryStore;
+    /** Test seams for the network-facing steps. */
+    snapshot?: typeof fetchSnapshot;
+    account?: typeof prospeoAccount;
+  } = {},
 ) {
   const now = options.now || new Date(),
     day = dayKey(now),
@@ -141,9 +149,13 @@ export async function runDiscovery(
     },
     issues: [],
   };
+  let sourceWork: Promise<void> | undefined;
   try {
-    const sourceDeadline = Math.min(deadline - 90_000, Date.now() + 180_000);
-    const results = await Promise.allSettled(
+    // Sources load in the background while the queue that is already saved is
+    // processed, so the slowest source can no longer eat the candidates' time.
+    const sourceDeadline = deadline - 30_000;
+    const snapshot = options.snapshot ?? fetchSnapshot;
+    sourceWork = Promise.allSettled(
       SOURCES.map(async (source) => {
         const state = await store.source(source);
         const since = state.last_success_at
@@ -154,35 +166,42 @@ export async function runDiscovery(
               ),
             ).toISOString()
           : CUTOFF;
-        const snapshot = await fetchSnapshot(
+        const result = await snapshot(
           source,
           sourceDeadline,
           new Set(state.seen_keys),
           since,
         );
-        if (!snapshot.complete) {
-          await store.sourceError(
-            source,
-            snapshot.error || 'Incomplete source',
-          );
-          return { source, status: 'unavailable', error: snapshot.error };
+        if (!result.complete) {
+          await store.sourceError(source, result.error || 'Incomplete source');
+          // A dated source that stopped early keeps what it read; its window
+          // stays put, so the next run lists it again and reads only the rest.
+          if (result.partial && result.items.length)
+            return {
+              source,
+              status: 'partial',
+              error: result.error,
+              ...(await store.commitPartial(result, state, now.toISOString())),
+            };
+          return { source, status: 'unavailable', error: result.error };
         }
         return {
           source,
           status: 'checked',
-          ...(await store.commit(snapshot, state, now.toISOString())),
+          ...(await store.commit(result, state, now.toISOString())),
         };
       }),
-    );
-    results.forEach((r, i) =>
-      report.sources.push(
-        r.status === 'fulfilled'
-          ? r.value
-          : {
-              source: SOURCES[i],
-              status: 'failed',
-              error: 'Source checkpoint could not be saved',
-            },
+    ).then((results) =>
+      results.forEach((r, i) =>
+        report.sources.push(
+          r.status === 'fulfilled'
+            ? r.value
+            : {
+                source: SOURCES[i],
+                status: 'failed',
+                error: 'Source checkpoint could not be saved',
+              },
+        ),
       ),
     );
     const missing = ['PROSPEO_API_KEY', 'SMARTLEAD_API_KEY'].filter(
@@ -221,7 +240,7 @@ export async function runDiscovery(
       // Free account check: plan and credits go in the report, and enrichment
       // pauses instead of failing candidates when Prospeo has no credits left.
       try {
-        const account = await prospeoAccount(deadline);
+        const account = await (options.account ?? prospeoAccount)(deadline);
         if (account) {
           report.prospeo = account;
           if (account.remainingCredits === 0)
@@ -462,6 +481,7 @@ export async function runDiscovery(
         }
       }
     }
+    await sourceWork;
     report.providers = providerPacer.snapshot();
     report.status =
       report.sources.some((r) => r.status !== 'checked') ||
@@ -474,6 +494,7 @@ export async function runDiscovery(
     await store.finish(day, owner, report);
     return report;
   } catch (error) {
+    if (sourceWork) await sourceWork;
     report.status = 'failed';
     report.issues.push(
       error instanceof Error ? error.message.slice(0, 200) : 'Job failed',
