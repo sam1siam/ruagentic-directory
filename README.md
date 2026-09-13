@@ -1,5 +1,7 @@
 # RUAGENTIC Directory
 
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/ruagentic-com-developers)
+
 RUAGENTIC is the official Agentic directory for agentic AI MCP servers, clients, and tools. It is an independent directory, separate from the official Model Context Protocol registry.
 
 The directory lives at **https://ruagentic.com**. The free file convention, generator, auditor, and CLI live at **https://ruagentic.org**, in the separate [sam1siam/agentic](https://github.com/sam1siam/agentic) repository.
