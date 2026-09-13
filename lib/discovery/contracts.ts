@@ -95,11 +95,14 @@ export const hackerNewsItem = z.object({
 });
 export const githubSearch = z.object({
   total_count: z.number(),
+  incomplete_results: z.boolean(),
   items: z.array(
     z.object({
       full_name: z.string().min(1),
       name: z.string().min(1),
       html_url: z.string(),
+      private: z.boolean().nullish(),
+      visibility: text,
       description: text,
       homepage: text,
       fork: z.boolean().nullish(),

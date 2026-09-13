@@ -608,13 +608,15 @@ export async function hackerNewsSnapshot(
     : { items, complete: true };
 }
 const GITHUB_TOPICS = ['mcp-server', 'model-context-protocol'] as const;
-/** New, non-fork, non-archived repositories from one search results page,
+/** New public, non-fork, non-archived repositories from one search results page,
  *  dated by their creation time. */
 export function parseGithubSearch(value: unknown, topic: string): Candidate[] {
   return githubSearch
     .parse(value)
     .items.filter(
       (repo) =>
+        repo.private === false &&
+        (repo.visibility === undefined || repo.visibility === 'public') &&
         !repo.fork &&
         !repo.archived &&
         Date.parse(repo.created_at) >= Date.parse(CUTOFF),
@@ -665,7 +667,7 @@ export async function githubSnapshot(
         const u = new URL(SOURCE_URLS.github);
         u.searchParams.set(
           'q',
-          `topic:${topic} created:>=${created} fork:false archived:false`,
+          `topic:${topic} created:>=${created} fork:false archived:false is:public`,
         );
         u.searchParams.set('sort', 'updated');
         u.searchParams.set('per_page', '100');
@@ -673,13 +675,17 @@ export async function githubSnapshot(
         const data = githubSearch.parse(
           await api(u.href, { headers }, deadline),
         );
+        for (const item of parseGithubSearch(data, topic))
+          if (!known.has(digest(item.id)) && !found.has(item.id))
+            found.set(item.id, item);
+        // A successful HTTP response can still represent a timed-out search.
+        // Keep its public matches, but leave the source window open for retry.
+        if (data.incomplete_results)
+          throw new Error(`GitHub topic ${topic} returned incomplete results`);
         if (data.total_count > 1000)
           throw new Error(
             `GitHub topic ${topic} has more than 1,000 new repositories in the window`,
           );
-        for (const item of parseGithubSearch(data, topic))
-          if (!known.has(digest(item.id)) && !found.has(item.id))
-            found.set(item.id, item);
         if (data.items.length < 100) break;
       }
     }

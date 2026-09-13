@@ -20,9 +20,11 @@ The permanent cutoff is **September 10, 2026, 00:00 America/Toronto** (`2026-09-
 | LiteLLM | Public `mcp_registry.json` | New catalog ID after a complete baseline; package/registry metadata resolves project links without executing install commands |
 | Product Hunt | Public Atom feed | Original `published`, never `updated`; only agent/MCP products qualify |
 | Hacker News | Official HN API `showstories` (the latest ~200 Show HN posts, several days' worth) | Original submission `time`; only posts that mention MCP or AI agents qualify |
-| GitHub | Repository search API for topics `mcp-server` and `model-context-protocol` | Repository `created_at`; forks and archived repositories are excluded, and a repository without its own website is skipped |
+| GitHub | Public repository search API for topics `mcp-server` and `model-context-protocol` | Repository `created_at`; private, internal, unknown-visibility, forked and archived repositories are excluded, and a repository without its own website is skipped |
 
 An undated site's first successful full snapshot is a baseline, not a lead list. This deliberately excludes entries already present at setup, including those whose exact publication time cannot be established. Failed, empty, or incomplete full catalogs do not replace a baseline. Source failures leave the other sources operational. A public feed can expose only its current window; an outage longer than that window can miss entries. A site that renames URLs without publication evidence may require manual review. No scraper can guarantee that an undated source's newly appearing URL represents a newly created company.
+
+GitHub searches use `is:public` and require public repository metadata even when a token can access private repositories. An HTTP 200 response with `incomplete_results: true` saves only partial progress and leaves the source window open for the next run.
 
 Public crawling checks robots.txt, uses the identified RUAGENTIC user agent, pins public DNS addresses, caps bytes and time, and never uses browser sessions, executes a submitted command, or bypasses a bot wall. Redirects are followed for up to five hops: every hop must stay on HTTPS, is resolved and pinned to public addresses again, and is checked against the robots.txt of its own origin. A redirecting robots.txt is followed the same way (RFC 9309); one that ends on an ordinary page or a 4xx response imposes no rules.
 
@@ -35,7 +37,7 @@ The dedicated Smartlead campaign is **3932154**, “RUAGENTIC | New MCP & AI age
 Contact policy: **a founder's work email first, then a published hello@ or support@ address.** Addresses are never guessed.
 
 1. Prospeo founder search on the exact company domain (current titles containing Founder or Co-founder, at most two people), then a verified work-email reveal for each. The returned company, current title and email domain must match, and founder lookups accept only personal mailboxes.
-2. If Prospeo names a founder without a verified email, Findymail looks that founder up by name and domain.
+2. If Prospeo names founders without verified emails, Findymail looks up each known founder by name and domain, in order (at most two).
 3. If Prospeo finds no founder, Findymail searches the company's current founders itself and looks up their emails.
 4. If no founder email is found, a hello@ or support@ address on the company's own domain that the homepage or its contact page publishes (hello@ first) is verified through Findymail. Pages that refuse marketing or unsolicited contact are skipped. This step never runs while a Prospeo lookup is unresolved.
 
@@ -47,7 +49,7 @@ Smartlead imports retain its global block list, unsubscribe list, bounce suppres
 
 ## Provider limits and work order
 
-Every Prospeo and Findymail call is paced, including empty searches and failures: Prospeo at least 3.1 seconds apart per endpoint group and Findymail 1.1 seconds, slowing further to match Prospeo's `x-second-rate-limit` and `x-minute-rate-limit` headers. A 429, or a minute or daily allowance reaching zero, blocks that provider until its `Retry-After` or reset time. Each outreach run starts with Prospeo's free account check and records the plan, remaining credits and renewal (`prospeo`) plus the pacer's state per provider (`providers`, including requests left today). With no credits left, enrichment pauses and candidates stay queued.
+Every Prospeo, Findymail and Smartlead call is paced, including empty searches and failures: Prospeo at least 3.1 seconds apart per endpoint group and Findymail and Smartlead 1.1 seconds, slowing further to match Prospeo's `x-second-rate-limit` and `x-minute-rate-limit` headers. A 429, or a minute or daily allowance reaching zero, blocks that provider until its `Retry-After` or reset time. GitHub secondary limits, including HTTP 403, pause both search and repository requests; a response identifying a secondary limit without `Retry-After` pauses them for at least a minute. Cooldowns apply as soon as response headers arrive and are rechecked by waiting requests. Each outreach run starts with Prospeo's free account check and records the plan, remaining credits and renewal (`prospeo`) plus the pacer's state per provider (`providers`, including requests left today). With no credits left, enrichment pauses and candidates stay queued.
 
 A rate limit, cooldown or account error (HTTP 401, 402, 403, 423 or 429) at Prospeo, Findymail or Smartlead is not the candidate's fault. The candidate returns to the queue with its status and attempt count unchanged and is counted as `deferred`. A short limit is waited out; one that outlasts the run, or any account error, stops outreach for the day with the reason in `issues`. Findymail never substitutes for a rate-limited Prospeo lookup. Only candidate-specific failures count an attempt, and a third failed attempt moves a candidate to `needs_review`.
 

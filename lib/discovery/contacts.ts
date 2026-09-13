@@ -185,12 +185,16 @@ export async function findContact(
   if (!domain) return null;
   const prospeo = process.env.PROSPEO_API_KEY,
     findymail = process.env.FINDYMAIL_API_KEY;
-  if (!prospeo || !findymail)
-    throw new Error('Both founder enrichment providers must be configured');
+  if (!prospeo)
+    throw new Error('Prospeo founder enrichment must be configured');
   let prospeoFailure: unknown;
-  let knownFounder:
-    | { name: string; role: string; evidence: string }
-    | undefined;
+  const nameKey = (name: string) => name.normalize('NFKC').trim().toLowerCase();
+  const knownFounders = new Map<
+    string,
+    { name: string; role: string; evidence: string }
+  >();
+  const founderEvidence = (personId: string) =>
+    `Prospeo current founder search for ${domain}; person ${personId}`;
   const paid = async (
     url: string,
     headers: Record<string, string>,
@@ -244,16 +248,15 @@ export async function findContact(
         person.full_name &&
         person.full_name.trim().split(/\s+/).length >= 2
       ) {
-        knownFounder = {
+        knownFounders.set(nameKey(person.full_name), {
           name: person.full_name,
           role: person.current_job_title!,
-          evidence:
-            'Prospeo current founder search for ' +
-            domain +
-            '; person ' +
-            person.person_id,
-        };
+          evidence: founderEvidence(person.person_id!),
+        });
       }
+    }
+    for (const match of matches) {
+      const person = match.person!;
       const enriched = await paid(
         'https://api.prospeo.io/enrich-person',
         { 'X-KEY': prospeo },
@@ -266,7 +269,7 @@ export async function findContact(
       const contact = verifiedFounder(
         enriched,
         domain,
-        knownFounder?.evidence || 'Prospeo exact company founder',
+        founderEvidence(person.person_id!),
       );
       if (contact) return contact;
     }
@@ -277,6 +280,10 @@ export async function findContact(
     if (/budget/.test(e instanceof Error ? e.message : '') || providerHold(e))
       throw e;
     prospeoFailure = e;
+  }
+  if (!findymail) {
+    if (prospeoFailure) throw prospeoFailure;
+    return null;
   }
   const finderHeaders = { Authorization: 'Bearer ' + findymail };
   const findEmail = async (person: {
@@ -294,8 +301,7 @@ export async function findContact(
     );
     const sameName =
       typeof result.name === 'string' &&
-      result.name.normalize('NFKC').trim().toLowerCase() ===
-        person.name.normalize('NFKC').trim().toLowerCase();
+      nameKey(result.name) === nameKey(person.name);
     if (
       !sameName ||
       !founderEmail(result.email, domain) ||
@@ -314,12 +320,11 @@ export async function findContact(
       verifiedAt: new Date().toISOString(),
     } satisfies Contact;
   };
-  if (knownFounder) {
-    const contact = await findEmail(knownFounder);
+  for (const founder of knownFounders.values()) {
+    const contact = await findEmail(founder);
     if (contact) return contact;
   }
-  // Findymail must discover the founder itself when Prospeo finds no person.
-  // The old generic-mailbox /api/verify path is intentionally absent.
+  // Search for another founder when the known founders have no verified email.
   const employees = await paid(
     'https://app.findymail.com/api/search/employees',
     finderHeaders,
@@ -336,7 +341,7 @@ export async function findContact(
       person.name.trim().split(/\s+/).length < 2
     )
       continue;
-    if (person.name === knownFounder?.name) continue;
+    if (knownFounders.has(nameKey(person.name))) continue;
     const contact = await findEmail({
       name: person.name,
       role: person.jobTitle,
@@ -436,7 +441,7 @@ export function publishedContacts(
   const $ = load(html);
   const text = $('body').length ? $('body').text() : $.root().text();
   if (
-    /no (?:unsolicited|marketing|sales)\b|do not (?:contact|email) us for|not for (?:sales|marketing)/i.test(
+    /\bno\s+(?:unsolicited|marketing|sales)\b|\b(?:do\s+not|don[’']t)\s+(?:contact|e-?mail)\b|\bnot\s+for\s+(?:sales|marketing)\b/i.test(
       text,
     )
   )
@@ -453,7 +458,11 @@ export function publishedContacts(
           return '';
         }
       }),
-    ...(text.match(/\b(?:hello|support)@[a-z0-9.-]+\.[a-z]{2,}\b/gi) ?? []),
+    // Read the whole mailbox before filtering its local part. A word boundary
+    // would incorrectly turn jane+hello@example.com into hello@example.com.
+    ...(text.match(
+      /[a-z0-9.!#$%&'*+\-/=?^_`{|}~]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi,
+    ) ?? []),
   ].map((email) => email.trim().toLowerCase());
   return [...new Set(addresses)]
     .filter(

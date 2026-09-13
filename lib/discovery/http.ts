@@ -162,12 +162,20 @@ export async function apiJson(
     signal: AbortSignal.timeout(timeout),
     headers,
   });
-  const retryAfterSeconds = providerPacer.observe(
+  let retryAfterSeconds = providerPacer.observe(
     u,
     response.headers,
     response.status,
   );
   const body = await response.text();
+  if (
+    response.status === 403 &&
+    /secondary rate limit|abuse detection/i.test(body)
+  )
+    retryAfterSeconds = Math.max(
+      retryAfterSeconds,
+      providerPacer.observe(u, response.headers, response.status, true),
+    );
   if (body.length > 8_000_000) throw new Error('API response exceeded limit');
   if (!response.ok) {
     let code;

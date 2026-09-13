@@ -23,10 +23,11 @@ export class ProviderCooldown extends Error {
   }
 }
 
-/** Paces every Prospeo and Findymail call, including empty searches and
+/** Paces provider calls, including empty searches and
  *  failures, and adapts to their rate-limit headers. Never retries writes. */
 export class ProviderPacer {
   private buckets = new Map<string, Bucket>();
+  private githubBlocked = 0;
   private clock: Clock;
   constructor(clock: Clock = { now: Date.now, sleep: delay }) {
     this.clock = clock;
@@ -35,6 +36,7 @@ export class ProviderPacer {
     if (url.hostname === 'api.prospeo.io')
       return `prospeo:${url.pathname.startsWith('/search-') ? 'search' : 'enrich'}`;
     if (url.hostname === 'app.findymail.com') return 'findymail';
+    if (url.hostname === 'server.smartlead.ai') return 'smartlead';
     if (url.hostname === 'api.github.com')
       return url.pathname.startsWith('/search/')
         ? 'github:search'
@@ -62,15 +64,24 @@ export class ProviderPacer {
   async wait(url: URL, deadline: number) {
     const key = this.key(url);
     if (!key) return;
-    const b = this.bucket(key),
-      now = this.clock.now();
-    const at = Math.max(now, b.next, b.blocked);
-    if (at > deadline - 20_000)
-      throw new ProviderCooldown(key, Math.ceil((at - now) / 1000));
-    b.next = at + b.interval; // reserve before awaiting, so concurrent callers cannot burst
-    if (at > now) await this.clock.sleep(at - now);
+    const b = this.bucket(key);
+    let at = Math.max(this.clock.now(), b.next);
+    for (;;) {
+      const now = this.clock.now();
+      const blocked = Math.max(
+        b.blocked,
+        key.startsWith('github:') ? this.githubBlocked : 0,
+      );
+      // Another response can extend the cooldown while this caller sleeps.
+      if (blocked > at) at = Math.max(blocked, b.next);
+      if (at > deadline - 20_000)
+        throw new ProviderCooldown(key, Math.ceil((at - now) / 1000));
+      b.next = Math.max(b.next, at + b.interval);
+      if (at <= now) return;
+      await this.clock.sleep(at - now);
+    }
   }
-  observe(url: URL, headers: Headers, status: number) {
+  observe(url: URL, headers: Headers, status: number, secondaryLimit = false) {
     const key = this.key(url);
     if (!key) return 0;
     const b = this.bucket(key),
@@ -108,7 +119,19 @@ export class ProviderPacer {
       if (remaining === 0 && reset)
         b.blocked = Math.max(b.blocked, reset * 1000 + 1000);
     }
-    if (status === 429) {
+    const githubSecondary =
+      key.startsWith('github:') &&
+      (secondaryLimit ||
+        ((status === 403 || status === 429) &&
+          number('x-ratelimit-remaining') !== 0 &&
+          (status === 429 || headers.has('retry-after'))));
+    if (
+      status === 429 ||
+      githubSecondary ||
+      (key.startsWith('github:') &&
+        status === 403 &&
+        headers.has('retry-after'))
+    ) {
       const retry = headers.get('retry-after');
       const milliseconds =
         retry && /^\d+(?:\.\d+)?$/.test(retry)
@@ -124,6 +147,9 @@ export class ProviderPacer {
             : 60000) +
           1000,
       );
+      // Secondary limits apply across GitHub's search and core endpoints.
+      if (githubSecondary)
+        this.githubBlocked = Math.max(this.githubBlocked, b.blocked);
     }
     return Math.max(0, Math.ceil((b.blocked - now) / 1000));
   }
@@ -135,7 +161,17 @@ export class ProviderPacer {
         key,
         {
           intervalMs: b.interval,
-          blockedForSeconds: Math.max(0, Math.ceil((b.blocked - now) / 1000)),
+          blockedForSeconds: Math.max(
+            0,
+            Math.ceil(
+              (Math.max(
+                b.blocked,
+                key.startsWith('github:') ? this.githubBlocked : 0,
+              ) -
+                now) /
+                1000,
+            ),
+          ),
           ...(b.dailyLeft !== undefined ? { dailyLeft: b.dailyLeft } : {}),
           ...(b.minuteLeft !== undefined ? { minuteLeft: b.minuteLeft } : {}),
           ...(b.remaining !== undefined ? { remaining: b.remaining } : {}),

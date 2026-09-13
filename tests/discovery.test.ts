@@ -1055,6 +1055,8 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
     full_name: full,
     name: full.split('/')[1],
     html_url: `https://github.com/${full}`,
+    private: false,
+    visibility: 'public',
     description: 'An MCP server',
     homepage: null,
     fork: false,
@@ -1070,6 +1072,7 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
     return topic === 'topic:mcp-server'
       ? {
           total_count: 2,
+          incomplete_results: false,
           items: [
             repo('Acme/Tool', { homepage: 'https://acme.dev' }),
             repo('old/one', { created_at: '2025-01-01T00:00:00Z' }),
@@ -1077,6 +1080,7 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
         }
       : {
           total_count: 3,
+          incomplete_results: false,
           items: [
             repo('acme/tool'),
             repo('fork/copy', { fork: true }),
@@ -1100,11 +1104,11 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
   assert.equal(snap.items[1]!.kind, undefined);
   assert.equal(
     new URL(urls[0]!).searchParams.get('q'),
-    'topic:mcp-server created:>=2026-09-11T11:17:00Z fork:false archived:false',
+    'topic:mcp-server created:>=2026-09-11T11:17:00Z fork:false archived:false is:public',
   );
   assert.equal(
     parseGithubSearch(
-      { total_count: 1, items: [repo('x/y')] },
+      { total_count: 1, incomplete_results: false, items: [repo('x/y')] },
       'mcp-server',
     )[0]!.dateEvidence,
     'GitHub repository creation time',
@@ -1113,7 +1117,7 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
     Date.now() + 60_000,
     new Set(),
     '2026-09-11T11:17:00.000Z',
-    async () => ({ total_count: 1500, items: [] }),
+    async () => ({ total_count: 1500, incomplete_results: false, items: [] }),
   );
   assert.equal(tooMany.complete, false);
 });
