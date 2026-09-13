@@ -1,4 +1,5 @@
 import { load } from 'cheerio';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   CUTOFF,
   digest,
@@ -7,7 +8,7 @@ import {
   type Snapshot,
   type Source,
 } from './policy.ts';
-import { readPage } from './http.ts';
+import { ProviderError, readPage } from './http.ts';
 import { mcpSoMetadata } from './mcp-so.ts';
 import {
   clineCatalog,
@@ -347,7 +348,10 @@ type RegistryEntry = ReturnType<
 >['servers'][number];
 const readRegistry: RegistryRead = (url, deadline) =>
   readPage(url, deadline, false);
-const HISTORY_CONCURRENCY = 6;
+/** The public registry publishes no rate limit and answers bursts with 429,
+ *  so reads stay modest and every reader pauses together when throttled. */
+const HISTORY_CONCURRENCY = 4;
+const REGISTRY_RETRIES = 4;
 /** One server's first publication, from its complete version history.
  *  Undefined when any version is undated, so first publication is unproven. */
 async function registryItem(
@@ -395,7 +399,7 @@ async function registryItem(
   };
 }
 /** Official registry servers updated since `since`. Each new server's full
- *  version history is read, up to six at a time, to find its first
+ *  version history is read, up to four at a time, to find its first
  *  publication. A server whose read fails is left for the next run; when time
  *  runs short the servers already read come back as a partial result. */
 export async function officialSnapshot(
@@ -403,12 +407,34 @@ export async function officialSnapshot(
   known: Set<string>,
   since: string,
   read: RegistryRead = readRegistry,
+  sleep: (ms: number) => Promise<unknown> = delay,
 ): Promise<{ items: Candidate[]; complete: boolean; error?: string }> {
   const items: Candidate[] = [],
     cursors = new Set<string>();
   let cursor = '',
     failed = 0;
   const timeUp = () => Date.now() > deadline - 15_000;
+  let pauseUntil = 0;
+  /** A 429 or 503 pauses every reader for 2, 4, 8 then 16 seconds and retries
+   *  the same read, so throttling delays servers instead of failing them. */
+  const politeRead: RegistryRead = async (url) => {
+    for (let attempt = 0; ; attempt++) {
+      const wait = pauseUntil - Date.now();
+      if (wait > 0) {
+        if (Date.now() + wait > deadline - 15_000)
+          throw new Error('Registry rate limit outlasted the time limit');
+        await sleep(wait);
+      }
+      try {
+        return await read(url, deadline);
+      } catch (error) {
+        const throttled =
+          error instanceof ProviderError && [429, 503].includes(error.status);
+        if (!throttled || attempt >= REGISTRY_RETRIES) throw error;
+        pauseUntil = Math.max(pauseUntil, Date.now() + 2000 * 2 ** attempt);
+      }
+    }
+  };
   const stopped = () => ({
     items,
     complete: false,
@@ -423,7 +449,7 @@ export async function officialSnapshot(
       u.searchParams.set('updated_since', since);
       if (cursor) u.searchParams.set('cursor', cursor);
       const data = registryCatalog.parse(
-        JSON.parse((await read(u.href, deadline)).text),
+        JSON.parse((await politeRead(u.href, deadline)).text),
       );
       const queue = data.servers.filter((entry) => {
         const name = entry.server?.name,
@@ -447,7 +473,7 @@ export async function officialSnapshot(
           const entry = queue[next++]!;
           // The latest version publication is NOT the first listing date.
           try {
-            const item = await registryItem(entry, deadline, read);
+            const item = await registryItem(entry, deadline, politeRead);
             if (item) {
               items.push(item);
               known.add(digest(item.id));

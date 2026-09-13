@@ -676,7 +676,7 @@ void test('Registry histories are read several at a time and failed reads are le
     CUTOFF,
     read,
   );
-  assert.ok(peak > 1 && peak <= 6, `peak concurrency ${peak}`);
+  assert.ok(peak > 1 && peak <= 4, `peak concurrency ${peak}`);
   assert.equal(histories.includes('io.example/server-0'), false);
   assert.equal(result.complete, false);
   assert.match(result.error ?? '', /^1 registry server could not be read/);
@@ -859,4 +859,66 @@ void test('Candidates start before the slowest source finishes, and a partial re
     finished?.sources.find((s) => s.source === 'official-registry')?.status,
     'partial',
   );
+});
+void test('Registry throttling pauses the readers and retries instead of failing servers', async () => {
+  const meta = {
+    'io.modelcontextprotocol.registry/official': {
+      status: 'active',
+      publishedAt: '2026-09-12T10:00:00Z',
+    },
+  };
+  const listing = JSON.stringify({
+    servers: [
+      {
+        server: { name: 'io.example/busy', description: 'An MCP server' },
+        _meta: meta,
+      },
+    ],
+    metadata: {},
+  });
+  const history = JSON.stringify({
+    servers: [{ server: { name: 'io.example/busy' }, _meta: meta }],
+  });
+  let throttledOnce = false;
+  const waits: number[] = [];
+  const recovers = async (url: string) => {
+    if (new URL(url).pathname === '/v0.1/servers') return { text: listing };
+    if (!throttledOnce) {
+      throttledOnce = true;
+      throw new ProviderError('registry.modelcontextprotocol.io', 429);
+    }
+    return { text: history };
+  };
+  const result = await officialSnapshot(
+    Date.now() + 60_000,
+    new Set(),
+    CUTOFF,
+    recovers,
+    async (ms) => {
+      waits.push(ms);
+    },
+  );
+  assert.equal(result.complete, true);
+  assert.deepEqual(
+    result.items.map((i) => i.id),
+    ['io.example/busy'],
+  );
+  assert.equal(waits.length, 1);
+  assert.ok(waits[0]! > 1000 && waits[0]! <= 2000, `waited ${waits[0]}`);
+  let attempts = 0;
+  const neverRecovers = async (url: string) => {
+    if (new URL(url).pathname === '/v0.1/servers') return { text: listing };
+    attempts++;
+    throw new ProviderError('registry.modelcontextprotocol.io', 429);
+  };
+  const stuck = await officialSnapshot(
+    Date.now() + 60_000,
+    new Set(),
+    CUTOFF,
+    neverRecovers,
+    async () => {},
+  );
+  assert.equal(attempts, 5);
+  assert.equal(stuck.complete, false);
+  assert.match(stuck.error ?? '', /^1 registry server could not be read/);
 });
