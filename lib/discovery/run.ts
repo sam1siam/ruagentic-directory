@@ -1,5 +1,4 @@
 import seed from '../../data/catalog.json' with { type: 'json' };
-import { setTimeout as delay } from 'node:timers/promises';
 import {
   aliases,
   CAMPAIGN_ID,
@@ -13,8 +12,19 @@ import {
   type Source,
 } from './policy.ts';
 import { fetchSnapshot, parseDetail } from './sources.ts';
-import { readPage } from './http.ts';
-import { findContact, resolveHomepage } from './contacts.ts';
+import {
+  ProviderCooldown,
+  ProviderError,
+  providerHold,
+  readPage,
+} from './http.ts';
+import { providerPacer } from './rate-limit.ts';
+import {
+  findContact,
+  prospeoAccount,
+  resolveHomepage,
+  type ProspeoAccount,
+} from './contacts.ts';
 import { Smartlead } from './smartlead.ts';
 import { discoveryStore, type DiscoveryStore } from './store.ts';
 import { object } from './contracts.ts';
@@ -38,12 +48,15 @@ type DiscoveryReport = {
     | 'suppressed'
     | 'skipped'
     | 'uncertain'
-    | 'failed',
+    | 'failed'
+    | 'deferred',
     number
   >;
   issues: string[];
   mode?: string;
   status?: string;
+  prospeo?: ProspeoAccount;
+  providers?: ReturnType<typeof providerPacer.snapshot>;
 };
 
 /** Includes submissions/hidden entries so owners already using RUAGENTIC are not prospected. */
@@ -124,6 +137,7 @@ export async function runDiscovery(
       skipped: 0,
       uncertain: 0,
       failed: 0,
+      deferred: 0,
     },
     issues: [],
   };
@@ -204,7 +218,26 @@ export async function runDiscovery(
         contactedEmails = new Set(ledger.map((r) => String(r.email)));
       const smartlead = new Smartlead(process.env.SMARTLEAD_API_KEY!, deadline),
         limit = dailyLimit();
-      for (const row of await store.pending(100)) {
+      // Free account check: plan and credits go in the report, and enrichment
+      // pauses instead of failing candidates when Prospeo has no credits left.
+      try {
+        const account = await prospeoAccount(deadline);
+        if (account) {
+          report.prospeo = account;
+          if (account.remainingCredits === 0)
+            report.issues.push(
+              `Prospeo has no credits left${account.renewalDays !== null ? `; renews in ${account.renewalDays} days` : ''}`,
+            );
+        }
+      } catch (error) {
+        report.issues.push(
+          'Prospeo account check failed: ' +
+            (error instanceof Error
+              ? error.message.slice(0, 120)
+              : 'unknown error'),
+        );
+      }
+      for (const row of await store.pending(100, now)) {
         if (Date.now() > deadline - 45_000) {
           report.issues.push(
             'Remaining candidates are queued for the next daily run',
@@ -280,6 +313,12 @@ export async function runDiscovery(
             continue;
           }
           if (!contact) {
+            if (report.prospeo?.remainingCredits === 0) {
+              report.issues.push(
+                'Enrichment paused until Prospeo credits renew; candidates stay queued',
+              );
+              break;
+            }
             if (!(await store.budget('prospects', day, limit))) {
               report.issues.push('Daily prospect limit reached');
               break;
@@ -366,42 +405,70 @@ export async function runDiscovery(
                 : 'uncertain'
           ]++;
           for (const alias of aliases(item)) known.add(alias);
-          await delay(2100); // below Prospeo search quota, including on fast project responses
         } catch (error) {
-          report.candidates.failed++;
+          const message =
+            error instanceof Error
+              ? error.message.slice(0, 180)
+              : 'Candidate processing failed';
           // Never turn an uncertain external write back into a retryable enrichment job.
           const { data } = await store.db
             .from('discovery_candidates')
             .select('status')
             .eq('id', row.id)
             .single();
-          if (data?.status !== 'enrollment_uncertain')
+          const uncertain = data?.status === 'enrollment_uncertain';
+          if (providerHold(error)) {
+            // A provider's rate limit or account problem is not the candidate's
+            // fault: it goes back in the queue unchanged and keeps its place.
+            report.candidates.deferred++;
+            if (!uncertain)
+              await store.update(row.id, {
+                status: row.status,
+                attempts: row.attempts,
+                reason: 'Held: ' + message,
+              });
+            const seconds =
+              error instanceof ProviderCooldown
+                ? error.seconds
+                : error instanceof ProviderError
+                  ? error.retryAfterSeconds
+                  : 0;
+            const accountProblem =
+              error instanceof ProviderError && error.status !== 429;
+            if (
+              accountProblem ||
+              Date.now() + seconds * 1000 > deadline - 45_000
+            ) {
+              report.issues.push(
+                `${message}; remaining candidates left queued${!accountProblem && seconds ? ` (limit resets in about ${Math.max(1, Math.ceil(seconds / 60))} min)` : ''}`,
+              );
+              break;
+            }
+            continue;
+          }
+          report.candidates.failed++;
+          if (!uncertain)
             await store.update(row.id, {
               status: row.attempts >= 2 ? 'needs_review' : 'retry',
               attempts: row.attempts + 1,
-              reason:
-                error instanceof Error
-                  ? error.message.slice(0, 180)
-                  : 'Candidate processing failed',
+              reason: message,
             });
-          if (
-            /(?:HTTP (401|402|403|423|429)|budget)/.test(
-              error instanceof Error ? error.message : '',
-            )
-          ) {
+          if (/budget/.test(message)) {
             report.issues.push(
-              'Provider unavailable or budget reached; remaining contacts left queued',
+              'Daily enrichment API budget reached; remaining candidates left queued',
             );
             break;
           }
         }
       }
     }
+    report.providers = providerPacer.snapshot();
     report.status =
       report.sources.some((r) => r.status !== 'checked') ||
       report.issues.length ||
       report.candidates.uncertain ||
-      report.candidates.failed
+      report.candidates.failed ||
+      report.candidates.deferred
         ? 'attention_required'
         : 'completed';
     await store.finish(day, owner, report);

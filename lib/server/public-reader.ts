@@ -10,7 +10,12 @@ export async function readPublic(
   value: string,
   limit = 262144,
   deadline = Date.now() + 13000,
-  options: { allowQuery?: boolean; timeoutMs?: number } = {},
+  options: {
+    allowQuery?: boolean;
+    timeoutMs?: number;
+    /** 'return' hands a 3xx back with its Location instead of failing. */
+    redirects?: 'reject' | 'return';
+  } = {},
 ) {
   if (Date.now() >= deadline)
     throw new Error('The import time limit was reached.');
@@ -47,6 +52,7 @@ export async function readPublic(
     status: number;
     text: string;
     contentType: string;
+    location?: string;
   }>((resolve, reject) => {
     const req = request(
       url,
@@ -75,7 +81,21 @@ export async function readPublic(
       (res) => {
         if ((res.statusCode ?? 0) >= 300 && (res.statusCode ?? 0) < 400) {
           res.destroy();
-          reject(new Error('The URL redirects. Enter the final public URL.'));
+          // The submission importer asks a person for the final URL; the
+          // discovery job follows redirects itself, one validated hop at a time.
+          if (options.redirects === 'return')
+            resolve({
+              url: url.href,
+              status: res.statusCode ?? 0,
+              text: '',
+              contentType: '',
+              location:
+                typeof res.headers.location === 'string'
+                  ? res.headers.location
+                  : undefined,
+            });
+          else
+            reject(new Error('The URL redirects. Enter the final public URL.'));
           return;
         }
         if (

@@ -1,6 +1,5 @@
 import { load } from 'cheerio';
-import { setTimeout as delay } from 'node:timers/promises';
-import { apiJson, ProviderError, readPage } from './http.ts';
+import { apiJson, ProviderError, providerHold, readPage } from './http.ts';
 import {
   companyDomain,
   publicUrl,
@@ -12,6 +11,37 @@ import type { Contact } from './store.ts';
 import { object, prospeoRecord, prospeoSearch } from './contracts.ts';
 
 type Api = typeof apiJson;
+export const isFounderTitle = (title: unknown): title is string =>
+  typeof title === 'string' &&
+  /\bfounder\b/i.test(title) &&
+  !/\b(?:former|ex[- ]|founder in residence|founder associate|founder[’']?s (?:office|assistant))/i.test(
+    title,
+  );
+export function founderEmail(value: unknown, domain: string): value is string {
+  return (
+    validEmail(value) &&
+    companyDomain('https://' + value.split('@')[1]) === domain &&
+    !/^(?:support|hello|contact|info|team|sales|admin|office|help|helpdesk|hi|hey|inquiries|enquiries|founders?|owners?|ceo|marketing|press|billing|careers|jobs|feedback|business|partners|partnerships)(?:[._+-][^@]*)?@/i.test(
+      value,
+    )
+  );
+}
+export function founderContact(
+  contact: Contact | null,
+  domain: string,
+): contact is Contact {
+  return Boolean(
+    contact &&
+    founderEmail(contact.email, domain) &&
+    contact.fullName.trim().split(/\s+/).length >= 2 &&
+    isFounderTitle(contact.role) &&
+    contact.companyDomain === domain &&
+    contact.evidence &&
+    ['Prospeo verified founder', 'Findymail verified founder'].includes(
+      contact.provider,
+    ),
+  );
+}
 export function belongsToCompany(input: unknown, domain: string) {
   const record = prospeoRecord.safeParse(input).data;
   return (
@@ -25,9 +55,7 @@ export function founderRecord(input: unknown, domain: string) {
   return (
     belongsToCompany(record, domain) &&
     typeof record?.person?.person_id === 'string' &&
-    /\bfounder\b|\bowner\b/i.test(title) &&
-    !/(?:former|ex[- ])\s*(?:co[- ]?)?(?:founder|owner)/i.test(title) &&
-    !/\b(?:product|project|process|service) owner\b/i.test(title)
+    isFounderTitle(title)
   );
 }
 export function verifiedFounder(
@@ -44,8 +72,9 @@ export function verifiedFounder(
     !founderRecord(record, domain) ||
     e?.status !== 'VERIFIED' ||
     e.revealed !== true ||
-    !validEmail(e.email) ||
-    companyDomain('https://' + e.email.split('@')[1]) !== domain
+    !founderEmail(e.email, domain) ||
+    !p.full_name ||
+    p.full_name.trim().split(/\s+/).length < 2
   )
     return null;
   return {
@@ -56,42 +85,8 @@ export function verifiedFounder(
     provider: 'Prospeo verified founder',
     evidence,
     verifiedAt: new Date().toISOString(),
+    role: p.current_job_title!,
   };
-}
-/** Only published contact addresses; never generate guessed mailbox combinations. */
-export function publicContacts(html: string, pageUrl: string) {
-  const $ = load(html);
-  const links = $('a[href^="mailto:"]')
-    .toArray()
-    .map((el) => {
-      let email = '';
-      try {
-        email = decodeURIComponent(
-          ($(el).attr('href') || '').slice(7).split('?')[0],
-        ).trim();
-      } catch {}
-      const context = $(el).parent().text();
-      return {
-        email,
-        evidence: pageUrl,
-        rank: /^(hello|contact|info|team|support|sales)@/i.test(email) ? 0 : 1,
-        context,
-      };
-    })
-    .filter(
-      (r) =>
-        validEmail(r.email) &&
-        !/(no (?:unsolicited|marketing)|do not (?:contact|email)|not for (?:sales|marketing))/i.test(
-          r.context,
-        ),
-    );
-  return [
-    ...new Map(
-      links
-        .sort((a, b) => a.rank - b.rank)
-        .map((r) => [r.email.toLowerCase(), r]),
-    ).values(),
-  ];
 }
 export async function resolveHomepage(
   item: Candidate,
@@ -187,7 +182,12 @@ export async function findContact(
   if (!domain) return null;
   const prospeo = process.env.PROSPEO_API_KEY,
     findymail = process.env.FINDYMAIL_API_KEY;
-  let founderName = item.founderName;
+  if (!prospeo || !findymail)
+    throw new Error('Both founder enrichment providers must be configured');
+  let prospeoFailure: unknown;
+  let knownFounder:
+    | { name: string; role: string; evidence: string }
+    | undefined;
   const paid = async (
     url: string,
     headers: Record<string, string>,
@@ -213,7 +213,7 @@ export async function findContact(
       throw e;
     }
   };
-  if (prospeo) {
+  try {
     const result = await paid(
       'https://api.prospeo.io/search-person',
       { 'X-KEY': prospeo },
@@ -222,106 +222,163 @@ export async function findContact(
         filters: {
           company: { websites: { include: [domain] } },
           person_job_title: {
-            include: ['Founder', 'Owner'],
+            include: ['Founder', 'Co-founder'],
             match_mode: 'CONTAINS',
           },
-          max_person_per_company: 1,
+          max_person_per_company: 2,
         },
       },
     );
-    const match = result
+    const matches = result
       ? prospeoSearch
           .parse(result)
-          .results.find((r) => founderRecord(r, domain))
-      : undefined;
-    if (match?.person) {
-      founderName = match.person.full_name || undefined;
-      await delay(1100);
+          .results.filter((r) => founderRecord(r, domain))
+          .slice(0, 2)
+      : [];
+    for (const match of matches) {
+      const person = match.person!;
+      if (
+        person.full_name &&
+        person.full_name.trim().split(/\s+/).length >= 2
+      ) {
+        knownFounder = {
+          name: person.full_name,
+          role: person.current_job_title!,
+          evidence:
+            'Prospeo current founder search for ' +
+            domain +
+            '; person ' +
+            person.person_id,
+        };
+      }
       const enriched = await paid(
         'https://api.prospeo.io/enrich-person',
         { 'X-KEY': prospeo },
         {
           only_verified_email: true,
           enrich_mobile: false,
-          data: { person_id: match.person.person_id },
+          data: { person_id: person.person_id },
         },
       );
       const contact = verifiedFounder(
         enriched,
         domain,
-        `Prospeo founder search for ${domain}; person ${match.person.person_id}`,
+        knownFounder?.evidence || 'Prospeo exact company founder',
       );
       if (contact) return contact;
     }
+  } catch (e) {
+    // Other Prospeo errors still allow the independent Findymail fallback.
+    // Budget exhaustion, rate limits and account problems stop the lookup so
+    // the candidate is retried later with Prospeo first, as the policy requires.
+    if (/budget/.test(e instanceof Error ? e.message : '') || providerHold(e))
+      throw e;
+    prospeoFailure = e;
   }
-  if (findymail && founderName) {
-    const result = await paid(
-      'https://app.findymail.com/api/search/name',
-      { Authorization: `Bearer ${findymail}` },
-      { name: founderName, domain },
-    );
-    const email = object(object(result).contact).email;
-    if (
-      validEmail(email) &&
-      companyDomain('https://' + email.split('@')[1]) === domain
-    )
-      return {
-        email: email.toLowerCase(),
-        firstName: founderName.split(' ')[0],
-        fullName: founderName,
-        companyDomain: domain,
-        provider: 'Findymail verified founder',
-        evidence: `Known founder ${founderName}; exact business domain ${domain}`,
-        verifiedAt: new Date().toISOString(),
-      };
-  }
-  if (!findymail) return null;
-  const home = publicUrl(item.homepage)!;
-  const page = await readPage(home, deadline, true, 500_000),
-    $ = load(page.text);
-  const pages = [{ url: home, text: page.text }];
-  const contactUrl = $('a[href]')
-    .toArray()
-    .map((el) => ({ href: $(el).attr('href')!, label: $(el).text().trim() }))
-    .filter((r) => /^(contact|contact us|get in touch)$/i.test(r.label))
-    .map((r) => {
-      try {
-        return publicUrl(new URL(r.href, home).href);
-      } catch {
-        return undefined;
-      }
-    })
-    .find((u) => u && new URL(u).origin === new URL(home).origin);
-  if (contactUrl && contactUrl !== home) {
-    try {
-      pages.push(await readPage(contactUrl, deadline, true, 500_000));
-    } catch {
-      /* Homepage's published contact can still be verified. */
-    }
-  }
-  const contacts = pages.flatMap((p) => publicContacts(p.text, p.url));
-  for (const candidate of contacts.slice(0, 2)) {
+  const finderHeaders = { Authorization: 'Bearer ' + findymail };
+  const findEmail = async (person: {
+    name: string;
+    role: string;
+    evidence: string;
+  }) => {
     const result = object(
-      await paid(
-        'https://app.findymail.com/api/verify',
-        { Authorization: `Bearer ${findymail}` },
-        { email: candidate.email },
-      ),
+      object(
+        await paid('https://app.findymail.com/api/search/name', finderHeaders, {
+          name: person.name,
+          domain,
+        }),
+      ).contact,
     );
+    const sameName =
+      typeof result.name === 'string' &&
+      result.name.normalize('NFKC').trim().toLowerCase() ===
+        person.name.normalize('NFKC').trim().toLowerCase();
     if (
-      result?.verified === true &&
-      typeof result.email === 'string' &&
-      result.email.toLowerCase() === candidate.email.toLowerCase()
+      !sameName ||
+      !founderEmail(result.email, domain) ||
+      (typeof result.domain === 'string' &&
+        companyDomain('https://' + result.domain) !== domain)
     )
-      return {
-        email: candidate.email.toLowerCase(),
-        firstName: '',
-        fullName: '',
-        companyDomain: domain,
-        provider: 'Published business contact, Findymail verified',
-        evidence: candidate.evidence,
-        verifiedAt: new Date().toISOString(),
-      };
+      return null;
+    return {
+      email: result.email.toLowerCase(),
+      firstName: person.name.split(' ')[0],
+      fullName: person.name,
+      role: person.role,
+      companyDomain: domain,
+      provider: 'Findymail verified founder',
+      evidence: person.evidence,
+      verifiedAt: new Date().toISOString(),
+    } satisfies Contact;
+  };
+  if (knownFounder) {
+    const contact = await findEmail(knownFounder);
+    if (contact) return contact;
   }
+  // Findymail must discover the founder itself when Prospeo finds no person.
+  // The old generic-mailbox /api/verify path is intentionally absent.
+  const employees = await paid(
+    'https://app.findymail.com/api/search/employees',
+    finderHeaders,
+    { website: domain, job_titles: ['Founder', 'Co-founder'], count: 2 },
+  );
+  if (employees !== null && !Array.isArray(employees))
+    throw new Error('Findymail founder search response changed');
+  for (const value of (employees || []) as unknown[]) {
+    const person = object(value);
+    if (
+      !isFounderTitle(person.jobTitle) ||
+      companyDomain(person.companyWebsite) !== domain ||
+      typeof person.name !== 'string' ||
+      person.name.trim().split(/\s+/).length < 2
+    )
+      continue;
+    if (person.name === knownFounder?.name) continue;
+    const contact = await findEmail({
+      name: person.name,
+      role: person.jobTitle,
+      evidence:
+        'Findymail current founder at ' +
+        domain +
+        '; ' +
+        (publicUrl(person.linkedinUrl) || person.name),
+    });
+    if (contact) return contact;
+  }
+  if (prospeoFailure) throw prospeoFailure; // Retry unresolved provider failures, not a false "no match".
   return null;
+}
+
+export type ProspeoAccount = {
+  plan: string;
+  remainingCredits: number | null;
+  renewalDays: number | null;
+};
+/** Prospeo's free account check: current plan, credits left and renewal. */
+export async function prospeoAccount(
+  deadline: number,
+  api: Api = apiJson,
+): Promise<ProspeoAccount | null> {
+  const key = process.env.PROSPEO_API_KEY;
+  if (!key) return null;
+  const body = object(
+    await api(
+      'https://api.prospeo.io/account-information',
+      { method: 'GET', headers: { 'X-KEY': key } },
+      deadline,
+    ),
+  );
+  const record = object(body.response ?? body);
+  const count = (value: unknown) =>
+    typeof value === 'number' && Number.isFinite(value)
+      ? value
+      : typeof value === 'string' && /^\d+$/.test(value)
+        ? Number(value)
+        : null;
+  return {
+    plan:
+      typeof record.current_plan === 'string' ? record.current_plan : 'unknown',
+    remainingCredits: count(record.remaining_credits),
+    renewalDays: count(record.next_quota_renewal_days),
+  };
 }

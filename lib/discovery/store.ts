@@ -35,6 +35,7 @@ export type Contact = {
   provider: string;
   evidence: string;
   verifiedAt: string;
+  role?: string;
 };
 export function discoveryStore() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -133,16 +134,30 @@ export class DiscoveryStore {
       baseline: !state.initialized_at,
     };
   }
-  async pending(limit: number) {
-    const { data, error } = await this.db
-      .from('discovery_candidates')
-      .select('*')
-      .in('status', ['pending', 'retry', 'contact_ready'])
-      .or('attempts.lt.3,status.eq.contact_ready')
-      .order('first_seen_at')
-      .limit(limit);
-    if (error) throw new Error('Could not load candidates');
-    return (data || []) as CandidateRow[];
+  /** Work order: candidates whose contact is already found (their credits are
+   *  spent), then at most five failed candidates last tried 20 or more hours
+   *  ago, then new candidates oldest first. Retries can no longer crowd out
+   *  new projects, and a failure is tried at most once a day. */
+  async pending(limit: number, now = new Date()) {
+    const table = () => this.db.from('discovery_candidates').select('*');
+    const cooldown = new Date(now.getTime() - 20 * 3_600_000).toISOString();
+    const [ready, retries, fresh] = await Promise.all([
+      table().eq('status', 'contact_ready').order('first_seen_at').limit(limit),
+      table()
+        .eq('status', 'retry')
+        .lt('attempts', 3)
+        .lt('updated_at', cooldown)
+        .order('updated_at')
+        .limit(5),
+      table().eq('status', 'pending').order('first_seen_at').limit(limit),
+    ]);
+    if (ready.error || retries.error || fresh.error)
+      throw new Error('Could not load candidates');
+    return [
+      ...(ready.data || []),
+      ...(retries.data || []),
+      ...(fresh.data || []),
+    ].slice(0, limit) as CandidateRow[];
   }
   async update(id: string, values: Record<string, unknown>) {
     const { error } = await this.db

@@ -24,13 +24,23 @@ import {
 } from '../lib/discovery/sources.ts';
 import {
   belongsToCompany,
+  findContact,
+  founderEmail,
   founderRecord,
-  publicContacts,
+  isFounderTitle,
   verifiedFounder,
 } from '../lib/discovery/contacts.ts';
 import { leadPayload, Smartlead } from '../lib/discovery/smartlead.ts';
 import { DiscoveryStore, type Contact } from '../lib/discovery/store.ts';
-import { ProviderError, apiJson } from '../lib/discovery/http.ts';
+import {
+  ProviderCooldown,
+  ProviderError,
+  apiJson,
+  providerHold,
+  readPage,
+  resetRobotsCache,
+} from '../lib/discovery/http.ts';
+import { ProviderPacer } from '../lib/discovery/rate-limit.ts';
 import { mcpSoMetadata } from '../lib/discovery/mcp-so.ts';
 
 void test('MCP.so reshuffled and renamed old entries use their exact original creation date', () => {
@@ -278,15 +288,24 @@ void test('Enrichment rejects mismatched companies, former founders and unverifi
     null,
   );
 });
-void test('Public email fallback takes published contacts, excluding explicit no-marketing notices', () => {
-  const r = publicContacts(
-    '<p><a href="mailto:hello@example.com">Contact</a></p><p>No unsolicited marketing <a href="mailto:owner@example.com">Email</a></p><p><a href="mailto:privacy@example.com">Privacy</a></p>',
-    'https://example.com/contact',
-  );
-  assert.deepEqual(
-    r.map((x) => x.email),
-    ['hello@example.com'],
-  );
+void test('Only founder work emails qualify; support and role mailboxes never do', () => {
+  assert.equal(founderEmail('pat@example.com', 'example.com'), true);
+  for (const email of [
+    'support@example.com',
+    'hello@example.com',
+    'team+sales@example.com',
+    'founders@example.com',
+    'pat@other.com',
+  ])
+    assert.equal(founderEmail(email, 'example.com'), false);
+  assert.equal(isFounderTitle('Co-founder & CEO'), true);
+  for (const title of [
+    'Former founder',
+    'Founder in Residence',
+    'Product owner',
+    'Engineer',
+  ])
+    assert.equal(isFounderTitle(title), false);
 });
 void test('Lead imports preserve suppression and render untrusted names as data', () => {
   const p = leadPayload({ ...item, name: '<b>{{bad}}</b>\nName' }, contact);
@@ -383,4 +402,215 @@ void test('Authenticated APIs reject credential forwarding to an arbitrary host'
     }),
     /Unsupported API origin/,
   );
+});
+void test('The provider pacer spaces every call and honours rate-limit headers', async () => {
+  let now = 1_000_000;
+  const sleeps: number[] = [];
+  const pacer = new ProviderPacer({
+    now: () => now,
+    sleep: async (ms) => {
+      sleeps.push(ms);
+      now += ms;
+    },
+  });
+  const search = new URL('https://api.prospeo.io/search-person');
+  await pacer.wait(search, now + 600_000);
+  await pacer.wait(search, now + 600_000);
+  assert.deepEqual(sleeps, [3100]);
+  assert.ok(
+    pacer.observe(search, new Headers({ 'retry-after': '120' }), 429) >= 120,
+  );
+  await assert.rejects(pacer.wait(search, now + 60_000), ProviderCooldown);
+  pacer.observe(
+    search,
+    new Headers({
+      'x-daily-request-left': '0',
+      'x-daily-reset-seconds': '3600',
+    }),
+    200,
+  );
+  assert.equal(pacer.snapshot()['prospeo:search']?.dailyLeft, 0);
+  assert.equal(
+    await pacer.wait(new URL('https://example.com/'), now),
+    undefined,
+  );
+});
+void test('Provider limits hold a candidate; ordinary failures do not', () => {
+  assert.equal(providerHold(new ProviderError('api.prospeo.io', 429)), true);
+  assert.equal(providerHold(new ProviderError('app.findymail.com', 402)), true);
+  assert.equal(providerHold(new ProviderError('api.prospeo.io', 500)), false);
+  assert.equal(providerHold(new ProviderError('example.com', 429)), false);
+  assert.equal(providerHold(new ProviderCooldown('prospeo:search', 90)), true);
+  assert.equal(providerHold(new Error('redirect')), false);
+});
+void test('A Prospeo rate limit stops the lookup instead of spending Findymail credits', async () => {
+  const previous = [process.env.PROSPEO_API_KEY, process.env.FINDYMAIL_API_KEY];
+  process.env.PROSPEO_API_KEY = 'fixture';
+  process.env.FINDYMAIL_API_KEY = 'fixture';
+  try {
+    const limited: string[] = [];
+    await assert.rejects(
+      findContact(
+        item,
+        Date.now() + 60_000,
+        async () => true,
+        async (url) => {
+          limited.push(new URL(url).hostname);
+          throw new ProviderError('api.prospeo.io', 429);
+        },
+      ),
+      /429/,
+    );
+    assert.deepEqual(limited, ['api.prospeo.io']);
+    const outage: string[] = [];
+    await assert.rejects(
+      findContact(
+        item,
+        Date.now() + 60_000,
+        async () => true,
+        async (url) => {
+          const host = new URL(url).hostname;
+          outage.push(host);
+          if (host === 'api.prospeo.io')
+            throw new ProviderError('api.prospeo.io', 500);
+          return [];
+        },
+      ),
+      /500/,
+    );
+    assert.deepEqual(outage, ['api.prospeo.io', 'app.findymail.com']);
+  } finally {
+    process.env.PROSPEO_API_KEY = previous[0];
+    process.env.FINDYMAIL_API_KEY = previous[1];
+    if (previous[0] === undefined) delete process.env.PROSPEO_API_KEY;
+    if (previous[1] === undefined) delete process.env.FINDYMAIL_API_KEY;
+  }
+});
+void test('Discovery reads follow HTTPS redirects, including robots.txt redirects', async () => {
+  type Page = { status: number; location?: string; text?: string };
+  const fake = (
+    pages: Record<string, Page>,
+    fallback?: (url: string) => Page,
+  ) =>
+    (async (url: string) => {
+      const page = pages[url] ?? fallback?.(url);
+      if (!page) throw new Error('unexpected read ' + url);
+      return {
+        url,
+        status: page.status,
+        text: page.text ?? '',
+        contentType: 'text/html',
+        location: page.location,
+      };
+    }) as unknown as Parameters<typeof readPage>[4];
+  resetRobotsCache();
+  const page = await readPage(
+    'https://upcampo.com.br/',
+    Date.now() + 60_000,
+    true,
+    500_000,
+    fake({
+      'https://upcampo.com.br/robots.txt': {
+        status: 200,
+        text: 'User-agent: *\nAllow: /',
+      },
+      'https://upcampo.com.br/': {
+        status: 301,
+        location: 'https://www.upcampo.com.br/',
+      },
+      'https://www.upcampo.com.br/robots.txt': {
+        status: 302,
+        location: 'https://partners.example.com/login',
+      },
+      'https://partners.example.com/login': {
+        status: 200,
+        text: '<html>Sign in</html>',
+      },
+      'https://www.upcampo.com.br/': { status: 200, text: '<h1>UPi</h1>' },
+    }),
+  );
+  assert.equal(page.url, 'https://www.upcampo.com.br/');
+  assert.match(page.text, /UPi/);
+  resetRobotsCache();
+  await assert.rejects(
+    readPage(
+      'https://blocked.example/',
+      Date.now() + 60_000,
+      true,
+      1000,
+      fake({
+        'https://blocked.example/robots.txt': {
+          status: 200,
+          text: 'User-agent: *\nDisallow: /',
+        },
+      }),
+    ),
+    /robots\.txt disallows/,
+  );
+  await assert.rejects(
+    readPage(
+      'https://loop.example/',
+      Date.now() + 60_000,
+      false,
+      1000,
+      fake({}, (url) => ({ status: 302, location: url + 'a' })),
+    ),
+    /more than 5 redirects/,
+  );
+  await assert.rejects(
+    readPage(
+      'https://down.example/',
+      Date.now() + 60_000,
+      false,
+      1000,
+      fake({
+        'https://down.example/': {
+          status: 301,
+          location: 'http://down.example/',
+        },
+      }),
+    ),
+    /usable HTTPS location/,
+  );
+});
+void test('Work order puts found contacts first and caps cooled-down retries ahead of new projects', async () => {
+  const rows: Record<string, { id: string }[]> = {
+    contact_ready: [{ id: 'ready' }],
+    retry: [{ id: 'retry-1' }, { id: 'retry-2' }],
+    pending: [{ id: 'new-1' }, { id: 'new-2' }],
+  };
+  const filters: string[] = [];
+  const db = {
+    from: () => {
+      let status = '';
+      const query = {
+        select: () => query,
+        eq: (column: string, value: string) => {
+          if (column === 'status') status = value;
+          return query;
+        },
+        lt: (column: string, value: unknown) => {
+          filters.push(`${column}<${String(value)}`);
+          return query;
+        },
+        order: () => query,
+        limit: (n: number) => {
+          filters.push(`${status} limit ${n}`);
+          return Promise.resolve({ data: rows[status], error: null });
+        },
+      };
+      return query;
+    },
+  } as unknown as ConstructorParameters<typeof DiscoveryStore>[0];
+  const work = await new DiscoveryStore(db).pending(
+    4,
+    new Date('2026-09-13T12:00:00Z'),
+  );
+  assert.deepEqual(
+    work.map((r) => r.id),
+    ['ready', 'retry-1', 'retry-2', 'new-1'],
+  );
+  assert.ok(filters.includes('attempts<3'));
+  assert.ok(filters.includes('updated_at<2026-09-12T16:00:00.000Z'));
+  assert.ok(filters.includes('retry limit 5'));
 });
