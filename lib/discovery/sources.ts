@@ -2,6 +2,7 @@ import { load } from 'cheerio';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
   CUTOFF,
+  companyDomain,
   digest,
   publicUrl,
   type Candidate,
@@ -619,7 +620,11 @@ export function parseGithubSearch(value: unknown, topic: string): Candidate[] {
         (repo.visibility === undefined || repo.visibility === 'public') &&
         !repo.fork &&
         !repo.archived &&
-        Date.parse(repo.created_at) >= Date.parse(CUTOFF),
+        Date.parse(repo.created_at) >= Date.parse(CUTOFF) &&
+        // The search result already carries the repository's homepage field;
+        // without a company website there is nothing to contact, so the
+        // repository never takes a place in the queue.
+        Boolean(companyDomain(repo.homepage)),
     )
     .map((repo) => ({
       source: 'github',

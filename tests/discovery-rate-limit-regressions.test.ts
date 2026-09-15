@@ -162,7 +162,8 @@ void test('A long Smartlead cooldown stops the run after one lookup and leaves c
     requests++;
     return new Response('{}', {
       status: 429,
-      headers: { 'Retry-After': '600' },
+      // Longer than the run's 770-second budget, so the run stops rather than waits.
+      headers: { 'Retry-After': '1200' },
     });
   };
   const rows: CandidateRow[] = Array.from({ length: 3 }, (_, i) => ({

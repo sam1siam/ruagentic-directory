@@ -104,6 +104,18 @@ export function companyDomain(value: unknown): string | undefined {
     return;
   return domain;
 }
+/** Processing order for queued candidates: a project with its own website can
+ *  be enriched right away (0); one that only names a repository, package,
+ *  registry entry or endpoint may still resolve to a website (1); a GitHub
+ *  search result without a website never will, so it goes last (2). */
+export function candidateRank(item: Candidate | undefined): 0 | 1 | 2 {
+  if (!item) return 2;
+  if (companyDomain(item.homepage)) return 0;
+  if (item.source === 'github') return 2;
+  return item.repository || item.npmPackage || item.registryUrl || item.endpoint
+    ? 1
+    : 2;
+}
 export function repositoryKey(value: unknown): string | undefined {
   const u = publicUrl(value);
   if (!u) return;

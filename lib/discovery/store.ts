@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 import {
   CUTOFF,
+  candidateRank,
   digest,
   isNew,
   type Candidate,
@@ -185,8 +186,9 @@ export class DiscoveryStore {
   }
   /** Work order: candidates whose contact is already found (their credits are
    *  spent), then at most five failed candidates last tried 20 or more hours
-   *  ago, then new candidates oldest first. Retries can no longer crowd out
-   *  new projects, and a failure is tried at most once a day. */
+   *  ago, then new candidates by promise (see candidateRank), oldest first
+   *  within a rank. Retries can no longer crowd out new projects, and a
+   *  failure is tried at most once a day. */
   async pending(limit: number, now = new Date()) {
     const table = () => this.db.from('discovery_candidates').select('*');
     const cooldown = new Date(now.getTime() - 20 * 3_600_000).toISOString();
@@ -198,15 +200,25 @@ export class DiscoveryStore {
         .lt('updated_at', cooldown)
         .order('updated_at')
         .limit(5),
-      table().eq('status', 'pending').order('first_seen_at').limit(limit),
+      // New candidates are taken by promise rather than age: those with their
+      // own website first, repository-only ones last, oldest first within a
+      // rank. The queue is read deep enough that a promising newcomer is not
+      // stuck behind hundreds of older repository-only entries.
+      table()
+        .eq('status', 'pending')
+        .order('first_seen_at')
+        .limit(Math.max(limit, 1000)),
     ]);
     if (ready.error || retries.error || fresh.error)
       throw new Error('Could not load candidates');
-    return [
-      ...(ready.data || []),
-      ...(retries.data || []),
-      ...(fresh.data || []),
-    ].slice(0, limit) as CandidateRow[];
+    const ranked = ((fresh.data || []) as CandidateRow[])
+      .map((row, index) => ({ row, index, rank: candidateRank(row.data) }))
+      .sort((a, b) => a.rank - b.rank || a.index - b.index)
+      .map((r) => r.row);
+    return [...(ready.data || []), ...(retries.data || []), ...ranked].slice(
+      0,
+      limit,
+    ) as CandidateRow[];
   }
   async update(id: string, values: Record<string, unknown>) {
     const { error } = await this.db

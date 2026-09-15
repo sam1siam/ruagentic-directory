@@ -112,10 +112,12 @@ export const duplicate = (item: Candidate, known: Set<string>) =>
   aliases(item).some((a) => known.has(a));
 export function dailyLimit() {
   const n = Number(process.env.DISCOVERY_DAILY_LIMIT || 50);
-  if (!Number.isInteger(n) || n < 1 || n > 50)
-    throw new Error('DISCOVERY_DAILY_LIMIT must be an integer from 1 to 50');
+  if (!Number.isInteger(n) || n < 1 || n > 100)
+    throw new Error('DISCOVERY_DAILY_LIMIT must be an integer from 1 to 100');
   return n;
 }
+/** The route's 800-second Vercel ceiling, less a margin for the response. */
+export const RUN_BUDGET_MS = 770_000;
 export async function runDiscovery(
   options: {
     baselineOnly?: boolean;
@@ -131,7 +133,7 @@ export async function runDiscovery(
     store = options.store || discoveryStore();
   const owner = await store.claim(day);
   if (!owner) return { status: 'already_running_or_completed', day };
-  const deadline = Date.now() + 275_000;
+  const deadline = Date.now() + RUN_BUDGET_MS;
   const report: DiscoveryReport = {
     day,
     cutoff: CUTOFF,
@@ -256,7 +258,9 @@ export async function runDiscovery(
               : 'unknown error'),
         );
       }
-      for (const row of await store.pending(100, now)) {
+      // Skips cost no enrolment, so the queue is read well past the limit;
+      // the clock and the budgets below decide where the run stops.
+      for (const row of await store.pending(limit * 4, now)) {
         if (Date.now() > deadline - 45_000) {
           report.issues.push(
             'Remaining candidates are queued for the next daily run',

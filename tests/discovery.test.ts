@@ -39,7 +39,7 @@ import {
 } from '../lib/discovery/contacts.ts';
 import { leadPayload, Smartlead } from '../lib/discovery/smartlead.ts';
 import { DiscoveryStore, type Contact } from '../lib/discovery/store.ts';
-import { runDiscovery } from '../lib/discovery/run.ts';
+import { dailyLimit, runDiscovery } from '../lib/discovery/run.ts';
 import {
   ProviderCooldown,
   ProviderError,
@@ -582,10 +582,29 @@ void test('Discovery reads follow HTTPS redirects, including robots.txt redirect
   );
 });
 void test('Work order puts found contacts first and caps cooled-down retries ahead of new projects', async () => {
-  const rows: Record<string, { id: string }[]> = {
+  const rows: Record<string, { id: string; data?: unknown }[]> = {
     contact_ready: [{ id: 'ready' }],
     retry: [{ id: 'retry-1' }, { id: 'retry-2' }],
-    pending: [{ id: 'new-1' }, { id: 'new-2' }],
+    pending: [
+      // Oldest first, but a repository-only GitHub result ranks below a
+      // project with its own website, and an unresolved registry entry
+      // (repository only) sits between them.
+      {
+        id: 'new-repo-only',
+        data: {
+          source: 'github',
+          repository: 'https://github.com/x/y',
+        },
+      },
+      {
+        id: 'new-registry',
+        data: {
+          source: 'official-registry',
+          repository: 'https://github.com/x/z',
+        },
+      },
+      { id: 'new-site', data: { homepage: 'https://acme.dev' } },
+    ],
   };
   const filters: string[] = [];
   const db = {
@@ -611,16 +630,33 @@ void test('Work order puts found contacts first and caps cooled-down retries ahe
     },
   } as unknown as ConstructorParameters<typeof DiscoveryStore>[0];
   const work = await new DiscoveryStore(db).pending(
-    4,
+    5,
     new Date('2026-09-13T12:00:00Z'),
   );
   assert.deepEqual(
     work.map((r) => r.id),
-    ['ready', 'retry-1', 'retry-2', 'new-1'],
+    ['ready', 'retry-1', 'retry-2', 'new-site', 'new-registry'],
   );
   assert.ok(filters.includes('attempts<3'));
   assert.ok(filters.includes('updated_at<2026-09-12T16:00:00.000Z'));
   assert.ok(filters.includes('retry limit 5'));
+  assert.ok(filters.includes('pending limit 1000'));
+});
+void test('The daily limit accepts up to 100 and rejects anything else', () => {
+  const previous = process.env.DISCOVERY_DAILY_LIMIT;
+  try {
+    delete process.env.DISCOVERY_DAILY_LIMIT;
+    assert.equal(dailyLimit(), 50);
+    process.env.DISCOVERY_DAILY_LIMIT = '100';
+    assert.equal(dailyLimit(), 100);
+    process.env.DISCOVERY_DAILY_LIMIT = '101';
+    assert.throws(dailyLimit, /1 to 100/);
+    process.env.DISCOVERY_DAILY_LIMIT = '2.5';
+    assert.throws(dailyLimit, /1 to 100/);
+  } finally {
+    if (previous === undefined) delete process.env.DISCOVERY_DAILY_LIMIT;
+    else process.env.DISCOVERY_DAILY_LIMIT = previous;
+  }
 });
 void test('Registry histories are read several at a time and failed reads are left for the next run', async () => {
   const servers = Array.from({ length: 9 }, (_, i) => `io.example/server-${i}`);
@@ -1084,7 +1120,13 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
           items: [
             repo('acme/tool'),
             repo('fork/copy', { fork: true }),
-            repo('new/client', { topics: ['mcp-client'] }),
+            repo('new/client', {
+              topics: ['mcp-client'],
+              homepage: 'https://client.example',
+            }),
+            // No website: nothing to contact, so it never enters the queue.
+            repo('hobby/server'),
+            repo('pages/only', { homepage: 'https://pages.github.io/x' }),
           ],
         };
   };
@@ -1108,7 +1150,11 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
   );
   assert.equal(
     parseGithubSearch(
-      { total_count: 1, incomplete_results: false, items: [repo('x/y')] },
+      {
+        total_count: 1,
+        incomplete_results: false,
+        items: [repo('x/y', { homepage: 'https://xy.example' })],
+      },
       'mcp-server',
     )[0]!.dateEvidence,
     'GitHub repository creation time',

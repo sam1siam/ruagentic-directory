@@ -1,7 +1,8 @@
 import { cronAuthorized } from '@/lib/server/http';
 import { runDiscovery } from '@/lib/discovery/run';
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+// Pro plan ceiling with Fluid compute; lib/discovery/run.ts budgets under it.
+export const maxDuration = 800;
 export async function GET(request: Request) {
   if (!cronAuthorized(request))
     return Response.json({ error: 'Unauthorized.' }, { status: 401 });
