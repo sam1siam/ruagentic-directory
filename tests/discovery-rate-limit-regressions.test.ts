@@ -5,8 +5,112 @@ import {
   ProviderPacer,
 } from '../lib/discovery/rate-limit.ts';
 import { runDiscovery } from '../lib/discovery/run.ts';
-import { apiJson } from '../lib/discovery/http.ts';
+import { apiJson, ProviderError } from '../lib/discovery/http.ts';
+import { Smartlead } from '../lib/discovery/smartlead.ts';
 import type { CandidateRow, DiscoveryStore } from '../lib/discovery/store.ts';
+
+void test('A Findymail account failure leaves its candidate pending and enrolls a later Prospeo contact', async (t) => {
+  const keys = [
+    'DISCOVERY_ENRICHMENT_ENABLED',
+    'PROSPEO_API_KEY',
+    'SMARTLEAD_API_KEY',
+  ] as const;
+  const previous = keys.map((key) => process.env[key]);
+  keys.forEach((key) => {
+    process.env[key] =
+      key === 'DISCOVERY_ENRICHMENT_ENABLED' ? 'true' : 'fixture';
+  });
+  t.after(() =>
+    keys.forEach((key, i) => {
+      if (previous[i] === undefined) delete process.env[key];
+      else process.env[key] = previous[i];
+    }),
+  );
+  const rows: CandidateRow[] = [0, 1].map((i) => ({
+    id: `fallback-fixture-${i}`,
+    source: 'github',
+    status: 'pending',
+    attempts: 0,
+    reason: null,
+    contact: null,
+    data: {
+      source: 'github',
+      id: `fallback-fixture-${i}`,
+      name: `Unique Fallback Fixture ${i}`,
+      description: 'An MCP server',
+      kind: 'mcp-server',
+      sourceUrl: `https://github.com/fallback-fixture-${i}/server`,
+      homepage: `https://fallback-fixture-${i}.com`,
+    },
+  }));
+  const updates = new Map<string, Record<string, unknown>>();
+  const table = {
+    select: () => table,
+    order: () => table,
+    eq: () => table,
+    range: async () => ({ data: [], error: null }),
+    single: async () => ({ data: { status: 'retry' }, error: null }),
+  };
+  const store = {
+    db: { from: () => table },
+    claim: async () => 'owner',
+    source: async (source: string) => ({
+      source,
+      initialized_at: null,
+      last_success_at: null,
+      seen_keys: [],
+    }),
+    commit: async () => ({ observed: 0, newCandidates: 0, baseline: false }),
+    outreach: async () => [],
+    pending: async () => rows,
+    update: async (id: string, values: Record<string, unknown>) => {
+      updates.set(id, { ...updates.get(id), ...values });
+    },
+    budget: async () => true,
+    reserve: async () => true,
+    completeOutreach: async () => {},
+    finish: async () => {},
+  } as unknown as DiscoveryStore;
+  t.mock.method(Smartlead.prototype, 'exists', async () => false);
+  const imports = t.mock.method(Smartlead.prototype, 'import', async () => ({
+    status: 'enrolled',
+    accepted: 1,
+  }));
+  let lookups = 0;
+  let sharedState: unknown;
+  const report = await runDiscovery({
+    store,
+    account: async () => null,
+    snapshot: async (source) => ({ source, items: [], complete: true }),
+    contact: async (item, _deadline, _budget, _api, _reader, state) => {
+      lookups++;
+      if (lookups === 1) {
+        sharedState = state;
+        throw new ProviderError('app.findymail.com', 402);
+      }
+      assert.equal(state, sharedState);
+      return {
+        email: 'alice@fallback-fixture-1.com',
+        companyDomain: 'fallback-fixture-1.com',
+        firstName: 'Alice',
+        fullName: 'Alice Example',
+        role: 'Founder',
+        provider: 'Prospeo verified founder',
+        evidence: item.sourceUrl,
+        verifiedAt: new Date().toISOString(),
+      };
+    },
+  });
+  assert.ok('candidates' in report);
+  assert.equal(report.candidates.deferred, 1);
+  assert.equal(report.candidates.enrolled, 1);
+  assert.equal(report.candidates.failed, 0);
+  assert.equal(imports.mock.callCount(), 1);
+  assert.equal(updates.get(rows[0]!.id)?.status, 'pending');
+  assert.equal(updates.get(rows[0]!.id)?.attempts, 0);
+  assert.equal(updates.get(rows[1]!.id)?.status, 'enrolled');
+  assert.match(report.issues.join(' '), /Prospeo enrichment continues/);
+});
 
 function clockFixture() {
   let now = 1_000_000;

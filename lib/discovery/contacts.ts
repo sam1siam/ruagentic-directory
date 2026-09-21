@@ -1,5 +1,11 @@
 import { load } from 'cheerio';
-import { apiJson, ProviderError, providerHold, readPage } from './http.ts';
+import {
+  apiJson,
+  ProviderCooldown,
+  ProviderError,
+  providerHold,
+  readPage,
+} from './http.ts';
 import {
   companyDomain,
   publicUrl,
@@ -11,6 +17,10 @@ import type { Contact } from './store.ts';
 import { object, prospeoRecord, prospeoSearch } from './contracts.ts';
 
 type Api = typeof apiJson;
+/** Shared only within one run; a later run checks restored provider access. */
+export type ContactLookupState = {
+  findymailHold?: ProviderError | ProviderCooldown;
+};
 export const isFounderTitle = (title: unknown): title is string =>
   typeof title === 'string' &&
   /\bfounder\b/i.test(title) &&
@@ -180,6 +190,7 @@ export async function findContact(
   budget: () => Promise<boolean>,
   api: Api = apiJson,
   reader: typeof readPage = readPage,
+  state: ContactLookupState = {},
 ): Promise<Contact | null> {
   const domain = companyDomain(item.homepage);
   if (!domain) return null;
@@ -200,6 +211,10 @@ export async function findContact(
     headers: Record<string, string>,
     body: unknown,
   ) => {
+    const isFindymail = new URL(url).hostname === 'app.findymail.com';
+    // Prospeo still runs first for each company. Only candidates that need
+    // this unavailable fallback are held, without repeating failed paid calls.
+    if (isFindymail && state.findymailHold) throw state.findymailHold;
     if (!(await budget()))
       throw new Error('Daily enrichment API budget reached');
     try {
@@ -209,6 +224,15 @@ export async function findContact(
         deadline,
       );
     } catch (e) {
+      if (
+        isFindymail &&
+        ((e instanceof ProviderError &&
+          providerHold(e) &&
+          (e.status !== 429 ||
+            Date.now() + e.retryAfterSeconds * 1000 >= deadline)) ||
+          e instanceof ProviderCooldown)
+      )
+        state.findymailHold = e;
       if (
         e instanceof ProviderError &&
         (['NO_RESULTS', 'NO_MATCH', 'NO_VERIFIED_EMAIL'].includes(

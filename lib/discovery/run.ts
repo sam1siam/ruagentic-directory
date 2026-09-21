@@ -23,6 +23,7 @@ import {
   findContact,
   prospeoAccount,
   resolveHomepage,
+  type ContactLookupState,
   type ProspeoAccount,
 } from './contacts.ts';
 import { Smartlead } from './smartlead.ts';
@@ -126,6 +127,7 @@ export async function runDiscovery(
     /** Test seams for the network-facing steps. */
     snapshot?: typeof fetchSnapshot;
     account?: typeof prospeoAccount;
+    contact?: typeof findContact;
   } = {},
 ) {
   const now = options.now || new Date(),
@@ -239,6 +241,7 @@ export async function runDiscovery(
         contactedEmails = new Set(ledger.map((r) => String(r.email)));
       const smartlead = new Smartlead(process.env.SMARTLEAD_API_KEY!, deadline),
         limit = dailyLimit();
+      const contactState: ContactLookupState = {};
       // Free account check: plan and credits go in the report, and enrichment
       // pauses instead of failing candidates when Prospeo has no credits left.
       try {
@@ -351,8 +354,13 @@ export async function runDiscovery(
               status: 'retry',
               data: item,
             });
-            contact = await findContact(item, deadline, () =>
-              store.budget('paid_api_calls', day, limit * 4),
+            contact = await (options.contact ?? findContact)(
+              item,
+              deadline,
+              () => store.budget('paid_api_calls', day, limit * 4),
+              undefined,
+              undefined,
+              contactState,
             );
             if (!contact) {
               await store.update(row.id, {
@@ -461,8 +469,16 @@ export async function runDiscovery(
               error instanceof ProviderError
                 ? error.provider
                 : '';
-            // A GitHub limit only holds this candidate; paid-provider limits
-            // or account problems stop outreach for the day.
+            // Findymail is optional: its outage holds only the candidates
+            // that need it, while later Prospeo contacts can still enroll.
+            if (provider === 'app.findymail.com' || provider === 'findymail') {
+              const issue =
+                'Findymail unavailable; dependent candidates held while Prospeo enrichment continues';
+              if (!report.issues.includes(issue)) report.issues.push(issue);
+              continue;
+            }
+            // A GitHub limit only holds this candidate; required-provider
+            // limits or account problems stop outreach for the day.
             const paidProvider = !provider.includes('github');
             const accountProblem =
               error instanceof ProviderError && error.status !== 429;

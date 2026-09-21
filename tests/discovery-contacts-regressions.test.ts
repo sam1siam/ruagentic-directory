@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findContact, publishedContacts } from '../lib/discovery/contacts.ts';
-import { ProviderError } from '../lib/discovery/http.ts';
+import {
+  findContact,
+  publishedContacts,
+  type ContactLookupState,
+} from '../lib/discovery/contacts.ts';
+import { ProviderCooldown, ProviderError } from '../lib/discovery/http.ts';
 import type { Candidate } from '../lib/discovery/policy.ts';
 
 const item: Candidate = {
@@ -42,6 +46,58 @@ async function withProviders(findymail: boolean, run: () => Promise<void>) {
 const noPage = async () => {
   throw new Error('Unexpected public page read');
 };
+
+await test('Findymail outages hold dependent contacts without blocking later Prospeo founders or spending repeated fallback calls', async () => {
+  await withProviders(true, async () => {
+    for (const failure of [
+      new ProviderError('app.findymail.com', 402),
+      new ProviderError('app.findymail.com', 401),
+      new ProviderError('app.findymail.com', 429, undefined, 1200),
+      new ProviderCooldown('findymail', 1200),
+    ]) {
+      const state: ContactLookupState = {};
+      let available = false;
+      let finderCalls = 0;
+      let paidCalls = 0;
+      const api: NonNullable<Parameters<typeof findContact>[3]> = async (
+        url,
+      ) => {
+        const target = new URL(url);
+        if (target.hostname === 'app.findymail.com') {
+          finderCalls++;
+          throw failure;
+        }
+        if (target.pathname === '/search-person')
+          return {
+            results: available ? [founder('Alice Example', 'alice')] : [],
+          };
+        return founder('Alice Example', 'alice', 'alice@example.com');
+      };
+      const lookup = (lookupState = state) =>
+        findContact(
+          item,
+          Date.now() + 60_000,
+          async () => {
+            paidCalls++;
+            return true;
+          },
+          api,
+          noPage,
+          lookupState,
+        );
+      await assert.rejects(lookup(), (error) => error === failure);
+      await assert.rejects(lookup(), (error) => error === failure);
+      assert.equal(finderCalls, 1);
+      assert.equal(paidCalls, 3); // Two Prospeo searches, one failed Findymail call.
+      available = true;
+      assert.equal((await lookup())?.email, 'alice@example.com');
+      assert.equal(finderCalls, 1);
+      available = false;
+      await assert.rejects(lookup({}), (error) => error === failure);
+      assert.equal(finderCalls, 2); // A new run retries the provider.
+    }
+  });
+});
 
 await test('Prospeo can return a verified founder without a Findymail key', async () => {
   await withProviders(false, async () => {
