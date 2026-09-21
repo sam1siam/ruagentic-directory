@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { z } from 'zod';
 import { adminClient } from '../supabase/server';
+import { invalidateCatalog } from './catalog-cache';
 import { appUrl, HttpError } from './http';
 import { ownedSubmission, revisionInput, databaseError } from './submissions';
 import { listingPrice } from '../listing';
@@ -173,6 +174,7 @@ export async function fulfill(
     p_event_type: eventType,
   });
   if (commitError) throw commitError;
+  invalidateCatalog();
   return data;
 }
 export async function cancelCheckout(owner: string, id: string) {

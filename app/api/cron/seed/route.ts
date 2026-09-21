@@ -2,6 +2,7 @@ import seed from '@/data/catalog.json';
 import { prepareCatalog } from '@/lib/catalog-import';
 import { cronAuthorized, respond } from '@/lib/server/http';
 import { fingerprint } from '@/lib/server/catalog';
+import { invalidateCatalog } from '@/lib/server/catalog-cache';
 import { adminClient, configured } from '@/lib/supabase/server';
 import type { PublicListing } from '@/lib/listing';
 export const maxDuration = 60;
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
         .select('slug');
       if (error) throw error;
       inserted += data?.length ?? 0;
+      if (data?.length) invalidateCatalog();
     }
     let refreshed = 0;
     for (let i = 0; i < refreshes.length; i += 50) {
@@ -78,6 +80,7 @@ export async function GET(request: Request) {
         .select('slug');
       if (error) throw error;
       refreshed += data?.length ?? 0;
+      if (data?.length) invalidateCatalog();
     }
     return { inserted, refreshed, bundled: rows.length };
   });

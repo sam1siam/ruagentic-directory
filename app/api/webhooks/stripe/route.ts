@@ -2,6 +2,7 @@ import { after } from 'next/server';
 import Stripe from 'stripe';
 import { stripe, fulfill } from '@/lib/server/payments';
 import { adminClient } from '@/lib/supabase/server';
+import { invalidateCatalog } from '@/lib/server/catalog-cache';
 import { deliverEmails } from '@/lib/server/email';
 import { recordAdOrder, syncAdSubscription } from '@/lib/server/ads';
 import { isAdMetadata } from '@/lib/advertising';
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
           p_event: event.id,
         });
         if (error) throw error;
+        invalidateCatalog();
       }
     }
     return Response.json({ received: true });

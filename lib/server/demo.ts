@@ -1,5 +1,6 @@
 import 'server-only';
 import { adminClient } from '../supabase/server';
+import { invalidateCatalog } from './catalog-cache';
 import {
   auditSubmission,
   publishSubmission,
@@ -181,6 +182,7 @@ export async function removeDemoData(admin: { id: string }) {
       .delete()
       .eq('id', current.id);
     if (error) throw error;
+    invalidateCatalog();
     removed.push(listing.name);
   }
   const { error, count } = await db

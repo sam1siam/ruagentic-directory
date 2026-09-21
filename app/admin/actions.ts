@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/server/admin';
 import { dismissDuplicates, mergeListing } from '@/lib/server/duplicates';
 import { adminClient } from '@/lib/supabase/server';
+import { invalidateCatalog } from '@/lib/server/catalog-cache';
 import { sendMail } from '@/lib/server/mail';
 import { sponsorshipDecisionEmail } from '@/lib/email-policy';
 import { formatUsd, placementById, type CreativeEdit } from '@/lib/advertising';
@@ -243,6 +244,7 @@ export async function setListingState(form: FormData) {
         .update({ visible: true, updated_at: new Date().toISOString() })
         .eq('submission_id', id);
   }
+  invalidateCatalog();
   await log(admin.email, 'listing.' + action, id, note);
   refresh();
 }
@@ -406,6 +408,7 @@ export async function hideListing(form: FormData) {
     { onConflict: 'slug' },
   );
   if (error) throw error;
+  invalidateCatalog();
   await log(admin.email, hidden ? 'listing.hide' : 'listing.show', slug, note);
   refresh();
   revalidatePath('/admin/health');

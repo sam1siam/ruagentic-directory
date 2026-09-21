@@ -45,7 +45,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Stats and sponsors come from the live directory at request time, never from a build snapshot.
+  // Render at request time; public catalog data uses a short shared cache.
   await connection();
   const [stats, sponsors, bar] = await Promise.all([
     directoryStats(),

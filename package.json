@@ -13,6 +13,7 @@
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.ts",
+    "test:catalog-cache": "node scripts/check-catalog-cache.ts",
     "test:database": "python tests/database.py --container ruagentic-db-test",
     "discovery:audit": "node scripts/discovery.ts"
   },

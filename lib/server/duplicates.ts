@@ -4,7 +4,8 @@
  *  working through listing_redirects. */
 import { cache } from 'react';
 import { adminClient, configured } from '../supabase/server';
-import { catalog } from './catalog';
+import { freshCatalog } from './catalog';
+import { invalidateCatalog } from './catalog-cache';
 import {
   duplicateGroups,
   findDuplicates,
@@ -19,7 +20,7 @@ export async function duplicatesFor(
   payload: Pick<ListingInput, 'homepage' | 'repository'>,
   excludeSlug?: string | null,
 ): Promise<DuplicateMatch[]> {
-  return findDuplicates(payload, await catalog(), excludeSlug);
+  return findDuplicates(payload, await freshCatalog(), excludeSlug);
 }
 
 export const dismissedPairs = cache(async (): Promise<Set<string>> => {
@@ -37,7 +38,10 @@ export const dismissedPairs = cache(async (): Promise<Set<string>> => {
 
 /** Groups with at least one pair the admin has not dismissed. */
 export async function openDuplicateGroups(): Promise<DuplicateGroup[]> {
-  const [items, dismissed] = await Promise.all([catalog(), dismissedPairs()]);
+  const [items, dismissed] = await Promise.all([
+    freshCatalog(),
+    dismissedPairs(),
+  ]);
   return duplicateGroups(items).filter((group) => {
     for (let i = 0; i < group.items.length; i++)
       for (let j = i + 1; j < group.items.length; j++)
@@ -80,6 +84,7 @@ export async function mergeListing(
     .update({ visible: false, updated_at: now })
     .eq('slug', loser);
   if (hidden.error) throw hidden.error;
+  invalidateCatalog();
   const override = await db
     .from('catalog_overrides')
     .upsert(
@@ -87,6 +92,7 @@ export async function mergeListing(
       { onConflict: 'slug' },
     );
   if (override.error) throw override.error;
+  invalidateCatalog();
   await db
     .from('submissions')
     .update({ state: 'suspended', updated_at: now })

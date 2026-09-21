@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { adminClient } from '../supabase/server';
+import { invalidateCatalog } from './catalog-cache';
 import {
   listingSchema,
   serviceIdentity,
@@ -184,6 +185,7 @@ export async function publishSubmission(owner: string, input: unknown) {
   });
   if (error) databaseError(error);
   const merged: string[] = [];
+  invalidateCatalog();
   if (parsed.method === 'agentic')
     // A verified publication replaces imported entries for the same project;
     // listings other people paid for stay and go to the review queue.

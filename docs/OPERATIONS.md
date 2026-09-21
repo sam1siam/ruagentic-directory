@@ -112,6 +112,12 @@ Signing up through `/login` with that address works too; the account only needs 
 
 `data/catalog.json` bundles source-labelled listings. The public catalog merges database rows with bundled entries the database has not stored yet, and the hourly `/api/cron/seed` cron inserts those rows (never touching existing ones) so bookmarks and reports can reference them.
 
+Public catalog reads use Next.js's shared data cache with a five-minute revalidation interval. Database rows are cached in batches of 100 to stay below the per-entry cache size limit; hidden rows retain only their slug so bundled entries cannot bring them back. Publication, withdrawal, payment fulfillment/revocation, admin hide/restore, merges, demo removal, and seed writes expire the `public-catalog` tag. Account data and publication/duplicate-review decisions are not shared through this cache. Failed visibility lookups fail closed rather than serving unchecked bundled data.
+
+Direct SQL changes and standalone seed-script writes rely on the time-based refresh, which occurs on the next request after the interval (the first request can receive stale data during background refresh). Existing public REST response caching is separate and can retain a response for its advertised cache lifetime.
+
+Run `npm run test:catalog-cache` with no other Next development server running in this checkout. It starts a local Next development server and a loopback Supabase fixture with dummy credentials, and checks cross-request reuse, mutation invalidation, hidden-listing fallback, restoration, and error recovery without contacting production services.
+
 ## Stripe
 
 Use the separate RUAGENTIC Stripe account (formerly Superway) in Vertex Innovation Collective. Do not use AstroFabric's account or credentials. The application key needs Checkout Sessions write access and Payment Intents, Prices, and Products read access. Connected-account permissions and all other resource permissions stay disabled.

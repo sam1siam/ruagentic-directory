@@ -2,6 +2,7 @@ import { after } from 'next/server';
 import { rateLimit, respond, sameOrigin, signedIn } from '@/lib/server/http';
 import { ownedSubmission, databaseError } from '@/lib/server/submissions';
 import { adminClient } from '@/lib/supabase/server';
+import { invalidateCatalog } from '@/lib/server/catalog-cache';
 import { fulfill } from '@/lib/server/payments';
 import { deliverEmails } from '@/lib/server/email';
 import { duplicatesFor } from '@/lib/server/duplicates';
@@ -82,6 +83,7 @@ export async function DELETE(
       p_id: id,
     });
     if (error) databaseError(error);
+    invalidateCatalog();
     return { withdrawn: true };
   });
 }
