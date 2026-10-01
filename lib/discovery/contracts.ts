@@ -68,21 +68,6 @@ export const registryCatalog = z.object({
   ),
   metadata: z.object({ nextCursor: text }).optional(),
 });
-export const prospeoRecord = z.object({
-  company: z.object({ domain: text, website: text }).nullish(),
-  person: z
-    .object({
-      person_id: text,
-      current_job_title: text,
-      first_name: text,
-      full_name: text,
-      email: z
-        .object({ status: text, revealed: z.boolean().nullish(), email: text })
-        .nullish(),
-    })
-    .nullish(),
-});
-export const prospeoSearch = z.object({ results: z.array(prospeoRecord) });
 export const hackerNewsItem = z.object({
   id: z.number(),
   type: text,

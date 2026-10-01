@@ -5,8 +5,6 @@ type Bucket = {
   next: number;
   interval: number;
   blocked: number;
-  dailyLeft?: number;
-  minuteLeft?: number;
   remaining?: number;
 };
 
@@ -23,8 +21,8 @@ export class ProviderCooldown extends Error {
   }
 }
 
-/** Paces provider calls, including empty searches and
- *  failures, and adapts to their rate-limit headers. Never retries writes. */
+/** Paces GitHub API calls, including failures, and adapts to the
+ *  rate-limit headers. Never retries writes. */
 export class ProviderPacer {
   private buckets = new Map<string, Bucket>();
   private githubBlocked = 0;
@@ -33,10 +31,6 @@ export class ProviderPacer {
     this.clock = clock;
   }
   private key(url: URL) {
-    if (url.hostname === 'api.prospeo.io')
-      return `prospeo:${url.pathname.startsWith('/search-') ? 'search' : 'enrich'}`;
-    if (url.hostname === 'app.findymail.com') return 'findymail';
-    if (url.hostname === 'server.smartlead.ai') return 'smartlead';
     if (url.hostname === 'api.github.com')
       return url.pathname.startsWith('/search/')
         ? 'github:search'
@@ -47,15 +41,12 @@ export class ProviderPacer {
     let b = this.buckets.get(key);
     if (!b) {
       // GitHub search allows 10 requests a minute without a token, 30 with one.
-      const interval = key.startsWith('prospeo:')
-        ? 3100
-        : key === 'github:search'
+      const interval =
+        key === 'github:search'
           ? process.env.GITHUB_TOKEN
             ? 2100
             : 6500
-          : key === 'github:core'
-            ? 750
-            : 1100;
+          : 750;
       b = { next: 0, interval, blocked: 0 };
       this.buckets.set(key, b);
     }
@@ -68,10 +59,7 @@ export class ProviderPacer {
     let at = Math.max(this.clock.now(), b.next);
     for (;;) {
       const now = this.clock.now();
-      const blocked = Math.max(
-        b.blocked,
-        key.startsWith('github:') ? this.githubBlocked : 0,
-      );
+      const blocked = Math.max(b.blocked, this.githubBlocked);
       // Another response can extend the cooldown while this caller sleeps.
       if (blocked > at) at = Math.max(blocked, b.next);
       if (at > deadline - 20_000)
@@ -92,45 +80,20 @@ export class ProviderPacer {
         ? Number(value)
         : undefined;
     };
-    if (key.startsWith('prospeo:')) {
-      const second = number('x-second-rate-limit'),
-        minute = number('x-minute-rate-limit');
-      if (second && minute)
-        b.interval = Math.max(
-          1100,
-          Math.ceil(1000 / second) + 100,
-          Math.ceil(60000 / minute) + 100,
-        );
-      b.dailyLeft = number('x-daily-request-left') ?? b.dailyLeft;
-      b.minuteLeft = number('x-minute-request-left') ?? b.minuteLeft;
-      for (const period of ['minute', 'daily']) {
-        if (number(`x-${period}-request-left`) === 0) {
-          const seconds =
-            number(`x-${period}-reset-seconds`) ??
-            (period === 'daily' ? 86400 : 60);
-          b.blocked = Math.max(b.blocked, now + seconds * 1000 + 1000);
-        }
-      }
-    }
-    if (key.startsWith('github:')) {
-      const remaining = number('x-ratelimit-remaining'),
-        reset = number('x-ratelimit-reset');
-      b.remaining = remaining ?? b.remaining;
-      if (remaining === 0 && reset)
-        b.blocked = Math.max(b.blocked, reset * 1000 + 1000);
-    }
+    const remaining = number('x-ratelimit-remaining'),
+      reset = number('x-ratelimit-reset');
+    b.remaining = remaining ?? b.remaining;
+    if (remaining === 0 && reset)
+      b.blocked = Math.max(b.blocked, reset * 1000 + 1000);
     const githubSecondary =
-      key.startsWith('github:') &&
-      (secondaryLimit ||
-        ((status === 403 || status === 429) &&
-          number('x-ratelimit-remaining') !== 0 &&
-          (status === 429 || headers.has('retry-after'))));
+      secondaryLimit ||
+      ((status === 403 || status === 429) &&
+        remaining !== 0 &&
+        (status === 429 || headers.has('retry-after')));
     if (
       status === 429 ||
       githubSecondary ||
-      (key.startsWith('github:') &&
-        status === 403 &&
-        headers.has('retry-after'))
+      (status === 403 && headers.has('retry-after'))
     ) {
       const retry = headers.get('retry-after');
       const milliseconds =
@@ -163,17 +126,8 @@ export class ProviderPacer {
           intervalMs: b.interval,
           blockedForSeconds: Math.max(
             0,
-            Math.ceil(
-              (Math.max(
-                b.blocked,
-                key.startsWith('github:') ? this.githubBlocked : 0,
-              ) -
-                now) /
-                1000,
-            ),
+            Math.ceil((Math.max(b.blocked, this.githubBlocked) - now) / 1000),
           ),
-          ...(b.dailyLeft !== undefined ? { dailyLeft: b.dailyLeft } : {}),
-          ...(b.minuteLeft !== undefined ? { minuteLeft: b.minuteLeft } : {}),
           ...(b.remaining !== undefined ? { remaining: b.remaining } : {}),
         },
       ]),

@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { getDomain } from 'tldts';
 
 export const CUTOFF = '2026-09-10T04:00:00.000Z'; // September 10, 00:00 America/Toronto
-export const CAMPAIGN_ID = 3932154;
 export const SOURCES = [
   'official-registry',
   'mcp-so',
@@ -29,7 +28,6 @@ export type Candidate = {
   kind?: 'mcp-server' | 'mcp-client' | 'ai-agent';
   publishedAt?: string;
   dateEvidence?: string;
-  founderName?: string;
   needsDetail?: boolean;
   registryUrl?: string;
   npmPackage?: string;
@@ -216,17 +214,6 @@ export function isNew(
   )
     return false;
   return initialized; // absent from a previously completed, full source snapshot
-}
-export function validEmail(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length <= 254 &&
-    /^[a-z0-9.!#$%&'*+\-/=?^_`{|}~]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value) &&
-    !/[\r\n]/.test(value) &&
-    !/^(?:no-?reply|do-?not-?reply|abuse|privacy|security|legal|postmaster|dmarc)@/i.test(
-      value,
-    )
-  );
 }
 export function dayKey(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {

@@ -1,17 +1,19 @@
 # Daily project discovery
 
-The directory checks eleven sources once a day at **11:17 UTC** (07:17 Toronto during daylight saving time, 06:17 in winter). Vercel calls `/api/cron/discovery` with the existing `CRON_SECRET`. This is private prospecting infrastructure, not a public crawler endpoint or a mechanism for automatically publishing directory listings.
+The directory checks eleven sources once a day at **11:17 UTC** (07:17 Toronto during daylight saving time, 06:17 in winter). Vercel calls `/api/cron/discovery` with the existing `CRON_SECRET`. New MCP servers, MCP clients and AI agents that have their own website are published as source-labelled, imported listings, the same way the bundled catalog was built. The project's owner can claim a listing later to correct or complete it.
+
+The earlier founder-outreach stage (Prospeo, Findymail and Smartlead) was retired on October 1, 2026. The job no longer looks up people, sends email, or needs any paid provider.
 
 ## Selection and dates
 
-Only MCP servers, MCP clients, and AI agents qualify. A factual project identity and public project URL are required. Projects already in the bundled directory, database, or a user's submission are excluded before enrichment. Matching uses normalized repositories, company domains, endpoints, and names. The conservative company-level rule allows only one invitation per company, even if it ships several projects.
+Only MCP servers, MCP clients, and AI agents qualify. A factual project identity and public project URL are required. Projects already in the bundled directory, database, or a user's submission are excluded. Matching uses normalized repositories, company domains, endpoints, and names.
 
 The permanent cutoff is **September 10, 2026, 00:00 America/Toronto** (`2026-09-10T04:00:00Z`). There is no historical backfill.
 
 | Source                | Discovery method                                                                   | How newness is established                                                                                                                                         |
 | --------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Official MCP Registry | Public v0.1 API, paginated                                                         | Earliest publication across the complete server version history; a new version of an old server is excluded                                                        |
-| MCP.so                | Public server and agent sitemaps, then new detail pages                            | New URL plus the exact server record's original `createdAt`; sitemap order can change, so absence alone never authorizes outreach                                  |
+| MCP.so                | Public server and agent sitemaps, then new detail pages                            | New URL plus the exact server record's original `createdAt`; sitemap order can change, so absence alone never establishes newness                                  |
 | PulseMCP              | Public sitemap and allowed detail pages                                            | Absent from a previous complete baseline; `lastmod` is ignored                                                                                                     |
 | Cline                 | Official published `catalog.json`, MCP entries only                                | New catalog ID after a complete baseline                                                                                                                           |
 | Docker                | Official v3 catalog                                                                | Original `dateAdded`                                                                                                                                               |
@@ -22,7 +24,7 @@ The permanent cutoff is **September 10, 2026, 00:00 America/Toronto** (`2026-09-
 | Hacker News           | Official HN API `showstories` (the latest ~200 Show HN posts, several days' worth) | Original submission `time`; only posts that mention MCP or AI agents qualify                                                                                       |
 | GitHub                | Public repository search API for topics `mcp-server` and `model-context-protocol`  | Repository `created_at`; private, internal, unknown-visibility, forked and archived repositories are excluded, and a repository without its own website is skipped |
 
-An undated site's first successful full snapshot is a baseline, not a lead list. This deliberately excludes entries already present at setup, including those whose exact publication time cannot be established. Failed, empty, or incomplete full catalogs do not replace a baseline. Source failures leave the other sources operational. A public feed can expose only its current window; an outage longer than that window can miss entries. A site that renames URLs without publication evidence may require manual review. No scraper can guarantee that an undated source's newly appearing URL represents a newly created company.
+An undated site's first successful full snapshot is a baseline, not a lead list. This deliberately excludes entries already present at setup, including those whose exact publication time cannot be established. Failed, empty, or incomplete full catalogs do not replace a baseline. Source failures leave the other sources operational. A public feed can expose only its current window; an outage longer than that window can miss entries. A site that renames URLs without publication evidence may require manual review.
 
 GitHub searches use `is:public` and require public repository metadata even when a token can access private repositories. An HTTP 200 response with `incomplete_results: true` saves only partial progress and leaves the source window open for the next run.
 
@@ -30,51 +32,40 @@ Public crawling checks robots.txt, uses the identified RUAGENTIC user agent, pin
 
 MCP.so's public server-rendered metadata is parsed as JavaScript syntax without execution, matching the exact server slug and reading only its name and original creation date. Unreadable or conflicting dates are held as `needs_publication_evidence`; old renamed or promoted entries are skipped. Product Hunt's feed currently returns HTTP 403 from Vercel, and Cursor returns HTTP 429. These failures are recorded independently. Product Hunt's [API documentation](https://api.producthunt.com/v2/docs) requires permission for commercial use; API access is not enabled pending that permission.
 
-## Contacts and campaign
+## From candidate to listing
 
-The dedicated Smartlead campaign is **3932154**, “RUAGENTIC | New MCP & AI agent listings | Since 2026-09-10”. Its one email introduces ruagentic.com and the Agentic Protocol at ruagentic.org, and explains the actual free path: generate and publish matching `agentic.json`, `agentic.txt`, and README additions, then pass the directory submission checker. It does not promise rankings, endorsement, or automatic approval.
+Each queued candidate goes through these steps (`lib/discovery/run.ts`):
 
-Contact policy: **a founder's work email first, then a published hello@ or support@ address.** Addresses are never guessed.
+1. Detail pages are read where the source only listed a URL, and MCP.so entries without an exact publication date are held.
+2. Candidates whose publication evidence predates the cutoff are skipped.
+3. Candidates that match an existing listing or submission are marked `already_listed`.
+4. The project's own website is resolved (`lib/discovery/homepage.ts`): the registry's `websiteUrl`, the npm package's homepage, the GitHub repository's homepage field, or an endpoint origin whose page title names the project. Nothing is guessed. A candidate with no identifiable website is skipped.
+5. The listing is built (`lib/discovery/listing.ts`): name, summary and description from the source's own text plus a plain provenance sentence; homepage, repository and endpoint as found; `imported: true`, `submitted: false`, `ownershipVerified: false`; `source`, `sourceUrl`, `observedAt` and `publishedAt`; and a `sources` trail. The kind (server, client or AI agent) is the source's classification or, failing that, the project's own words; the category is a keyword suggestion with `Other` as the fallback. Both are recorded as editorial normalization, like the bundled catalog, and the owner can correct them by claiming the listing. Pricing, transport, authentication and license stay `unknown` or empty rather than invented.
+6. The row is inserted into `directory_entries` (an existing slug is never overwritten), the candidate becomes `listed` with its address in `reason`, and the catalog cache is expired.
 
-1. Prospeo founder search on the exact company domain (current titles containing Founder or Co-founder, at most two people), then a verified work-email reveal for each. The returned company, current title and email domain must match, and founder lookups accept only personal mailboxes.
-2. If Prospeo names founders without verified emails, Findymail looks up each known founder by name and domain, in order (at most two).
-3. If Prospeo finds no founder, Findymail searches the company's current founders itself and looks up their emails.
-4. If no founder email is found, a hello@ or support@ address on the company's own domain that the homepage or its contact page publishes (hello@ first) is verified through Findymail. Pages that refuse marketing or unsolicited contact are skipped. This step never runs while a Prospeo lookup is unresolved.
+Data the listing schema rejects is held as `needs_review`, never published. A GitHub rate limit holds the candidate unchanged (`deferred`); any other failure counts an attempt, and a third failed attempt moves the candidate to `needs_review`.
 
-A candidate with none of these is recorded as `no_verified_contact` and is never enrolled.
-
-The default ceiling is **50 prospects and 50 enrollments per Toronto calendar day**, with at most 200 paid API attempts across providers. Failed and ambiguous paid calls still consume this internal allowance; provider pricing determines actual credits. No mobile-number enrichment is requested. Missing keys, unavailable duplicate checks, and provider account/quota errors stop dependent work. Projects lacking a verifiable contact are recorded without enrollment.
-
-Smartlead imports retain its global block list, unsubscribe list, bounce suppression, and duplicate checks across other campaigns. The campaign stops on replies, offers unsubscribe, disables click/open tracking, and sends weekdays 09:00–17:00 America/Toronto. Campaign enrollment and campaign activation are separate: a verified sender must be connected before sending starts. The cron never starts a paused campaign or changes existing campaigns/mailboxes.
-
-## Provider limits and work order
-
-Every Prospeo, Findymail and Smartlead call is paced, including empty searches and failures: Prospeo at least 3.1 seconds apart per endpoint group and Findymail and Smartlead 1.1 seconds, slowing further to match Prospeo's `x-second-rate-limit` and `x-minute-rate-limit` headers. A 429, or a minute or daily allowance reaching zero, blocks that provider until its `Retry-After` or reset time. GitHub secondary limits, including HTTP 403, pause both search and repository requests; a response identifying a secondary limit without `Retry-After` pauses them for at least a minute. Cooldowns apply as soon as response headers arrive and are rechecked by waiting requests. Each outreach run starts with Prospeo's free account check and records the plan, remaining credits and renewal (`prospeo`) plus the pacer's state per provider (`providers`, including requests left today). With no credits left, enrichment pauses and candidates stay queued.
-
-A rate limit, cooldown or account error (HTTP 401, 402, 403, 423 or 429) at Prospeo, Findymail or Smartlead is not the candidate's fault. The candidate returns to the queue with its status and attempt count unchanged and is counted as `deferred`. A short limit is waited out; one that outlasts the run, or any account error, at a required provider (Prospeo or Smartlead) stops outreach for the day with the reason in `issues`. Findymail is optional: its account errors or cooldowns hold only candidates that need it, while later candidates can still enroll through verified Prospeo founder contacts. A run remembers a Findymail account error or cooldown that exceeds its deadline, avoiding further failed Findymail calls and budget charges; a new run checks provider access again. Held candidates retain their status and attempt count instead of becoming `no_verified_contact`. Findymail never substitutes for a rate-limited Prospeo lookup. Only candidate-specific failures count an attempt, and a third failed attempt moves a candidate to `needs_review`.
-
-Work order each run: candidates whose contact is already found, then at most five failed candidates last tried 20 or more hours ago, then new candidates by promise: projects with their own website first, then those that only name a repository, package, registry entry or endpoint (which may still resolve to a website), then GitHub search results without a website; oldest first within each group. GitHub search results without a website are no longer queued at all, since the search result already carries the repository's homepage and there is nothing to contact without one.
+Work order each run: candidates whose contact lookup had already finished (legacy `contact_ready`), then at most five failed candidates last tried 20 or more hours ago, then new candidates by promise: projects with their own website first, then those that only name a repository, package, registry entry or endpoint (which may still resolve to a website), then GitHub search results without a website; oldest first within each group. Candidates left as `no_verified_contact` by the retired outreach stage are queued again automatically.
 
 ## Deployment and controls
 
-Apply `supabase/migrations/202609100001_discovery.sql`. All four tables are service-role-only with RLS. Configure these **server-side production** environment variables and redeploy:
+Apply `supabase/migrations/202609100001_discovery.sql`. All discovery tables are service-role-only with RLS. The `discovery_outreach` table is no longer written; it can stay for history or be dropped. Configure these **server-side production** environment variables and redeploy:
 
-- `DISCOVERY_ENABLED=true`: enable source collection.
-- `DISCOVERY_ENRICHMENT_ENABLED=true`: allow paid enrichment and Smartlead enrollment. Leave false while establishing baselines or completing sender/key setup.
-- `DISCOVERY_DAILY_LIMIT=100`: integer 1–100 (default 50); also update the Smartlead campaign's sending limit when intentionally increasing volume. The paid enrichment budget is four calls per allowed enrolment.
-- `PROSPEO_API_KEY`, `FINDYMAIL_API_KEY`, `SMARTLEAD_API_KEY`: sensitive credentials. Findymail is optional for founder-only Prospeo operation, but required for the published-contact fallback.
+- `DISCOVERY_ENABLED=true`: run the job at all.
+- `DISCOVERY_LISTING_ENABLED` (default `true`): set to `false` to keep collecting sources without publishing listings.
+- `DISCOVERY_DAILY_LIMIT=100`: integer 1–100 (default 50), the most listings one Toronto calendar day may publish. Skips do not count.
 - Existing Supabase URL/secret and `CRON_SECRET`.
-- Optional `GITHUB_TOKEN` for public repository API quota. Without it GitHub allows 10 repository searches a minute and 60 other API calls an hour; with it, 30 and 5,000. A GitHub limit holds only the candidate that hit it, never the day's outreach.
+- Optional `GITHUB_TOKEN` for public repository API quota. Without it GitHub allows 10 repository searches a minute and 60 other API calls an hour; with it, 30 and 5,000. GitHub calls are paced and a limit holds only the candidate that hit it.
 
-The cron has an 800-second maximum (the Pro plan ceiling; the run budgets 770 seconds under it). Sources load in the background while the candidates already queued are processed, so a slow source no longer uses up the candidates' time, and it leaves remaining candidates queued when its processing budget is exhausted. Each complete source is checkpointed. The Official MCP Registry reads up to four version histories at a time. It publishes no rate limit and answers bursts with HTTP 429, so a 429 or 503 pauses every reader for 2, 4, 8 then 16 seconds and retries the same read; a server whose read fails is left for the next run, and when time runs short the servers already read and their new candidates are saved (`partial` in the report). Its window start stays put until a complete pass, so the next run lists the same window again and reads only what is left. Partial saving is limited to dated sources; undated sources still establish newness only from a complete snapshot. It has a ten-minute database lease and one completed run per day. A process crash cannot blindly duplicate an invitation: reserve the project/company/email and persist `enrollment_uncertain` before calling Smartlead. Explicitly acknowledged imports become `enrolled` or `suppressed`; unknown outcomes stay held for review.
+`PROSPEO_API_KEY`, `FINDYMAIL_API_KEY`, `SMARTLEAD_API_KEY` and `DISCOVERY_ENRICHMENT_ENABLED` are no longer read and can be deleted from Vercel.
 
-Turning off enrichment preserves source collection. Turning off discovery stops the job. Pause the dedicated campaign in Smartlead to stop sending immediately; that does not alter other campaigns.
+The cron has an 800-second maximum (the Pro plan ceiling; the run budgets 770 seconds under it). Sources load in the background while the candidates already queued are processed, so a slow source does not use up the candidates' time, and remaining candidates stay queued when the clock or the daily limit stops the run. Each complete source is checkpointed. The Official MCP Registry reads up to four version histories at a time; a 429 or 503 pauses every reader for 2, 4, 8 then 16 seconds and retries the same read; a server whose read fails is left for the next run, and when time runs short the servers already read and their new candidates are saved (`partial` in the report). Its window start stays put until a complete pass. Partial saving is limited to dated sources; undated sources still establish newness only from a complete snapshot. The job has a ten-minute database lease and one completed run per day.
 
-## Monitoring and recovery
+## Monitoring
 
-Run `npm run discovery:audit` for read-only source checks; this does not write checkpoints, spend credits, or add contacts. For an explicitly authorized local run with real server credentials, use `node --env-file=<private-env-file> scripts/discovery.ts --baseline` or `--run`. Vercel's downloaded environment files redact sensitive values; a downloaded placeholder is not a usable credential.
+Run `npm run discovery:audit` for read-only source checks; this does not write checkpoints or listings. For an explicitly authorized local run with real server credentials, use `node --env-file=<private-env-file> scripts/discovery.ts --baseline` or `--run`.
 
-In the RUAGENTIC Supabase SQL editor:
+Run summaries are logged as `discovery_run_summary`; `vercel logs --query discovery_run_summary --json` reads them. In the RUAGENTIC Supabase SQL editor:
 
 ```sql
 select source, item_count, initialized_at, last_success_at, last_error
@@ -82,28 +73,15 @@ from public.discovery_sources order by source;
 select day, started_at, finished_at, status, report
 from public.discovery_runs order by day desc limit 14;
 select status, count(*) from public.discovery_candidates group by status;
-select id, data->>'name' as project, reason, contact->>'email' as email
+select id, data->>'name' as project, reason
 from public.discovery_candidates
-where status in ('enrollment_uncertain','needs_review') order by first_seen_at;
+where status = 'needs_review' order by first_seen_at;
+select slug, data->>'name' as name, data->>'kind' as kind, data->>'category' as category
+from public.directory_entries
+where data->>'source' in ('Official MCP Registry','MCP.so','PulseMCP','Cline Marketplace','Docker MCP Catalog','Cursor Directory','Microsoft MCP list','LiteLLM','Product Hunt','Hacker News (Show HN)','GitHub')
+  and (data->>'observedAt') >= '2026-10-01' order by updated_at desc;
 ```
 
-Check the exact email in campaign 3932154 before resolving an uncertain import. If present, mark the candidate and its outreach row `enrolled`. If absent, establish that the original request definitively failed before manually adding it through Smartlead; never reset the reservation and let a retry guess. Suppressed and unsubscribed contacts stay suppressed.
+Review `attention_required` reports for source failures, limits and `needs_review` candidates. Fix the cause, preserving `seen_keys` and `initialized_at`. Do not clear a baseline to "retry": doing so loses the evidence for newness. The next daily run retries unavailable sources. A completely failed run can reacquire its expired lease; a completed day's job is intentionally not repeatable. A listing the job got wrong is handled like any imported listing: hide it from the admin Data health tab, or let the owner claim and correct it.
 
-For an explicitly authorized same-day recovery after replenishing Findymail credits, `node scripts/recover-discovery.ts YYYY-MM-DD` reopens only an expired, completed run that enrolled zero leads and reported Findymail HTTP 402. Run it in a trusted production environment with the existing server credentials. It preserves the previous run inside the recovery report and leaves all daily budgets, source checkpoints, candidate attempts, and invitation reservations intact. A second invocation detects the recovery marker and does not repeat it. This operator command is never part of the normal build or cron.
-
-Review `attention_required` reports for source failures, missing keys, limits, and unknown imports. Fix the cause, preserving `seen_keys`, `initialized_at`, and invitation reservations. Do not clear a baseline to “retry”: doing so loses the evidence for newness. The next daily run retries unavailable sources. A completely failed run can reacquire its expired lease; a completed day's job is intentionally not repeatable.
-
-Candidates that failed only because of the redirect handling or Prospeo pacing fixed on September 13, 2026 can go back in the queue. This touches only rows with no found contact and no reserved invitation:
-
-```sql
-update public.discovery_candidates as c
-set status = 'pending', attempts = 0, reason = null, updated_at = now()
-where c.status in ('retry', 'needs_review')
-  and (c.reason like 'The URL redirects%' or c.reason like '%returned HTTP 429%')
-  and c.contact is null
-  and not exists (
-    select 1 from public.discovery_outreach o where o.candidate_id = c.id
-  );
-```
-
-Validation: `npm test`, `npm run typecheck`, `npm run build`, and the transactional `tests/discovery-database.sql` checks. Database fixtures roll back and never invoke an email provider.
+Validation: `npm test`, `npm run typecheck`, `npm run build`, and the transactional `tests/discovery-database.sql` checks.

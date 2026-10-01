@@ -1,39 +1,25 @@
 import seed from '../../data/catalog.json' with { type: 'json' };
 import {
   aliases,
-  CAMPAIGN_ID,
   companyDomain,
   CUTOFF,
   dayKey,
-  digest,
   qualify,
   SOURCES,
   type Candidate,
   type Source,
 } from './policy.ts';
 import { fetchSnapshot, parseDetail } from './sources.ts';
-import {
-  ProviderCooldown,
-  ProviderError,
-  providerHold,
-  readPage,
-} from './http.ts';
+import { providerHold, readPage } from './http.ts';
 import { providerPacer } from './rate-limit.ts';
-import {
-  findContact,
-  prospeoAccount,
-  resolveHomepage,
-  type ContactLookupState,
-  type ProspeoAccount,
-} from './contacts.ts';
-import { Smartlead } from './smartlead.ts';
+import { resolveHomepage } from './homepage.ts';
+import { listingFromCandidate } from './listing.ts';
 import { discoveryStore, type DiscoveryStore } from './store.ts';
 import { object } from './contracts.ts';
 
 type DiscoveryReport = {
   day: string;
   cutoff: string;
-  campaignId: number;
   sources: {
     source: Source;
     status: string;
@@ -44,24 +30,16 @@ type DiscoveryReport = {
     partial?: boolean;
   }[];
   candidates: Record<
-    | 'checked'
-    | 'enriched'
-    | 'enrolled'
-    | 'suppressed'
-    | 'skipped'
-    | 'uncertain'
-    | 'failed'
-    | 'deferred',
+    'checked' | 'listed' | 'skipped' | 'review' | 'failed' | 'deferred',
     number
   >;
   issues: string[];
   mode?: string;
   status?: string;
-  prospeo?: ProspeoAccount;
   providers?: ReturnType<typeof providerPacer.snapshot>;
 };
 
-/** Includes submissions/hidden entries so owners already using RUAGENTIC are not prospected. */
+/** Includes submissions/hidden entries so projects already on RUAGENTIC are not listed twice. */
 export async function directoryAliases(store: DiscoveryStore) {
   const result = new Set(seed.flatMap((i) => aliases(i)));
   for (const [table, field, key] of [
@@ -77,7 +55,7 @@ export async function directoryAliases(store: DiscoveryStore) {
         .range(offset, offset + 499);
       if (error)
         throw new Error(
-          'RUAGENTIC duplicate check unavailable; enrichment stopped',
+          'RUAGENTIC duplicate check unavailable; listing stopped',
         );
       for (const row of data || []) {
         const listing = object(object(row)[field]);
@@ -124,10 +102,8 @@ export async function runDiscovery(
     baselineOnly?: boolean;
     now?: Date;
     store?: DiscoveryStore;
-    /** Test seams for the network-facing steps. */
+    /** Test seam for the network-facing source reads. */
     snapshot?: typeof fetchSnapshot;
-    account?: typeof prospeoAccount;
-    contact?: typeof findContact;
   } = {},
 ) {
   const now = options.now || new Date(),
@@ -139,15 +115,12 @@ export async function runDiscovery(
   const report: DiscoveryReport = {
     day,
     cutoff: CUTOFF,
-    campaignId: CAMPAIGN_ID,
     sources: [],
     candidates: {
       checked: 0,
-      enriched: 0,
-      enrolled: 0,
-      suppressed: 0,
+      listed: 0,
       skipped: 0,
-      uncertain: 0,
+      review: 0,
       failed: 0,
       deferred: 0,
     },
@@ -156,7 +129,7 @@ export async function runDiscovery(
   let sourceWork: Promise<void> | undefined;
   try {
     // Sources load in the background while the queue that is already saved is
-    // processed, so the slowest source can no longer eat the candidates' time.
+    // processed, so the slowest source cannot eat the candidates' time.
     const sourceDeadline = deadline - 30_000;
     const snapshot = options.snapshot ?? fetchSnapshot;
     sourceWork = Promise.allSettled(
@@ -208,61 +181,24 @@ export async function runDiscovery(
         ),
       ),
     );
-    const missing = ['PROSPEO_API_KEY', 'SMARTLEAD_API_KEY'].filter(
-      (k) => !process.env[k],
-    );
     if (
       options.baselineOnly ||
-      process.env.DISCOVERY_ENRICHMENT_ENABLED !== 'true' ||
-      missing.length
+      process.env.DISCOVERY_LISTING_ENABLED === 'false'
     ) {
       report.mode = 'discovery_only';
       report.issues.push(
-        options.baselineOnly
-          ? 'Baseline-only run'
-          : missing.length
-            ? `Missing ${missing.join(', ')}`
-            : 'Enrichment is not enabled',
+        options.baselineOnly ? 'Baseline-only run' : 'Listing is not enabled',
       );
     } else {
-      report.mode = 'discovery_and_outreach';
+      report.mode = 'discovery_and_listing';
       const known = await directoryAliases(store),
-        ledger = await store.outreach();
-      const held = ledger.filter((r) =>
-        ['reserved', 'uncertain'].includes(r.status),
-      ).length;
-      if (held)
-        report.issues.push(
-          `${held} invitation reservations need Smartlead reconciliation before any retry`,
-        );
-      const contactedDomains = new Set(
-          ledger.map((r) => String(r.company_domain)),
-        ),
-        contactedEmails = new Set(ledger.map((r) => String(r.email)));
-      const smartlead = new Smartlead(process.env.SMARTLEAD_API_KEY!, deadline),
+        slugs = new Set([
+          ...seed.map((s) => s.slug),
+          ...(await store.listingSlugs()),
+        ]),
         limit = dailyLimit();
-      const contactState: ContactLookupState = {};
-      // Free account check: plan and credits go in the report, and enrichment
-      // pauses instead of failing candidates when Prospeo has no credits left.
-      try {
-        const account = await (options.account ?? prospeoAccount)(deadline);
-        if (account) {
-          report.prospeo = account;
-          if (account.remainingCredits === 0)
-            report.issues.push(
-              `Prospeo has no credits left${account.renewalDays !== null ? `; renews in ${account.renewalDays} days` : ''}`,
-            );
-        }
-      } catch (error) {
-        report.issues.push(
-          'Prospeo account check failed: ' +
-            (error instanceof Error
-              ? error.message.slice(0, 120)
-              : 'unknown error'),
-        );
-      }
-      // Skips cost no enrolment, so the queue is read well past the limit;
-      // the clock and the budgets below decide where the run stops.
+      // Skips cost nothing against the limit, so the queue is read well past
+      // it; the clock and the daily limit decide where the run stops.
       for (const row of await store.pending(limit * 4, now)) {
         if (Date.now() > deadline - 45_000) {
           report.issues.push(
@@ -271,8 +207,7 @@ export async function runDiscovery(
           break;
         }
         report.candidates.checked++;
-        let item = row.data,
-          contact = row.contact;
+        let item = row.data;
         try {
           if (item.needsDetail) {
             item = parseDetail(
@@ -320,193 +255,73 @@ export async function runDiscovery(
           item = await resolveHomepage(item, deadline);
           const decision = qualify(item),
             domain = companyDomain(item.homepage);
-          if (
-            !decision.eligible ||
-            !domain ||
-            duplicate(item, known) ||
-            contactedDomains.has(domain)
-          ) {
+          if (!decision.eligible || !domain || duplicate(item, known)) {
             await store.update(row.id, {
               status: 'skipped',
               reason: !decision.eligible
                 ? decision.reason
                 : !domain
-                  ? 'No independently identifiable company website'
-                  : 'Project or company already listed/contacted',
+                  ? 'No independently identifiable project website'
+                  : 'Project already listed',
               data: item,
             });
             report.candidates.skipped++;
             continue;
           }
-          if (!contact) {
-            if (report.prospeo?.remainingCredits === 0) {
-              report.issues.push(
-                'Enrichment paused until Prospeo credits renew; candidates stay queued',
-              );
-              break;
-            }
-            if (!(await store.budget('prospects', day, limit))) {
-              report.issues.push('Daily prospect limit reached');
-              break;
-            }
-            await store.update(row.id, {
-              attempts: row.attempts + 1,
-              status: 'retry',
-              data: item,
-            });
-            contact = await (options.contact ?? findContact)(
-              item,
-              deadline,
-              () => store.budget('paid_api_calls', day, limit * 4),
-              undefined,
-              undefined,
-              contactState,
-            );
-            if (!contact) {
-              await store.update(row.id, {
-                status: 'no_verified_contact',
-                reason:
-                  'No verified founder or published business contact found',
-              });
-              report.candidates.skipped++;
-              continue;
-            }
-            await store.update(row.id, { status: 'contact_ready', contact });
-            report.candidates.enriched++;
-          }
-          if (
-            contactedEmails.has(contact.email) ||
-            (await smartlead.exists(contact.email))
-          ) {
-            await store.update(row.id, {
-              status: 'suppressed',
-              reason: 'Email already exists in invitation ledger or Smartlead',
-            });
-            report.candidates.suppressed++;
-            continue;
-          }
-          if (!(await store.budget('enrollments', day, limit))) {
-            report.issues.push('Daily enrollment limit reached');
+          if (!(await store.budget('listings', day, limit))) {
+            report.issues.push('Daily listing limit reached');
             break;
           }
-          const projectKey = digest(
-            aliases(item).find((a) => a.startsWith('repo:')) ||
-              `domain:${domain}`,
-          );
-          if (
-            !(await store.reserve(row.id, projectKey, contact, CAMPAIGN_ID))
-          ) {
+          let listing;
+          try {
+            listing = listingFromCandidate(item, now.toISOString(), slugs);
+          } catch (error) {
+            // Malformed source data is held for a person, never published.
             await store.update(row.id, {
-              status: 'suppressed',
+              status: 'needs_review',
               reason:
-                'Another source already reserved this project/company/email',
+                'Listing data rejected: ' +
+                (error instanceof Error
+                  ? error.message.slice(0, 160)
+                  : 'invalid'),
+              data: item,
             });
-            report.candidates.suppressed++;
+            report.candidates.review++;
             continue;
           }
-          contactedDomains.add(domain);
-          contactedEmails.add(contact.email);
-          // Write uncertainty BEFORE calling the external service. A crash can never re-import blindly.
-          await store.update(row.id, {
-            status: 'enrollment_uncertain',
-            reason: 'Import reserved; awaiting provider acknowledgement',
-          });
-          let outcome;
-          try {
-            outcome = await smartlead.import(item, contact);
-          } catch {
-            outcome = { status: 'uncertain', accepted: 0 };
-          }
-          await store.completeOutreach(row.id, outcome.status, outcome);
-          await store.update(row.id, {
-            status:
-              outcome.status === 'uncertain'
-                ? 'enrollment_uncertain'
-                : outcome.status,
-            reason:
-              outcome.status === 'uncertain'
-                ? 'Check this email in the Smartlead campaign before any manual retry'
-                : null,
-          });
-          report.candidates[
-            outcome.status === 'enrolled'
-              ? 'enrolled'
-              : outcome.status === 'suppressed'
-                ? 'suppressed'
-                : 'uncertain'
-          ]++;
+          const inserted = await store.publishListing(listing);
+          slugs.add(listing.slug);
           for (const alias of aliases(item)) known.add(alias);
+          await store.update(row.id, {
+            status: inserted ? 'listed' : 'already_listed',
+            reason: inserted
+              ? `Listed as /tools/${listing.slug}`
+              : 'A listing with this address already exists',
+            data: item,
+          });
+          report.candidates[inserted ? 'listed' : 'skipped']++;
         } catch (error) {
           const message =
             error instanceof Error
               ? error.message.slice(0, 180)
               : 'Candidate processing failed';
-          // Never turn an uncertain external write back into a retryable enrichment job.
-          const { data } = await store.db
-            .from('discovery_candidates')
-            .select('status')
-            .eq('id', row.id)
-            .single();
-          const uncertain = data?.status === 'enrollment_uncertain';
           if (providerHold(error)) {
-            // A provider's rate limit or account problem is not the candidate's
-            // fault: it goes back in the queue unchanged and keeps its place.
+            // A GitHub rate limit is not the candidate's fault: it goes back
+            // in the queue unchanged and keeps its place.
             report.candidates.deferred++;
-            if (!uncertain)
-              await store.update(row.id, {
-                status: row.status,
-                attempts: row.attempts,
-                reason: 'Held: ' + message,
-              });
-            const seconds =
-              error instanceof ProviderCooldown
-                ? error.seconds
-                : error instanceof ProviderError
-                  ? error.retryAfterSeconds
-                  : 0;
-            const provider =
-              error instanceof ProviderCooldown ||
-              error instanceof ProviderError
-                ? error.provider
-                : '';
-            // Findymail is optional: its outage holds only the candidates
-            // that need it, while later Prospeo contacts can still enroll.
-            if (provider === 'app.findymail.com' || provider === 'findymail') {
-              const issue =
-                'Findymail unavailable; dependent candidates held while Prospeo enrichment continues';
-              if (!report.issues.includes(issue)) report.issues.push(issue);
-              continue;
-            }
-            // A GitHub limit only holds this candidate; required-provider
-            // limits or account problems stop outreach for the day.
-            const paidProvider = !provider.includes('github');
-            const accountProblem =
-              error instanceof ProviderError && error.status !== 429;
-            if (
-              paidProvider &&
-              (accountProblem ||
-                Date.now() + seconds * 1000 > deadline - 45_000)
-            ) {
-              report.issues.push(
-                `${message}; remaining candidates left queued${!accountProblem && seconds ? ` (limit resets in about ${Math.max(1, Math.ceil(seconds / 60))} min)` : ''}`,
-              );
-              break;
-            }
+            await store.update(row.id, {
+              status: row.status,
+              attempts: row.attempts,
+              reason: 'Held: ' + message,
+            });
             continue;
           }
           report.candidates.failed++;
-          if (!uncertain)
-            await store.update(row.id, {
-              status: row.attempts >= 2 ? 'needs_review' : 'retry',
-              attempts: row.attempts + 1,
-              reason: message,
-            });
-          if (/budget/.test(message)) {
-            report.issues.push(
-              'Daily enrichment API budget reached; remaining candidates left queued',
-            );
-            break;
-          }
+          await store.update(row.id, {
+            status: row.attempts >= 2 ? 'needs_review' : 'retry',
+            attempts: row.attempts + 1,
+            reason: message,
+          });
         }
       }
     }
@@ -515,7 +330,7 @@ export async function runDiscovery(
     report.status =
       report.sources.some((r) => r.status !== 'checked') ||
       report.issues.length ||
-      report.candidates.uncertain ||
+      report.candidates.review ||
       report.candidates.failed ||
       report.candidates.deferred
         ? 'attention_required'

@@ -10,7 +10,6 @@ import {
   publicUrl,
   qualify,
   repositoryKey,
-  validEmail,
   SOURCES,
   type Candidate,
 } from '../lib/discovery/policy.ts';
@@ -28,17 +27,7 @@ import {
   parseGithubSearch,
   parseHackerNewsItem,
 } from '../lib/discovery/sources.ts';
-import {
-  belongsToCompany,
-  findContact,
-  founderEmail,
-  founderRecord,
-  isFounderTitle,
-  publishedContacts,
-  verifiedFounder,
-} from '../lib/discovery/contacts.ts';
-import { leadPayload, Smartlead } from '../lib/discovery/smartlead.ts';
-import { DiscoveryStore, type Contact } from '../lib/discovery/store.ts';
+import { DiscoveryStore } from '../lib/discovery/store.ts';
 import { dailyLimit, runDiscovery } from '../lib/discovery/run.ts';
 import {
   ProviderCooldown,
@@ -101,15 +90,6 @@ const item: Candidate = {
   sourceUrl: 'https://github.com/cline/marketplace',
   homepage: 'https://example.com',
   repository: 'https://github.com/example/new-server',
-};
-const contact: Contact = {
-  email: 'founder@example.com',
-  firstName: 'Pat',
-  fullName: 'Pat Example',
-  companyDomain: 'example.com',
-  provider: 'fixture',
-  evidence: 'fixture',
-  verifiedAt: CUTOFF,
 };
 void test('Toronto cutoff excludes previous evening, old updates and future publications', () => {
   const now = '2026-09-10T15:00:00Z';
@@ -238,107 +218,6 @@ void test('Product qualification excludes content and unsupported products', () 
       .eligible,
     false,
   );
-  assert.equal(validEmail('noreply@example.com'), false);
-  assert.equal(validEmail('x@example.com\r\nBcc: x@evil.com'), false);
-});
-void test('Enrichment rejects mismatched companies, former founders and unverified email', () => {
-  const r = {
-    company: { domain: 'example.com' },
-    person: {
-      person_id: 'p1',
-      current_job_title: 'Co-founder',
-      first_name: 'Pat',
-      full_name: 'Pat Example',
-      email: { status: 'VERIFIED', revealed: true, email: 'pat@example.com' },
-    },
-  };
-  assert.equal(belongsToCompany(r, 'other.com'), false);
-  assert.equal(
-    verifiedFounder(r, 'example.com', 'record')?.email,
-    'pat@example.com',
-  );
-  assert.equal(
-    verifiedFounder(
-      { ...r, company: { domain: 'other.com' } },
-      'example.com',
-      'record',
-    ),
-    null,
-  );
-  assert.equal(
-    founderRecord(
-      { ...r, person: { ...r.person, current_job_title: 'Engineer' } },
-      'example.com',
-    ),
-    false,
-  );
-  for (const title of ['Former founder', 'Product owner', 'Project owner']) {
-    assert.equal(
-      founderRecord(
-        { ...r, person: { ...r.person, current_job_title: title } },
-        'example.com',
-      ),
-      false,
-    );
-  }
-  assert.equal(
-    verifiedFounder(
-      {
-        ...r,
-        person: {
-          ...r.person,
-          email: { ...r.person.email, status: 'UNAVAILABLE' },
-        },
-      },
-      'example.com',
-      'record',
-    ),
-    null,
-  );
-});
-void test('Founder lookups accept only personal founder mailboxes', () => {
-  assert.equal(founderEmail('pat@example.com', 'example.com'), true);
-  for (const email of [
-    'support@example.com',
-    'hello@example.com',
-    'team+sales@example.com',
-    'founders@example.com',
-    'pat@other.com',
-  ])
-    assert.equal(founderEmail(email, 'example.com'), false);
-  assert.equal(isFounderTitle('Co-founder & CEO'), true);
-  for (const title of [
-    'Former founder',
-    'Founder in Residence',
-    'Product owner',
-    'Engineer',
-  ])
-    assert.equal(isFounderTitle(title), false);
-});
-void test('Lead imports preserve suppression and render untrusted names as data', () => {
-  const p = leadPayload({ ...item, name: '<b>{{bad}}</b>\nName' }, contact);
-  assert.equal(p.settings.ignore_global_block_list, false);
-  assert.equal(p.settings.ignore_unsubscribe_list, false);
-  assert.equal(p.settings.ignore_duplicate_leads_in_other_campaign, false);
-  assert(!/[<>{}\n]/.test(p.lead_list[0].custom_fields.project_name));
-  assert.equal(
-    leadPayload(item, { ...contact, firstName: '' }).lead_list[0].custom_fields
-      .greeting_name,
-    'there',
-  );
-});
-void test('Unknown Smartlead acknowledgements remain uncertain; errors are not retried', async () => {
-  let calls = 0;
-  const s = new Smartlead('test-key', Date.now() + 5000, async () => {
-    calls++;
-    return { ok: true };
-  });
-  assert.equal((await s.import(item, contact)).status, 'uncertain');
-  assert.equal(calls, 1);
-  const failing = new Smartlead('test-key', Date.now() + 5000, async () => {
-    throw new ProviderError('server.smartlead.ai', 429);
-  });
-  await assert.rejects(failing.exists('x@example.com'), /429/);
 });
 void test('Incomplete snapshots cannot advance the database checkpoint', async () => {
   let writes = 0;
@@ -411,7 +290,7 @@ void test('Authenticated APIs reject credential forwarding to an arbitrary host'
     /Unsupported API origin/,
   );
 });
-void test('The provider pacer spaces every call and honours rate-limit headers', async () => {
+void test('The provider pacer spaces GitHub calls and honours rate-limit headers', async () => {
   let now = 1_000_000;
   const sleeps: number[] = [];
   const pacer = new ProviderPacer({
@@ -421,78 +300,35 @@ void test('The provider pacer spaces every call and honours rate-limit headers',
       now += ms;
     },
   });
-  const search = new URL('https://api.prospeo.io/search-person');
-  await pacer.wait(search, now + 600_000);
-  await pacer.wait(search, now + 600_000);
-  assert.deepEqual(sleeps, [3100]);
+  const core = new URL('https://api.github.com/repos/acme/tool');
+  await pacer.wait(core, now + 600_000);
+  await pacer.wait(core, now + 600_000);
+  assert.deepEqual(sleeps, [750]);
   assert.ok(
-    pacer.observe(search, new Headers({ 'retry-after': '120' }), 429) >= 120,
+    pacer.observe(core, new Headers({ 'retry-after': '120' }), 429) >= 120,
   );
-  await assert.rejects(pacer.wait(search, now + 60_000), ProviderCooldown);
+  await assert.rejects(pacer.wait(core, now + 60_000), ProviderCooldown);
   pacer.observe(
-    search,
+    core,
     new Headers({
-      'x-daily-request-left': '0',
-      'x-daily-reset-seconds': '3600',
+      'x-ratelimit-remaining': '0',
+      'x-ratelimit-reset': String(Math.ceil(now / 1000) + 3600),
     }),
     200,
   );
-  assert.equal(pacer.snapshot()['prospeo:search']?.dailyLeft, 0);
+  assert.equal(pacer.snapshot()['github:core']?.remaining, 0);
   assert.equal(
     await pacer.wait(new URL('https://example.com/'), now),
     undefined,
   );
 });
-void test('Provider limits hold a candidate; ordinary failures do not', () => {
-  assert.equal(providerHold(new ProviderError('api.prospeo.io', 429)), true);
-  assert.equal(providerHold(new ProviderError('app.findymail.com', 402)), true);
-  assert.equal(providerHold(new ProviderError('api.prospeo.io', 500)), false);
+void test('GitHub limits hold a candidate; ordinary failures do not', () => {
+  assert.equal(providerHold(new ProviderError('api.github.com', 429)), true);
+  assert.equal(providerHold(new ProviderError('api.github.com', 403)), true);
+  assert.equal(providerHold(new ProviderError('api.github.com', 500)), false);
   assert.equal(providerHold(new ProviderError('example.com', 429)), false);
-  assert.equal(providerHold(new ProviderCooldown('prospeo:search', 90)), true);
+  assert.equal(providerHold(new ProviderCooldown('github:search', 90)), true);
   assert.equal(providerHold(new Error('redirect')), false);
-});
-void test('A Prospeo rate limit stops the lookup instead of spending Findymail credits', async () => {
-  const previous = [process.env.PROSPEO_API_KEY, process.env.FINDYMAIL_API_KEY];
-  process.env.PROSPEO_API_KEY = 'fixture';
-  process.env.FINDYMAIL_API_KEY = 'fixture';
-  try {
-    const limited: string[] = [];
-    await assert.rejects(
-      findContact(
-        item,
-        Date.now() + 60_000,
-        async () => true,
-        async (url) => {
-          limited.push(new URL(url).hostname);
-          throw new ProviderError('api.prospeo.io', 429);
-        },
-      ),
-      /429/,
-    );
-    assert.deepEqual(limited, ['api.prospeo.io']);
-    const outage: string[] = [];
-    await assert.rejects(
-      findContact(
-        item,
-        Date.now() + 60_000,
-        async () => true,
-        async (url) => {
-          const host = new URL(url).hostname;
-          outage.push(host);
-          if (host === 'api.prospeo.io')
-            throw new ProviderError('api.prospeo.io', 500);
-          return [];
-        },
-      ),
-      /500/,
-    );
-    assert.deepEqual(outage, ['api.prospeo.io', 'app.findymail.com']);
-  } finally {
-    process.env.PROSPEO_API_KEY = previous[0];
-    process.env.FINDYMAIL_API_KEY = previous[1];
-    if (previous[0] === undefined) delete process.env.PROSPEO_API_KEY;
-    if (previous[1] === undefined) delete process.env.FINDYMAIL_API_KEY;
-  }
 });
 void test('Discovery reads follow HTTPS redirects, including robots.txt redirects', async () => {
   type Page = { status: number; location?: string; text?: string };
@@ -616,6 +452,11 @@ void test('Work order puts found contacts first and caps cooled-down retries ahe
           if (column === 'status') status = value;
           return query;
         },
+        in: (column: string, values: string[]) => {
+          if (column === 'status') status = values[0]!;
+          filters.push(`${column} in ${values.join(',')}`);
+          return query;
+        },
         lt: (column: string, value: unknown) => {
           filters.push(`${column}<${String(value)}`);
           return query;
@@ -641,6 +482,7 @@ void test('Work order puts found contacts first and caps cooled-down retries ahe
   assert.ok(filters.includes('updated_at<2026-09-12T16:00:00.000Z'));
   assert.ok(filters.includes('retry limit 5'));
   assert.ok(filters.includes('pending limit 1000'));
+  assert.ok(filters.includes('status in pending,no_verified_contact'));
 });
 void test('The daily limit accepts up to 100 and rejects anything else', () => {
   const previous = process.env.DISCOVERY_DAILY_LIMIT;
@@ -816,15 +658,6 @@ void test('Partial progress saves new dated candidates without moving the source
   );
 });
 void test('Candidates start before the slowest source finishes, and a partial registry read is kept', async () => {
-  const keys = [
-    'DISCOVERY_ENRICHMENT_ENABLED',
-    'PROSPEO_API_KEY',
-    'SMARTLEAD_API_KEY',
-  ] as const;
-  const previous = keys.map((k) => process.env[k]);
-  process.env.DISCOVERY_ENRICHMENT_ENABLED = 'true';
-  process.env.PROSPEO_API_KEY = 'fixture';
-  process.env.SMARTLEAD_API_KEY = 'fixture';
   const events: string[] = [];
   let release!: () => void;
   const released = new Promise<void>((resolve) => (release = resolve));
@@ -851,7 +684,7 @@ void test('Candidates start before the slowest source finishes, and a partial re
       events.push('partial saved');
       return { observed: 1, newCandidates: 1, baseline: false, partial: true };
     },
-    outreach: async () => [],
+    listingSlugs: async () => [],
     pending: async () => {
       events.push('candidates started');
       release();
@@ -861,11 +694,10 @@ void test('Candidates start before the slowest source finishes, and a partial re
       finished = report;
     },
   } as unknown as DiscoveryStore;
-  try {
+  {
     await runDiscovery({
       store,
       now: new Date('2026-09-13T12:00:00Z'),
-      account: async () => null,
       snapshot: async (source) => {
         await released;
         events.push('source ' + source);
@@ -887,11 +719,6 @@ void test('Candidates start before the slowest source finishes, and a partial re
             }
           : { source, items: [item], complete: true };
       },
-    });
-  } finally {
-    keys.forEach((k, i) => {
-      if (previous[i] === undefined) delete process.env[k];
-      else process.env[k] = previous[i];
     });
   }
   assert.equal(events[0], 'candidates started');
@@ -963,71 +790,6 @@ void test('Registry throttling pauses the readers and retries instead of failing
   assert.equal(attempts, 5);
   assert.equal(stuck.complete, false);
   assert.match(stuck.error ?? '', /^1 registry server could not be read/);
-});
-void test('Published hello@ and support@ addresses on the company domain are the fallback', () => {
-  const html =
-    '<body><a href="mailto:support@example.com">Support</a> <a href="mailto:hello@example.com?subject=hi">Say hi</a> <a href="mailto:sales@example.com">Sales</a> <a href="mailto:hello@other.com">Partner</a><footer>Or write to support@example.com</footer></body>';
-  assert.deepEqual(
-    publishedContacts(html, 'https://example.com', 'example.com').map(
-      (c) => c.email,
-    ),
-    ['hello@example.com', 'support@example.com'],
-  );
-  assert.deepEqual(
-    publishedContacts(
-      '<body><p>No unsolicited sales emails.</p><a href="mailto:hello@example.com">Hi</a></body>',
-      'https://example.com/contact',
-      'example.com',
-    ),
-    [],
-  );
-});
-void test('Without a founder, a published hello@ address verified by Findymail is used', async () => {
-  const previous = [process.env.PROSPEO_API_KEY, process.env.FINDYMAIL_API_KEY];
-  process.env.PROSPEO_API_KEY = 'fixture';
-  process.env.FINDYMAIL_API_KEY = 'fixture';
-  try {
-    const calls: string[] = [];
-    const found = await findContact(
-      item,
-      Date.now() + 60_000,
-      async () => true,
-      async (url, init) => {
-        const u = new URL(url);
-        calls.push(u.hostname + u.pathname);
-        if (u.pathname === '/search-person') return { results: [] };
-        if (u.pathname === '/api/search/employees') return [];
-        if (u.pathname === '/api/verify')
-          return {
-            email:
-              typeof init?.body === 'string' ? JSON.parse(init.body).email : '',
-            verified: true,
-          };
-        throw new Error('unexpected ' + url);
-      },
-      (async (url: string) => ({
-        url,
-        status: 200,
-        contentType: 'text/html',
-        text: '<body><a href="mailto:hello@example.com">Hello</a></body>',
-      })) as unknown as Parameters<typeof findContact>[4],
-    );
-    assert.equal(found?.email, 'hello@example.com');
-    assert.equal(
-      found?.provider,
-      'Published business contact, Findymail verified',
-    );
-    assert.deepEqual(calls, [
-      'api.prospeo.io/search-person',
-      'app.findymail.com/api/search/employees',
-      'app.findymail.com/api/verify',
-    ]);
-  } finally {
-    process.env.PROSPEO_API_KEY = previous[0];
-    process.env.FINDYMAIL_API_KEY = previous[1];
-    if (previous[0] === undefined) delete process.env.PROSPEO_API_KEY;
-    if (previous[1] === undefined) delete process.env.FINDYMAIL_API_KEY;
-  }
 });
 void test('Show HN posts become dated candidates; other stories are ignored', async () => {
   const time = Date.parse('2026-09-12T15:00:00Z') / 1000;

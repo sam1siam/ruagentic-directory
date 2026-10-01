@@ -25,18 +25,8 @@ export type CandidateRow = {
   data: Candidate;
   status: string;
   reason: string | null;
-  contact: Contact | null;
+  contact: unknown;
   attempts: number;
-};
-export type Contact = {
-  email: string;
-  firstName: string;
-  fullName: string;
-  companyDomain: string;
-  provider: string;
-  evidence: string;
-  verifiedAt: string;
-  role?: string;
 };
 export function discoveryStore() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -205,7 +195,7 @@ export class DiscoveryStore {
       // rank. The queue is read deep enough that a promising newcomer is not
       // stuck behind hundreds of older repository-only entries.
       table()
-        .eq('status', 'pending')
+        .in('status', ['pending', 'no_verified_contact'])
         .order('first_seen_at')
         .limit(Math.max(limit, 1000)),
     ]);
@@ -236,51 +226,28 @@ export class DiscoveryStore {
     if (error) throw new Error('Daily budget could not be checked');
     return Boolean(data);
   }
-  async outreach() {
-    const rows: {
-      project_key: string;
-      company_domain: string;
-      email: string;
-      status: string;
-    }[] = [];
+  /** Every slug the directory holds, so a new listing never collides. */
+  async listingSlugs() {
+    const slugs: string[] = [];
     for (let offset = 0; offset < 100000; offset += 500) {
       const { data, error } = await this.db
-        .from('discovery_outreach')
-        .select('project_key,company_domain,email,status')
-        .order('project_key')
+        .from('directory_entries')
+        .select('slug')
+        .order('slug')
         .range(offset, offset + 499);
-      if (error) throw new Error('Could not check invitation deduplication');
-      rows.push(...(data || []));
-      if (!data || data.length < 500) return rows;
+      if (error) throw new Error('Could not read directory slugs');
+      slugs.push(...(data || []).map((row) => String(row.slug)));
+      if (!data || data.length < 500) return slugs;
     }
-    throw new Error('Outreach ledger exceeded pagination limit');
+    throw new Error('Directory slug read exceeded pagination limit');
   }
-  async reserve(
-    id: string,
-    projectKey: string,
-    contact: Contact,
-    campaignId: number,
-  ) {
-    const { error } = await this.db.from('discovery_outreach').insert({
-      project_key: projectKey,
-      company_domain: contact.companyDomain,
-      email: contact.email.toLowerCase(),
-      candidate_id: id,
-      campaign_id: campaignId,
-    });
-    if (error?.code === '23505') return false;
-    if (error) throw new Error('Could not reserve invitation');
-    return true;
-  }
-  async completeOutreach(id: string, status: string, result: unknown) {
-    const { error } = await this.db
-      .from('discovery_outreach')
-      .update({
-        status,
-        provider_result: result,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('candidate_id', id);
-    if (error) throw new Error('Could not record Smartlead outcome');
+  /** Publishes a listing; an existing slug is left untouched and reported. */
+  async publishListing(row: { slug: string; data: unknown; visible: boolean }) {
+    const { data, error } = await this.db
+      .from('directory_entries')
+      .upsert(row, { onConflict: 'slug', ignoreDuplicates: true })
+      .select('slug');
+    if (error) throw new Error('Could not publish listing');
+    return Boolean(data?.length);
   }
 }

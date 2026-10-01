@@ -26,20 +26,14 @@ export class ProviderError extends Error {
     this.retryAfterSeconds = retryAfterSeconds;
   }
 }
-const PAID_PROVIDERS = new Set([
-  'api.prospeo.io',
-  'app.findymail.com',
-  'server.smartlead.ai',
-  'api.github.com',
-]);
-/** Rate limits, cooldowns and account problems at a paid provider or the
- *  GitHub API are not a candidate's fault: callers put the candidate back
- *  instead of failing it. */
+const HELD_PROVIDERS = new Set(['api.github.com']);
+/** Rate limits and cooldowns at the GitHub API are not a candidate's fault:
+ *  callers put the candidate back instead of failing it. */
 export function providerHold(error: unknown) {
   return (
     error instanceof ProviderCooldown ||
     (error instanceof ProviderError &&
-      PAID_PROVIDERS.has(error.provider) &&
+      HELD_PROVIDERS.has(error.provider) &&
       [401, 402, 403, 423, 429].includes(error.status))
   );
 }
