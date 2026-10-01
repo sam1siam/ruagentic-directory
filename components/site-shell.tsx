@@ -25,6 +25,7 @@ const navigation = [
   ['Servers', '/servers'],
   ['Clients', '/clients'],
   ['AI agents', '/ai-agents'],
+  ['Skills', '/skills'],
   ['Categories', '/categories'],
   ['Advertise', '/advertise'],
   ['List your project', '/submit'],
@@ -36,6 +37,7 @@ const actions = [
   ['All MCP servers', '/servers', 'BROWSE'],
   ['All clients', '/clients', 'BROWSE'],
   ['All AI agents', '/ai-agents', 'BROWSE'],
+  ['All skills', '/skills', 'BROWSE'],
   ['Browse categories', '/categories', 'BROWSE'],
   ['Compare tools', '/compare', 'SIDE BY SIDE'],
   ['Your dashboard', '/dashboard', 'ACCOUNT'],
@@ -118,6 +120,9 @@ export function SiteHeader({
         </span>
         <span>
           AI AGENTS <b>{pad(stats.products)}</b>
+        </span>
+        <span>
+          SKILLS <b>{pad(stats.skills)}</b>
         </span>
         <span className="telemetry-gap" />
         <UtcClock />

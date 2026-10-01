@@ -40,6 +40,8 @@ const published: ListingInput = {
   readmeUrl: '',
   agentCard: '',
   agentProtocol: '',
+  skillFile: '',
+  allowedTools: '',
 };
 const draft: ListingInput = {
   kind: 'product',
@@ -69,6 +71,8 @@ const draft: ListingInput = {
   readmeUrl: '',
   agentCard: '',
   agentProtocol: '',
+  skillFile: '',
+  allowedTools: '',
 };
 export const demoSessionId = (ownerId: string) =>
   'cs_demo_' + ownerId.replace(/-/g, '').slice(0, 16);

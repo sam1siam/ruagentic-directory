@@ -63895,5 +63895,364 @@
     "note": "Original editorial summary paraphrasing the publisher’s own description at the evidence URL. Category is an editorial suggestion."
    }
   ]
+ },
+ {
+  "kind": "skill",
+  "name": "PDF skill",
+  "summary": "Read, extract, merge, split, fill, watermark and OCR PDF files from an agent.",
+  "description": "Use this skill whenever the user wants to do anything with PDF files. This includes reading or extracting text/tables from PDFs, combining or merging multiple PDFs into one, splitting PDFs apart, rotating pages, adding watermarks, creating new PDFs, filling PDF forms, encrypting/decrypting PDFs, extracting images, and OCR on scanned PDFs to make them searchable. If the user mentions a .pdf file or asks to produce one, use this skill.\n\nPublished by Anthropic in the anthropics/skills repository as an Agent Skills package (a folder with a SKILL.md file). Details were read from SKILL.md and the repository README; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Productivity",
+  "tags": [
+   "skill",
+   "anthropic",
+   "pdf",
+   "documents"
+  ],
+  "pricing": "free",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code",
+   "Claude.ai",
+   "Claude API"
+  ],
+  "license": "Proprietary. LICENSE.txt has complete terms",
+  "setup": "Claude Code: run /plugin marketplace add anthropics/skills, then /plugin install document-skills@anthropic-agent-skills. Or copy the skills/pdf folder into .claude/skills/ in your project. Claude.ai and the Claude API: upload the skill folder as a custom skill (see the repository README for links).",
+  "capabilities": [
+   "Extract text and tables",
+   "Merge and split files",
+   "Rotate pages and add watermarks",
+   "Fill PDF forms",
+   "Encrypt and decrypt",
+   "OCR scanned pages"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md",
+  "allowedTools": "",
+  "slug": "anthropic-pdf-skill",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "skill-manifest",
+    "url": "https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md",
+    "observedAt": "2026-10-01",
+    "fields": [
+     "name",
+     "description",
+     "license"
+    ]
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://github.com/anthropics/skills/blob/main/README.md",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "skill",
+  "name": "DOCX skill",
+  "summary": "Create, read, edit and manipulate Word documents and templates, including tracked changes and comments.",
+  "description": "Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files) or Word templates (.dotx files). Triggers include: any mention of 'Word doc', 'word document', '.docx', '.dotx', or requests to produce professional documents with formatting like tables of contents, headings, page numbers, or letterheads. Also use when extracting or reorganizing content from .docx or .dotx files, inserting or replacing images in documents, performing find-and-replace in Word files, working with tracked changes or comments, or converting content into a polished Word document. If the user asks for a 'report', 'memo', 'letter', 'template', or similar deliverable as a Word or .docx file, use this skill. Do NOT use for PDFs, spreadsheets, Google Docs, or general coding tasks unrelated to document generation.\n\nPublished by Anthropic in the anthropics/skills repository as an Agent Skills package (a folder with a SKILL.md file). Details were read from SKILL.md and the repository README; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills/tree/main/skills/docx",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Productivity",
+  "tags": [
+   "skill",
+   "anthropic",
+   "word",
+   "documents"
+  ],
+  "pricing": "free",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code",
+   "Claude.ai",
+   "Claude API"
+  ],
+  "license": "Proprietary. LICENSE.txt has complete terms",
+  "setup": "Claude Code: run /plugin marketplace add anthropics/skills, then /plugin install document-skills@anthropic-agent-skills. Or copy the skills/docx folder into .claude/skills/ in your project. Claude.ai and the Claude API: upload the skill folder as a custom skill (see the repository README for links).",
+  "capabilities": [
+   "Create Word documents and templates",
+   "Edit existing .docx and .dotx files",
+   "Tables of contents, headings and page numbers",
+   "Insert and replace images",
+   "Tracked changes and comments"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/docx/SKILL.md",
+  "allowedTools": "",
+  "slug": "anthropic-docx-skill",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills/blob/main/skills/docx/SKILL.md",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills/tree/main/skills/docx",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "skill-manifest",
+    "url": "https://github.com/anthropics/skills/blob/main/skills/docx/SKILL.md",
+    "observedAt": "2026-10-01",
+    "fields": [
+     "name",
+     "description",
+     "license"
+    ]
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://github.com/anthropics/skills/blob/main/README.md",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "skill",
+  "name": "Skill Creator",
+  "summary": "Create new skills, improve existing ones and measure how well they trigger and perform.",
+  "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.\n\nPublished by Anthropic in the anthropics/skills repository as an Agent Skills package (a folder with a SKILL.md file). Details were read from SKILL.md and the repository README; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "skill",
+   "anthropic",
+   "skills",
+   "evals"
+  ],
+  "pricing": "free",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code",
+   "Claude.ai",
+   "Claude API"
+  ],
+  "license": "",
+  "setup": "Claude Code: run /plugin marketplace add anthropics/skills, then /plugin install example-skills@anthropic-agent-skills. Or copy the skills/skill-creator folder into .claude/skills/ in your project. Claude.ai and the Claude API: upload the skill folder as a custom skill (see the repository README for links).",
+  "capabilities": [
+   "Create a skill from scratch",
+   "Edit and optimize a skill",
+   "Run evals against a skill",
+   "Benchmark with variance analysis",
+   "Tune the description for triggering"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md",
+  "allowedTools": "",
+  "slug": "anthropic-skill-creator",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "skill-manifest",
+    "url": "https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md",
+    "observedAt": "2026-10-01",
+    "fields": [
+     "name",
+     "description",
+     "license"
+    ]
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://github.com/anthropics/skills/blob/main/README.md",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "skill",
+  "name": "MCP Builder",
+  "summary": "A guide for building high-quality MCP servers in Python (FastMCP) or Node/TypeScript (MCP SDK).",
+  "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).\n\nPublished by Anthropic in the anthropics/skills repository as an Agent Skills package (a folder with a SKILL.md file). Details were read from SKILL.md and the repository README; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills/tree/main/skills/mcp-builder",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "skill",
+   "anthropic",
+   "mcp",
+   "developer"
+  ],
+  "pricing": "free",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code",
+   "Claude.ai",
+   "Claude API"
+  ],
+  "license": "Complete terms in LICENSE.txt",
+  "setup": "Claude Code: run /plugin marketplace add anthropics/skills, then /plugin install example-skills@anthropic-agent-skills. Or copy the skills/mcp-builder folder into .claude/skills/ in your project. Claude.ai and the Claude API: upload the skill folder as a custom skill (see the repository README for links).",
+  "capabilities": [
+   "MCP server design guidance",
+   "Python FastMCP servers",
+   "Node and TypeScript MCP SDK servers",
+   "Tool design for external APIs"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md",
+  "allowedTools": "",
+  "slug": "anthropic-mcp-builder",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills/tree/main/skills/mcp-builder",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "skill-manifest",
+    "url": "https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md",
+    "observedAt": "2026-10-01",
+    "fields": [
+     "name",
+     "description",
+     "license"
+    ]
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://github.com/anthropics/skills/blob/main/README.md",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "skill",
+  "name": "Webapp Testing",
+  "summary": "Test local web applications with Playwright: verify the UI, take screenshots and read browser logs.",
+  "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.\n\nPublished by Anthropic in the anthropics/skills repository as an Agent Skills package (a folder with a SKILL.md file). Details were read from SKILL.md and the repository README; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "skill",
+   "anthropic",
+   "playwright",
+   "testing"
+  ],
+  "pricing": "free",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code",
+   "Claude.ai",
+   "Claude API"
+  ],
+  "license": "Complete terms in LICENSE.txt",
+  "setup": "Claude Code: run /plugin marketplace add anthropics/skills, then /plugin install example-skills@anthropic-agent-skills. Or copy the skills/webapp-testing folder into .claude/skills/ in your project. Claude.ai and the Claude API: upload the skill folder as a custom skill (see the repository README for links).",
+  "capabilities": [
+   "Drive a local web app with Playwright",
+   "Verify frontend behaviour",
+   "Capture browser screenshots",
+   "Read browser logs"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/webapp-testing/SKILL.md",
+  "allowedTools": "",
+  "slug": "anthropic-webapp-testing",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills/blob/main/skills/webapp-testing/SKILL.md",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "skill-manifest",
+    "url": "https://github.com/anthropics/skills/blob/main/skills/webapp-testing/SKILL.md",
+    "observedAt": "2026-10-01",
+    "fields": [
+     "name",
+     "description",
+     "license"
+    ]
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://github.com/anthropics/skills/blob/main/README.md",
+    "observedAt": "2026-10-01"
+   }
+  ]
  }
 ]

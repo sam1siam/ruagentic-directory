@@ -18,6 +18,7 @@ import {
   type ListingInput,
   agentProtocols,
 } from '@/lib/listing';
+import { kindByValue } from '@/lib/categories';
 import { api } from '@/lib/client-api';
 import type { DuplicateMatch } from '@/lib/duplicates';
 import {
@@ -84,12 +85,7 @@ const expectedDetails = [
   'README.md',
 ];
 const CHECKING = 'Checking JSON, TXT and README';
-const kindLabel = (kind: string) =>
-  kind === 'server'
-    ? 'MCP server'
-    : kind === 'client'
-      ? 'MCP client'
-      : 'AI agent';
+const kindLabel = (kind: string) => kindByValue(kind)?.singular ?? 'Listing';
 const slugify = (value: string) =>
   value
     .toLowerCase()
@@ -889,6 +885,7 @@ export default function SubmissionForm({
                           ['server', 'MCP server'],
                           ['client', 'Client'],
                           ['product', 'AI agent'],
+                          ['skill', 'Skill'],
                         ] as const
                       ).map(([value, label]) => (
                         <button
@@ -1060,6 +1057,22 @@ export default function SubmissionForm({
                         agentProtocols.map(([v, l]) => [v, l] as const),
                         'How other agents or clients talk to it.',
                       )}
+                    </>
+                  )}
+                  {listing.kind === 'skill' && (
+                    <>
+                      {textField('skillFile', 'SKILL.md URL', {
+                        full: true,
+                        code: true,
+                        placeholder:
+                          'https://github.com/owner/repo/blob/main/skills/name/SKILL.md',
+                        hint: 'The skill’s SKILL.md file. Required unless the repository is given. List the agents it is written for under Supported platforms.',
+                      })}
+                      {textField('allowedTools', 'Pre-approved tools', {
+                        code: true,
+                        placeholder: 'Bash(git:*) Read',
+                        hint: 'Optional. The allowed-tools value from the SKILL.md frontmatter.',
+                      })}
                     </>
                   )}
                   {textField('profileUrl', 'Agentic Protocol manifest URL', {

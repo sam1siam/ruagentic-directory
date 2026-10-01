@@ -45,6 +45,10 @@ export function listingJsonLd(item: PublicListing, canonical: string) {
             : []),
         ]
       : []),
+    ...(item.skillFile ? [property('SKILL.md', item.skillFile)] : []),
+    ...(item.allowedTools
+      ? [property('Allowed tools', item.allowedTools)]
+      : []),
   ];
   return {
     '@context': 'https://schema.org',
@@ -86,7 +90,7 @@ export function websiteJsonLd() {
     name: 'RUAGENTIC',
     url: site + '/',
     description:
-      'The official Agentic Protocol directory of MCP servers, clients and AI agents.',
+      'The official Agentic Protocol directory of MCP servers, clients, AI agents and skills.',
     publisher: { '@id': site + '/#organization' },
     potentialAction: {
       '@type': 'SearchAction',

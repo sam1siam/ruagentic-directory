@@ -9,6 +9,7 @@ import {
   Link2,
   CheckCircle2,
   Clock,
+  FileText,
 } from 'lucide-react';
 import { catalog, listingByAnySlug } from '@/lib/server/catalog';
 import ListingActions from '@/components/listing-actions';
@@ -103,11 +104,7 @@ export default async function Page({
         <span className="project-monogram large">{item.name.slice(0, 2)}</span>
         <div>
           <span className="type-label">
-            {item.kind === 'server'
-              ? 'MCP SERVER'
-              : item.kind === 'client'
-                ? 'MCP CLIENT'
-                : 'AI AGENT'}
+            {kindByValue(item.kind)?.singular.toUpperCase() ?? 'LISTING'}
           </span>
           <h1>{item.name}</h1>
           <p>{item.summary}</p>
@@ -148,8 +145,45 @@ export default async function Page({
               </ul>
             </section>
           )}
+          {item.kind === 'skill' && (
+            <section>
+              <h2>Skill package</h2>
+              <dl className="facts">
+                {[
+                  ['Format', 'Agent Skills (a folder with SKILL.md)'],
+                  [
+                    'Works with',
+                    item.platforms.join(', ') ||
+                      'Not specified by the publisher',
+                  ],
+                  ['Pre-approved tools', item.allowedTools || 'None declared'],
+                  ['License', item.license || 'Not specified'],
+                ].map(([key, value]) => (
+                  <div key={key}>
+                    <dt>{key}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {item.skillFile && (
+                <div className="resource-links">
+                  <a
+                    href={item.skillFile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <FileText size={17} />
+                    <span>SKILL.md</span>
+                    <ArrowUpRight size={15} />
+                  </a>
+                </div>
+              )}
+            </section>
+          )}
           <section>
-            <h2>How to connect</h2>
+            <h2>
+              {item.kind === 'skill' ? 'How to install' : 'How to connect'}
+            </h2>
             <ConnectGuide item={item} />
             <div className="resource-links">
               {[

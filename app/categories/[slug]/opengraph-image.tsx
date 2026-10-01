@@ -15,7 +15,8 @@ export default async function Image({
     return ogImage({
       eyebrow: 'RUAGENTIC directory',
       title: 'Category not found.',
-      description: 'Browse MCP servers, clients and AI agents by category.',
+      description:
+        'Browse MCP servers, clients, AI agents and skills by category.',
       url: 'ruagentic.com/categories',
     });
   const count = (await catalog()).filter(

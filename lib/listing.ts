@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import ipaddr from 'ipaddr.js';
-export const kinds = ['server', 'client', 'product'] as const;
+export const kinds = ['server', 'client', 'product', 'skill'] as const;
 export const categories = [
   'Developer tools',
   'AI & language models',
@@ -109,6 +109,10 @@ export const listingSchema = z
      *  a client connects to. Optional, AI agents only in practice. */
     agentCard: url.default(''),
     agentProtocol: z.enum(['', 'a2a', 'acp', 'openai', 'custom']).default(''),
+    /** For skills (Agent Skills packages): where SKILL.md lives and the
+     *  tools its frontmatter pre-approves. Optional, skills only in practice. */
+    skillFile: url.default(''),
+    allowedTools: z.string().trim().max(500).default(''),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -119,16 +123,25 @@ export const listingSchema = z
         message:
           'Provide a remote endpoint or source repository for an MCP server.',
       });
+    if (value.kind === 'skill' && !value.skillFile && !value.repository)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['skillFile'],
+        message:
+          'Provide the SKILL.md URL or the source repository for a skill.',
+      });
   });
 export type ListingInput = z.infer<typeof listingSchema>;
 /** Public listings predate the optional agent fields, so those stay optional
  *  on the read side; the schema fills them in on write. */
 export type PublicListing = Omit<
   ListingInput,
-  'agentCard' | 'agentProtocol'
+  'agentCard' | 'agentProtocol' | 'skillFile' | 'allowedTools'
 > & {
   agentCard?: string;
   agentProtocol?: ListingInput['agentProtocol'];
+  skillFile?: string;
+  allowedTools?: string;
   slug: string;
   source: string;
   sourceUrl: string;
@@ -165,6 +178,8 @@ export const emptyListing: ListingInput = {
   readmeUrl: '',
   agentCard: '',
   agentProtocol: '',
+  skillFile: '',
+  allowedTools: '',
 };
 export function serviceIdentity(input: Pick<ListingInput, 'homepage'>) {
   const u = new URL(cleanUrl(input.homepage));

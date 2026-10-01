@@ -3,7 +3,7 @@
   "info": {
     "title": "RUAGENTIC Directory API",
     "version": "1.0.0",
-    "description": "Read-only public discovery for MCP servers, clients, and AI agents (kind product)."
+    "description": "Read-only public discovery for MCP servers, clients, AI agents (kind product), and skills (kind skill, a SKILL.md package in the Agent Skills format)."
   },
   "servers": [
     {
@@ -31,7 +31,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["server", "client", "product"]
+              "enum": ["server", "client", "product", "skill"]
             }
           },
           {
@@ -160,7 +160,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["server", "client", "product"]
+            "enum": ["server", "client", "product", "skill"]
           },
           "summary": {
             "type": "string"

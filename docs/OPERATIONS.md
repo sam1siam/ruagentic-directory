@@ -183,7 +183,7 @@ Before release, test new and returning magic-link users, cross-device email conf
 
 ## Social images, icons and page metadata
 
-`lib/server/og.tsx` renders the Open Graph and Twitter images with `next/og` in the HUD style; `app/opengraph-image.tsx` covers the site, `app/{servers,clients,ai-agents}/`, `app/categories/[slug]/` and `app/tools/[slug]/` carry their own (listing images show the name, type, category, summary and the "Agentic Protocol verified" chip only when `agenticCheckedAt` is set). Images revalidate hourly. Fonts are fetched from Google Fonts once per server instance; when that fetch fails the built-in font is used, so an image is always returned.
+`lib/server/og.tsx` renders the Open Graph and Twitter images with `next/og` in the HUD style; `app/opengraph-image.tsx` covers the site, `app/{servers,clients,ai-agents,skills}/`, `app/categories/[slug]/` and `app/tools/[slug]/` carry their own (listing images show the name, type, category, summary and the "Agentic Protocol verified" chip only when `agenticCheckedAt` is set). Images revalidate hourly. Fonts are fetched from Google Fonts once per server instance; when that fetch fails the built-in font is used, so an image is always returned.
 
 The root layout sets `openGraph` (type, site name, locale) and `twitter` (large card) without titles so every page's own title and description are inherited; pages set `alternates.canonical`. Icons follow the App Router file conventions: `app/icon.svg`, `app/favicon.ico` (16/32/48), `app/apple-icon.png` (180) and `app/manifest.ts` pointing at `public/icon-192.png` and `public/icon-512.png`. Regenerate the raster icons from the SVG mark when the mark changes; `scripts/check-site.ts` checks that all of them are served.
 

@@ -5,6 +5,7 @@ export type DirectoryStats = {
   servers: number;
   clients: number;
   products: number;
+  skills: number;
   /** Whole days since that observation, or null when the catalog is empty. */
   updatedDays: number | null;
 };
@@ -22,6 +23,7 @@ export const directoryStats = cache(async (): Promise<DirectoryStats> => {
     servers: count('server'),
     clients: count('client'),
     products: count('product'),
+    skills: count('skill'),
     updatedDays: latest
       ? Math.max(0, Math.round((Date.now() - Date.parse(latest)) / 86400000))
       : null,

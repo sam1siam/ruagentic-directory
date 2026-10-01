@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { kindByValue } from '@/lib/categories';
 import styles from './tool-card.module.css';
 
 type ToolCardProps = {
@@ -36,11 +37,7 @@ export default function ToolCard({
           {name.slice(0, 2).toUpperCase()}
         </span>
         <span className={styles.kind}>
-          {kind === 'server'
-            ? 'MCP SERVER'
-            : kind === 'client'
-              ? 'MCP CLIENT'
-              : 'AI AGENT'}
+          {kindByValue(kind)?.singular.toUpperCase() ?? 'LISTING'}
         </span>
       </div>
       <h3 className={styles.title}>{name}</h3>

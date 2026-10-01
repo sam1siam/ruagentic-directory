@@ -9,7 +9,7 @@ export default function Page() {
     <main className="content-page prose-page">
       <h1>Listing guidelines.</h1>
       <p>
-        We welcome MCP servers, MCP clients, and AI agents. Help people
+        We welcome MCP servers, MCP clients, AI agents, and skills. Help people
         understand what your project offers and how to get started.
       </p>
       <ol>
@@ -18,8 +18,8 @@ export default function Page() {
           and describe practical use cases. Keep claims factual.
         </li>
         <li>
-          <strong>Choose the right type.</strong> Identify a server, client, or
-          AI agent. If an agent offers several servers, explain that
+          <strong>Choose the right type.</strong> Identify a server, client, AI
+          agent, or skill. If an agent offers several servers, explain that
           relationship.
         </li>
         <li>

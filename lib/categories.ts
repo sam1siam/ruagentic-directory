@@ -139,6 +139,14 @@ export const kinds = [
     singular: 'AI agent',
     description: 'Agents, frameworks and platforms built for autonomous work.',
   },
+  {
+    slug: 'skills',
+    kind: 'skill',
+    name: 'Skills',
+    singular: 'Skill',
+    description:
+      'SKILL.md packages in the open Agent Skills format that teach Claude, Codex, Gemini and other agents how to do a job.',
+  },
 ] as const;
 export type KindPage = (typeof kinds)[number];
 /** Hand-picked leads for the home page sections, by kind. */
@@ -172,6 +180,13 @@ export const featured: Record<KindPage['kind'], string[]> = {
     'composio',
     'openhands',
     'openai-agents-sdk',
+  ],
+  skill: [
+    'anthropic-pdf-skill',
+    'anthropic-docx-skill',
+    'anthropic-skill-creator',
+    'anthropic-mcp-builder',
+    'anthropic-webapp-testing',
   ],
 };
 export const categoryBySlug = (slug: string) =>

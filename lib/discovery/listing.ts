@@ -196,6 +196,8 @@ export function listingFromCandidate(
     readmeUrl: '',
     agentCard: '',
     agentProtocol: '',
+    skillFile: '',
+    allowedTools: '',
   };
   const slug = uniqueSlug(item, taken);
   const [row] = prepareCatalog(

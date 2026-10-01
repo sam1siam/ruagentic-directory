@@ -15,7 +15,8 @@ export default async function Image({
     return ogImage({
       eyebrow: 'RUAGENTIC directory',
       title: 'Listing not found.',
-      description: 'Browse MCP servers, clients and AI agents on RUAGENTIC.',
+      description:
+        'Browse MCP servers, clients, AI agents and skills on RUAGENTIC.',
       url: 'ruagentic.com',
     });
   return ogImage({

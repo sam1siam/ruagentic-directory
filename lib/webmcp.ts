@@ -3,7 +3,9 @@ import { categoryNames } from './categories';
 export const filterInput = z
   .object({
     query: z.string().max(200).default(''),
-    kind: z.enum(['all', 'server', 'client', 'product']).default('all'),
+    kind: z
+      .enum(['all', 'server', 'client', 'product', 'skill'])
+      .default('all'),
     category: z
       .enum(['All categories', ...categoryNames])
       .default('All categories'),

@@ -9,6 +9,7 @@ const paths = [
   '/servers',
   '/clients',
   '/ai-agents',
+  '/skills',
   '/categories',
   '/categories/developer-tools',
   '/advertise',

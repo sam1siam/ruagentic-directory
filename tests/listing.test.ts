@@ -219,3 +219,27 @@ await test('free publication requires a complete report for this exact profile, 
       JSON.stringify(report),
     );
 });
+
+await test('a skill needs its SKILL.md file or a repository', () => {
+  const skill = {
+    ...listing,
+    kind: 'skill',
+    repository: '',
+    endpoint: '',
+    skillFile: 'https://github.com/example/project/blob/main/SKILL.md',
+    allowedTools: 'Bash(git:*) Read',
+  };
+  assert.equal(listingSchema.safeParse(skill).success, true);
+  assert.equal(
+    listingSchema.safeParse({ ...skill, skillFile: '' }).success,
+    false,
+  );
+  assert.equal(
+    listingSchema.safeParse({
+      ...skill,
+      skillFile: '',
+      repository: 'https://github.com/example/project',
+    }).success,
+    true,
+  );
+});

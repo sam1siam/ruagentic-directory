@@ -126,6 +126,51 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
         </p>
       ),
     });
+  } else if (item.kind === 'skill') {
+    questions.push({
+      q: `How do I install ${item.name}?`,
+      a: (
+        <p>
+          {item.setup ? 'The publisher’s install steps are shown above. ' : ''}
+          A skill is a folder with a SKILL.md file. Copy that folder into your
+          agent’s skills directory and the agent loads it when a task matches
+          the skill’s description: Claude Code reads{' '}
+          <code>.claude/skills/</code> in the project and{' '}
+          <code>~/.claude/skills/</code>; other agents that support the Agent
+          Skills format document their own location.
+          {item.skillFile ? (
+            <>
+              {' '}
+              The file itself is at{' '}
+              <a
+                href={item.skillFile}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item.skillFile.replace(/^https?:\/\//, '')}
+              </a>
+              .
+            </>
+          ) : null}
+        </p>
+      ),
+    });
+    questions.push({
+      q: `Which agents can use ${item.name}?`,
+      a: (
+        <p>
+          {item.platforms.length
+            ? `The publisher lists ${item.platforms.join(', ')}.`
+            : 'The publisher has not listed the agents it was written for.'}
+          {item.allowedTools ? (
+            <>
+              {' '}
+              Tools its SKILL.md pre-approves: <code>{item.allowedTools}</code>.
+            </>
+          ) : null}
+        </p>
+      ),
+    });
   } else {
     if (plan.agent)
       questions.push({
