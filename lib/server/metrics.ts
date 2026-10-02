@@ -13,6 +13,10 @@ import {
 } from '../leaderboard';
 
 const tag = 'listing-metrics';
+const missingTable = (error: { code?: string; message?: string }) =>
+  error.code === '42P01' ||
+  error.code === 'PGRST205' ||
+  /schema cache|does not exist/i.test(error.message ?? '');
 const columns =
   'slug,repository,stars,forks,watchers,open_issues,pushed_at,fetched_at,error';
 
@@ -26,7 +30,10 @@ async function readMetrics(_project: string): Promise<ListingMetrics[]> {
       .order('slug')
       .range(offset, offset + 999);
     if (error) {
-      if (error.code === '42P01') return [];
+      // No table yet (migration pending) or an API schema cache that has not
+      // seen it: the boards simply show that nothing was collected.
+      if (missingTable(error)) return [];
+      console.error('listing_metrics read failed', error.code, error.message);
       throw new Error('Listing metrics could not be read.');
     }
     rows.push(...((data ?? []) as ListingMetrics[]));
@@ -48,6 +55,8 @@ export async function metricsReady() {
     .from('listing_metrics')
     .select('slug')
     .limit(1);
+  if (error)
+    console.error('listing_metrics check failed', error.code, error.message);
   return !error;
 }
 /** When the newest row was collected, or null before the first run. */
