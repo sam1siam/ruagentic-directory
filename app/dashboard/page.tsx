@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import Dashboard from '@/components/dashboard';
+import { viewsFor } from '@/lib/server/views';
+import { browserMetrics } from '@/lib/server/metrics';
 import Link from 'next/link';
 import { configured, userClient, adminClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-policy';
@@ -52,6 +54,13 @@ export default async function Page() {
   ]);
   if (submissions.error || bookmarks.error || events.error || entries.error)
     throw new Error('Your dashboard could not be loaded.');
+  const publishedSlugs = (submissions.data ?? [])
+    .filter((s) => s.slug && s.state === 'published')
+    .map((s) => s.slug as string);
+  const [views, metrics] = await Promise.all([
+    viewsFor(publishedSlugs),
+    browserMetrics(),
+  ]);
   const checkedAt = new Map(
     (entries.data ?? []).map((e) => [
       e.submission_id as string,
@@ -110,6 +119,8 @@ export default async function Page() {
             (e) => e.submission_id === s.id && e.revision === s.revision,
           ),
           agenticCheckedAt: checkedAt.get(s.id) || undefined,
+          views: s.slug ? views.get(s.slug) : undefined,
+          stars: s.slug ? (metrics.get(s.slug)?.stars ?? null) : null,
         }))}
         saved={(bookmarks.data ?? []).flatMap((r) =>
           (

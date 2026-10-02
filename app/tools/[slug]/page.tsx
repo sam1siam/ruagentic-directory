@@ -17,6 +17,7 @@ import ConnectGuide from '@/components/connect-guide';
 import BadgeKit from '@/components/badge-kit';
 import { breadcrumbJsonLd, listingJsonLd } from '@/lib/seo';
 import { faqJsonLd, listingFaq } from '@/lib/faq';
+import ViewBeacon from '@/components/view-beacon';
 import JsonLd from '@/components/json-ld';
 import { kindByValue } from '@/lib/categories';
 import {
@@ -136,6 +137,7 @@ export default async function Page({
           <ArrowUpRight size={17} />
         </a>
       </div>
+      <ViewBeacon slug={item.slug} />
       <ListingActions slug={item.slug} />
       <div className="detail-layout">
         <div className="detail-body">

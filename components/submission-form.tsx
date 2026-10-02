@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { z } from 'zod';
 import { AlertCircle, CheckCircle2, LoaderCircle } from 'lucide-react';
 import ToolCard from '@/components/tool-card';
+import BadgeKit from '@/components/badge-kit';
 import {
   CornerBrackets,
   checkerLabels,
@@ -607,6 +608,25 @@ export default function SubmissionForm({
             </button>
           </div>
         </div>
+        <section className="confirmation-badge glass">
+          <h2>Send people here from your README</h2>
+          <p>
+            Add the badge or card to your README and docs. Every visitor it
+            brings counts toward the views you see on your dashboard, and the
+            link helps your listing rank.
+          </p>
+          <BadgeKit
+            item={{
+              slug: published,
+              name: listing.name,
+              kind: listing.kind,
+              category: listing.category,
+              summary: listing.summary,
+              agenticCheckedAt:
+                path === 'agentic' ? new Date().toISOString() : undefined,
+            }}
+          />
+        </section>
       </main>
     );
   const locked = Boolean(busy) || checkoutOpen;

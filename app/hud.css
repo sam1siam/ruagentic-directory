@@ -4620,3 +4620,21 @@ legend {
 .best-list small {
   color: var(--faint);
 }
+
+.dashboard-stats {
+  display: block;
+  margin-top: 6px;
+  color: var(--dim);
+}
+.confirmation-badge {
+  margin-top: 24px;
+  padding: 24px;
+}
+.confirmation-badge h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.confirmation-badge p {
+  margin: 0 0 16px;
+  color: var(--dim);
+}

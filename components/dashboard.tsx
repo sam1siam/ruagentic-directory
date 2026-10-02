@@ -6,6 +6,8 @@ import SignOut from './sign-out';
 import { Button } from './ui/button';
 import { api } from '@/lib/client-api';
 import BadgeKit from './badge-kit';
+import { compact } from '@/lib/leaderboard';
+import type { ViewTotals } from '@/lib/views';
 type Row = {
   id: string;
   payload: { name: string; summary: string; kind?: string; category?: string };
@@ -16,6 +18,10 @@ type Row = {
   hasUnpublishedChanges: boolean;
   /** Set when the published entry passed the Agentic Protocol checker. */
   agenticCheckedAt?: string;
+  /** Page views from the listing's beacon, when the table is in place. */
+  views?: ViewTotals;
+  /** Public GitHub stars from the metrics cron, when collected. */
+  stars?: number | null;
 };
 export default function Dashboard({
   email,
@@ -79,6 +85,17 @@ export default function Dashboard({
                   <small>
                     Updated {new Date(row.updated_at).toLocaleDateString()}
                   </small>
+                  {row.state === 'published' &&
+                    (row.views || typeof row.stars === 'number') && (
+                      <small className="dashboard-stats">
+                        {typeof row.stars === 'number'
+                          ? `★ ${compact(row.stars)} GitHub stars · `
+                          : ''}
+                        {row.views
+                          ? `${row.views.week.toLocaleString()} views this week · ${row.views.month.toLocaleString()} in 30 days · ${row.views.total.toLocaleString()} all time`
+                          : 'Views start counting from today'}
+                      </small>
+                    )}
                 </div>
                 <div className="actions">
                   <Link

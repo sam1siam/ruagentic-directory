@@ -216,3 +216,9 @@ Seven kinds share one schema (`lib/listing.ts` `kinds`): `server`, `client`, `pr
 ## Browse and leaderboard filters
 
 The browse pages (home, kind pages, category pages) and the per-kind leaderboards share one filter model in `lib/browse.ts`: search, type, category, launched (the repository's creation date from `listing_metrics`; projects without a public GitHub repository are not dated and never pass a launch filter), stars, forks, pricing, "Agentic Protocol checked", works-with platform, and for servers transport and authentication; sorts add most stars, most forks and newest launch. Filters live in the query string (`filtersFromParams` / `paramsFromFilters`), so filtered views are shareable; the browser updates the address with `replaceState`. Option counts answer "how many if I pick this" within the current type and category. The leaderboard form is a plain GET form, so each filtered board has its own address and the tabs keep the filters.
+
+## Views and the maker loop
+
+Listing pages send one beacon (`components/view-beacon.tsx` → `POST /api/views`) per view; the route drops crawlers by user agent, unknown slugs and more than 300 pings an hour from one address, then calls `bump_listing_view` (`202610020002_listing_views.sql`, one row per listing per UTC day, service role only). The dashboard shows each published listing's views for 7 days, 30 days and all time plus its GitHub stars, and the publish confirmation offers the badge and card so makers link back from their README. Apply the migration first; until then the beacon is a no-op and the dashboard shows "Views start counting from today".
+
+Growth pages: `/new` (added in 7 days, launched in 30), `/best` and `/best/<kind>/<category>` (pairs with 3+ listings, ranked by stars, with FAQ structured data), and the FAQ section with FAQPage data on every listing (`lib/faq.ts`, facts only). Titles carry real counts and "updated daily" (`generateMetadata` in the layout and kind pages).
