@@ -4504,3 +4504,44 @@ legend {
   color: var(--kind);
   border-color: color-mix(in srgb, var(--kind) 40%, transparent);
 }
+
+.leaderboard-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--glass-border);
+  background: rgba(5, 8, 12, 0.45);
+}
+.leaderboard-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+  font-size: 13px;
+  color: var(--dim);
+}
+.leaderboard-filter .input-shell {
+  display: flex;
+}
+.leaderboard-filter select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.leaderboard-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 10px;
+}
+.filter-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--faint);
+}

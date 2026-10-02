@@ -2,6 +2,7 @@ import 'server-only';
 import { unstable_cache, revalidateTag } from 'next/cache';
 import { adminClient, configured } from '../supabase/server';
 import { catalog } from './catalog';
+import type { BrowseFilters, BrowserMetrics } from '../browse';
 import { apiJson } from '../discovery/http';
 import { object } from '../discovery/contracts';
 import { providerHold } from '../discovery/http';
@@ -72,13 +73,26 @@ export async function metricsCollectedAt() {
       .at(-1) ?? null
   );
 }
+/** Stars, forks and creation date per slug, for the browser's filters. */
+export async function browserMetrics(): Promise<Map<string, BrowserMetrics>> {
+  const rows = await listingMetrics();
+  return new Map(
+    rows
+      .filter((r) => !r.error)
+      .map((r) => [
+        r.slug,
+        { stars: r.stars, forks: r.forks, createdAt: r.created_at ?? null },
+      ]),
+  );
+}
 export async function leaderboard(
   kind?: string,
   limit = 100,
   by: RankBy = 'stars',
+  filters?: BrowseFilters,
 ): Promise<RankedListing[]> {
   const [items, metrics] = await Promise.all([catalog(), listingMetrics()]);
-  return rankListings(items, metrics, kind, limit, by);
+  return rankListings(items, metrics, kind, limit, by, filters);
 }
 /** Refreshes the oldest metrics first through GitHub's repository API,
  *  paced by the shared provider pacer. Stops on a rate limit and leaves

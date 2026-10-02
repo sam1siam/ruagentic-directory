@@ -4,7 +4,9 @@ import { ArrowLeft } from 'lucide-react';
 import { kindBySlug, kinds } from '@/lib/categories';
 import { leaderboard, metricsCollectedAt } from '@/lib/server/metrics';
 import { parseRankBy } from '@/lib/leaderboard';
+import { filtersFromParams } from '@/lib/browse';
 import {
+  LeaderboardFilters,
   LeaderboardMethod,
   LeaderboardTable,
 } from '@/components/leaderboard-table';
@@ -34,14 +36,16 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ by?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const page = kindBySlug((await params).slug);
   if (!page) notFound();
-  const by = parseRankBy((await searchParams).by);
+  const query = await searchParams;
+  const by = parseRankBy(query.by);
+  const filters = filtersFromParams(query);
   const [collected, items] = await Promise.all([
     metricsCollectedAt(),
-    leaderboard(page.kind, 100, by),
+    leaderboard(page.kind, 100, by, filters),
   ]);
   return (
     <main className="content-page">
@@ -70,6 +74,12 @@ export default async function Page({
         collected={collected}
         base={'/leaderboards/' + page.slug}
         by={by}
+        filters={filters}
+      />
+      <LeaderboardFilters
+        base={'/leaderboards/' + page.slug}
+        by={by}
+        filters={filters}
       />
       <LeaderboardTable items={items} by={by} />
     </main>

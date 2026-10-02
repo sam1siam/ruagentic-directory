@@ -3,7 +3,8 @@ import { catalog } from '@/lib/server/catalog';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsors, type Sponsor } from '@/lib/advertising';
 import { categories, kinds } from '@/lib/categories';
-import { toBrowserListing } from '@/lib/browse';
+import { filtersFromParams, toBrowserListing } from '@/lib/browse';
+import { browserMetrics } from '@/lib/server/metrics';
 import JsonLd from '@/components/json-ld';
 import { organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
@@ -11,12 +12,13 @@ export const metadata = { alternates: { canonical: '/' } };
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; kind?: string; category?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [params, items, sponsors] = await Promise.all([
+  const [params, items, sponsors, metrics] = await Promise.all([
     searchParams,
     catalog(),
     activeSponsors(),
+    browserMetrics(),
   ]);
   // Kind sections show every card sponsor (newest first); the house card
   // fills the first section only when nobody has bought a card. Category
@@ -38,8 +40,8 @@ export default async function Home({
       <DirectoryBrowser
         key={JSON.stringify(params)}
         mode="home"
-        listings={items.map(toBrowserListing)}
-        initial={params}
+        listings={items.map((i) => toBrowserListing(i, metrics.get(i.slug)))}
+        initial={filtersFromParams(params)}
         sectionSponsors={sectionSponsors}
       />
     </>

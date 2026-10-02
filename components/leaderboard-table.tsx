@@ -1,5 +1,16 @@
 import Link from 'next/link';
 import { CheckCircle2 } from 'lucide-react';
+import { categories } from '@/lib/categories';
+import {
+  ALL_CATEGORIES,
+  FORK_OPTIONS,
+  LAUNCH_OPTIONS,
+  PRICING_OPTIONS,
+  STAR_OPTIONS,
+  activeFilterCount,
+  paramsFromFilters,
+  type BrowseFilters,
+} from '@/lib/browse';
 import {
   compact,
   pace,
@@ -124,18 +135,29 @@ export function LeaderboardMethod({
   collected,
   base,
   by = 'stars',
+  filters,
 }: {
   collected: string | null;
   base: string;
   by?: RankBy;
+  filters?: BrowseFilters;
 }) {
+  const tabHref = (mode: RankBy) => {
+    const p = filters ? paramsFromFilters(filters) : new URLSearchParams();
+    p.delete('kind');
+    p.delete('q');
+    p.delete('sort');
+    if (mode !== 'stars') p.set('by', mode);
+    const query = p.toString();
+    return query ? `${base}?${query}` : base;
+  };
   return (
     <div className="leaderboard-bar">
       <nav className="leaderboard-tabs" aria-label="Ranking">
         {rankModes.map((mode) => (
           <Link
             key={mode.by}
-            href={mode.by === 'stars' ? base : `${base}?by=${mode.by}`}
+            href={tabHref(mode.by)}
             aria-current={mode.by === by ? 'page' : undefined}
           >
             {mode.label}
@@ -151,5 +173,71 @@ export function LeaderboardMethod({
         {collected ? `Updated ${day(collected)}` : 'First update pending'}
       </span>
     </div>
+  );
+}
+
+const select = (
+  name: string,
+  label: string,
+  value: string,
+  options: readonly (readonly [string, string])[],
+) => (
+  <label className="leaderboard-filter">
+    <span>{label}</span>
+    <span className="input-shell">
+      <select name={name} defaultValue={value}>
+        {options.map(([v, l]) => (
+          <option key={v} value={v}>
+            {l}
+          </option>
+        ))}
+      </select>
+    </span>
+  </label>
+);
+/** Narrows a board with the same choices as the browse pages. A plain GET
+ *  form, so every filtered board has an address of its own. */
+export function LeaderboardFilters({
+  base,
+  by,
+  filters,
+}: {
+  base: string;
+  by: RankBy;
+  filters: BrowseFilters;
+}) {
+  const active = activeFilterCount(filters);
+  return (
+    <form method="get" action={base} className="leaderboard-filters">
+      {by !== 'stars' && <input type="hidden" name="by" value={by} />}
+      {select('category', 'Category', filters.category, [
+        [ALL_CATEGORIES, 'All categories'],
+        ...categories.map((c) => [c.name, c.name] as const),
+      ])}
+      {select('launched', 'Launched', filters.launched, LAUNCH_OPTIONS)}
+      {select('stars', 'Stars', filters.stars, STAR_OPTIONS)}
+      {select('forks', 'Forks', filters.forks, FORK_OPTIONS)}
+      {select('pricing', 'Pricing', filters.pricing, PRICING_OPTIONS)}
+      <label className="leaderboard-filter leaderboard-check">
+        <input
+          type="checkbox"
+          name="verified"
+          value="1"
+          defaultChecked={filters.verified}
+        />
+        <span>Agentic Protocol checked</span>
+      </label>
+      <button type="submit" className="button">
+        Apply
+      </button>
+      {active > 0 && (
+        <Link
+          href={by === 'stars' ? base : `${base}?by=${by}`}
+          className="text-link"
+        >
+          Clear {active} filter{active === 1 ? '' : 's'}
+        </Link>
+      )}
+    </form>
   );
 }

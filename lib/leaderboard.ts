@@ -4,6 +4,11 @@
  *  records nothing else about popularity, and sponsorship never changes a
  *  rank. */
 import type { PublicListing } from './listing.ts';
+import {
+  matchesFilters,
+  toBrowserListing,
+  type BrowseFilters,
+} from './browse.ts';
 
 export type ListingMetrics = {
   slug: string;
@@ -84,6 +89,7 @@ export function rankListings(
   kind?: string,
   limit = 100,
   by: RankBy = 'stars',
+  filters?: BrowseFilters,
 ): RankedListing[] {
   const bySlug = new Map(
     metrics.filter((m) => !m.error).map((m) => [m.slug, m]),
@@ -91,12 +97,25 @@ export function rankListings(
   const eligible = (m: ListingMetrics) =>
     by === 'stars' ||
     ((ageDays(m) ?? 0) >= PACE_MIN_DAYS && m.stars >= PACE_MIN_STARS);
+  // The same filters as the browse pages (category, launch window, stars,
+  // forks, pricing, checks, platform); the board's kind and tab stay fixed.
+  const wanted = (l: PublicListing, m: ListingMetrics) =>
+    !filters ||
+    matchesFilters(
+      toBrowserListing(l, {
+        stars: m.stars,
+        forks: m.forks,
+        createdAt: m.created_at ?? null,
+      }),
+      { ...filters, q: '', kind: 'all' },
+    );
   const ranked = listings
     .filter(
       (l) =>
         (!kind || l.kind === kind) &&
         bySlug.has(l.slug) &&
-        eligible(bySlug.get(l.slug)!),
+        eligible(bySlug.get(l.slug)!) &&
+        wanted(l, bySlug.get(l.slug)!),
     )
     .map((l) => ({ listing: l, m: bySlug.get(l.slug)! }))
     .sort((a, b) =>

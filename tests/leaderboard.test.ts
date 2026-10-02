@@ -10,6 +10,7 @@ import {
   type ListingMetrics,
 } from '../lib/leaderboard.ts';
 import { emptyListing, type PublicListing } from '../lib/listing.ts';
+import { defaultFilters } from '../lib/browse.ts';
 
 const listing = (slug: string, kind: string, repo = ''): PublicListing => ({
   ...emptyListing,
@@ -168,4 +169,40 @@ void test('The pace board ranks stars per day since creation and skips young or 
   assert.equal(pace(null), '—');
   // The stars board still lists everyone with metrics.
   assert.equal(rankListings(listings, metrics, 'server').length, 5);
+});
+
+void test('Board filters narrow by category, launch window, stars and forks', () => {
+  const listings = [
+    {
+      ...listing('a', 'server', 'https://github.com/x/a'),
+      category: 'Finance',
+    },
+    {
+      ...listing('b', 'server', 'https://github.com/x/b'),
+      category: 'Productivity',
+    },
+  ] as PublicListing[];
+  const metrics = [
+    metric('a', 5000, {
+      forks: 400,
+      fetched_at: '2026-10-02T00:00:00Z',
+      created_at: '2026-09-20T00:00:00Z',
+    }),
+    metric('b', 20, {
+      forks: 1,
+      fetched_at: '2026-10-02T00:00:00Z',
+      created_at: '2020-01-01T00:00:00Z',
+    }),
+  ];
+  const run = (patch: Partial<typeof defaultFilters>) =>
+    rankListings(listings, metrics, 'server', 100, 'stars', {
+      ...defaultFilters,
+      ...patch,
+    }).map((r) => r.slug);
+  assert.deepEqual(run({}), ['a', 'b']);
+  assert.deepEqual(run({ category: 'Finance' }), ['a']);
+  assert.deepEqual(run({ stars: '1000' }), ['a']);
+  assert.deepEqual(run({ forks: '100' }), ['a']);
+  assert.deepEqual(run({ launched: 'older' }), ['b']);
+  assert.deepEqual(run({ verified: true }), []);
 });

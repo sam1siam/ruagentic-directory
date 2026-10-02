@@ -15,45 +15,27 @@ import {
 } from '@/components/design-interactions';
 import ToolCard from '@/components/tool-card';
 import { SponsorCard } from '@/components/sponsor';
+import {
+  ALL_CATEGORIES as ALL,
+  AUTH_OPTIONS,
+  FORK_OPTIONS,
+  LAUNCH_OPTIONS,
+  PRICING_OPTIONS,
+  SORT_OPTIONS,
+  STAR_OPTIONS,
+  TRANSPORT_OPTIONS,
+  activeFilterCount,
+  defaultFilters,
+  matchesFilters,
+  orderListings,
+  paramsFromFilters,
+  topPlatforms,
+  type BrowseFilters,
+  type CatalogListing,
+} from '@/lib/browse';
+export type { CatalogListing } from '@/lib/browse';
+type Filters = Partial<BrowseFilters>;
 
-export type CatalogListing = {
-  slug: string;
-  name: string;
-  kind: string;
-  summary: string;
-  category: string;
-  homepage: string;
-  tags: string[];
-  source: string;
-  observedAt: string;
-};
-type Filters = { q?: string; kind?: string; category?: string; sort?: string };
-const ALL = 'All categories';
-const sorts = [
-  ['name', 'Name'],
-  ['kind', 'Type'],
-  ['recent', 'Recently indexed'],
-] as const;
-
-function matches(item: CatalogListing, f: Required<Filters>) {
-  return (
-    (f.kind === 'all' || item.kind === f.kind) &&
-    (f.category === ALL || item.category === f.category) &&
-    [item.name, item.summary, ...item.tags]
-      .join(' ')
-      .toLowerCase()
-      .includes(f.q.toLowerCase())
-  );
-}
-function order(items: CatalogListing[], sort: string) {
-  return [...items].sort((a, b) =>
-    sort === 'recent'
-      ? b.observedAt.localeCompare(a.observedAt) || a.name.localeCompare(b.name)
-      : sort === 'kind'
-        ? a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name)
-        : a.name.localeCompare(b.name),
-  );
-}
 /** Featured picks first, then the rest alphabetically. */
 function spotlight(items: CatalogListing[], picks: string[], limit: number) {
   const rank = new Map(picks.map((slug, i) => [slug, i]));
@@ -85,30 +67,27 @@ export default function DirectoryBrowser({
   sectionSponsors?: Record<string, Sponsor[]>;
   heading?: { title: string; lead: string; count?: number };
 }) {
-  const [q, setQ] = useState(initial.q ?? ''),
-    [kind, setKind] = useState(lock.kind ?? initial.kind ?? 'all'),
-    [category, setCategory] = useState(
-      lock.category ?? initial.category ?? ALL,
-    ),
-    [sort, setSort] = useState(initial.sort ?? 'name'),
-    [open, setOpen] = useState(false);
+  const [filters, setFilters] = useState<BrowseFilters>({
+    ...defaultFilters,
+    ...initial,
+    kind: lock.kind ?? initial.kind ?? 'all',
+    category: lock.category ?? initial.category ?? ALL,
+  });
+  const set = (patch: Filters) => setFilters((f) => ({ ...f, ...patch }));
+  const [open, setOpen] = useState(false);
+  const { q, kind, category, sort } = filters;
   const shortcut = useShortcutLabel();
-  const filters = { q, kind, category, sort };
   useEffect(
     () =>
       registerDirectoryFilter(browserModelContext(), (input) => {
-        flushSync(() => {
-          setQ(input.query);
-          if (!lock.kind) setKind(input.kind);
-          if (!lock.category) setCategory(input.category);
-        });
-        const applied = {
+        const applied: BrowseFilters = {
+          ...filters,
           q: input.query,
           kind: lock.kind ?? input.kind,
           category: lock.category ?? input.category,
-          sort,
         };
-        const found = listings.filter((r) => matches(r, applied));
+        flushSync(() => setFilters(applied));
+        const found = listings.filter((r) => matchesFilters(r, applied));
         return {
           total: found.length,
           listings: found.slice(0, 20).map((r) => ({
@@ -117,24 +96,66 @@ export default function DirectoryBrowser({
           })),
         };
       }),
-    [listings, lock.kind, lock.category, sort],
+    [listings, lock.kind, lock.category, filters],
   );
-  const results = order(
-    listings.filter((item) => matches(item, filters)),
+  // Filters live in the address so a view can be shared or bookmarked;
+  // replaceState keeps the back button clean while someone is narrowing down.
+  useEffect(() => {
+    const query = paramsFromFilters(filters, lock).toString();
+    const next = window.location.pathname + (query ? '?' + query : '');
+    if (next !== window.location.pathname + window.location.search)
+      window.history.replaceState(window.history.state, '', next);
+  }, [filters, lock]);
+  const results = orderListings(
+    listings.filter((item) => matchesFilters(item, filters)),
     sort,
   );
-  const active =
-    q.trim() !== '' ||
-    (!lock.kind && kind !== 'all') ||
-    (!lock.category && category !== ALL);
+  const active = activeFilterCount(filters, lock) > 0;
   const showFeatured = mode === 'home' && !active;
   const countBy = (fn: (item: CatalogListing) => boolean) =>
     listings.filter(fn).length;
-  const reset = () => {
-    setQ('');
-    if (!lock.kind) setKind('all');
-    if (!lock.category) setCategory(ALL);
-  };
+  const reset = () =>
+    setFilters({
+      ...defaultFilters,
+      sort,
+      kind: lock.kind ?? 'all',
+      category: lock.category ?? ALL,
+    });
+  // Counts for a choice: what each option would leave within the current
+  // type and category, so the numbers answer "how many if I pick this".
+  const inScope = listings.filter((i) =>
+    matchesFilters(i, { ...defaultFilters, kind, category }),
+  );
+  const countIf = (patch: Filters) =>
+    inScope.filter((i) =>
+      matchesFilters(i, { ...defaultFilters, kind, category, ...patch }),
+    ).length;
+  const choice = (
+    title: string,
+    key: keyof BrowseFilters,
+    options: readonly (readonly [string, string])[],
+    note?: string,
+  ) => (
+    <fieldset className="filter-block" key={key}>
+      <legend className="filter-title">{title}</legend>
+      <ul className="filter-list">
+        {options.map(([value, label]) => (
+          <li key={value}>
+            <button
+              type="button"
+              aria-pressed={filters[key] === value}
+              onClick={() => set({ [key]: value } as Filters)}
+            >
+              {label} <b>{countIf({ [key]: value } as Filters)}</b>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {note && <small className="filter-note">{note}</small>}
+    </fieldset>
+  );
+  const platforms = topPlatforms(inScope);
+  const serverish = kind === 'all' || kind === 'server';
   const grid = (
     items: CatalogListing[],
     leads: ReactNode[] = [],
@@ -227,7 +248,7 @@ export default function DirectoryBrowser({
                 type="search"
                 value={q}
                 placeholder="Filter by name, tag, capability…"
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => set({ q: e.target.value })}
               />
             </div>
           </div>
@@ -239,7 +260,7 @@ export default function DirectoryBrowser({
                   <button
                     type="button"
                     aria-pressed={kind === 'all'}
-                    onClick={() => setKind('all')}
+                    onClick={() => set({ kind: 'all' })}
                   >
                     All tools <b>{listings.length}</b>
                   </button>
@@ -249,7 +270,7 @@ export default function DirectoryBrowser({
                     <button
                       type="button"
                       aria-pressed={kind === k.kind}
-                      onClick={() => setKind(k.kind)}
+                      onClick={() => set({ kind: k.kind })}
                     >
                       {k.name} <b>{countBy((i) => i.kind === k.kind)}</b>
                     </button>
@@ -266,7 +287,7 @@ export default function DirectoryBrowser({
                   <button
                     type="button"
                     aria-pressed={category === ALL}
-                    onClick={() => setCategory(ALL)}
+                    onClick={() => set({ category: ALL })}
                   >
                     All categories <b>{listings.length}</b>
                   </button>
@@ -276,7 +297,7 @@ export default function DirectoryBrowser({
                     <button
                       type="button"
                       aria-pressed={category === c.name}
-                      onClick={() => setCategory(c.name)}
+                      onClick={() => set({ category: c.name })}
                     >
                       {c.name} <b>{countBy((i) => i.category === c.name)}</b>
                     </button>
@@ -285,15 +306,23 @@ export default function DirectoryBrowser({
               </ul>
             </fieldset>
           )}
+          {choice(
+            'Launched',
+            'launched',
+            LAUNCH_OPTIONS,
+            'Repository creation date. Projects without a public GitHub repository are not dated.',
+          )}
+          {choice('Stars', 'stars', STAR_OPTIONS)}
+          {choice('Forks', 'forks', FORK_OPTIONS)}
           <fieldset className="filter-block">
             <legend className="filter-title">Sort</legend>
             <ul className="filter-list">
-              {sorts.map(([value, label]) => (
+              {SORT_OPTIONS.map(([value, label]) => (
                 <li key={value}>
                   <button
                     type="button"
                     aria-pressed={sort === value}
-                    onClick={() => setSort(value)}
+                    onClick={() => set({ sort: value })}
                   >
                     {label}
                   </button>
@@ -301,6 +330,52 @@ export default function DirectoryBrowser({
               ))}
             </ul>
           </fieldset>
+          {choice('Pricing', 'pricing', PRICING_OPTIONS)}
+          <fieldset className="filter-block">
+            <legend className="filter-title">Checks</legend>
+            <ul className="filter-list">
+              <li>
+                <button
+                  type="button"
+                  aria-pressed={filters.verified}
+                  onClick={() => set({ verified: !filters.verified })}
+                >
+                  Agentic Protocol checked <b>{countIf({ verified: true })}</b>
+                </button>
+              </li>
+            </ul>
+          </fieldset>
+          {platforms.length > 0 && (
+            <fieldset className="filter-block">
+              <legend className="filter-title">Works with</legend>
+              <ul className="filter-list">
+                <li>
+                  <button
+                    type="button"
+                    aria-pressed={filters.platform === ''}
+                    onClick={() => set({ platform: '' })}
+                  >
+                    Any <b>{inScope.length}</b>
+                  </button>
+                </li>
+                {platforms.map((p) => (
+                  <li key={p.label}>
+                    <button
+                      type="button"
+                      aria-pressed={
+                        filters.platform.toLowerCase() === p.label.toLowerCase()
+                      }
+                      onClick={() => set({ platform: p.label })}
+                    >
+                      {p.label} <b>{p.count}</b>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          )}
+          {serverish && choice('Transport', 'transport', TRANSPORT_OPTIONS)}
+          {serverish && choice('Authentication', 'auth', AUTH_OPTIONS)}
           <nav className="filter-block filter-links" aria-label="Browse">
             <span className="filter-title">Browse</span>
             {kinds.map((k) => (

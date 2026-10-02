@@ -3,7 +3,8 @@ import { catalog } from '@/lib/server/catalog';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsors } from '@/lib/advertising';
 import { kindBySlug } from '@/lib/categories';
-import { toBrowserListing } from '@/lib/browse';
+import { filtersFromParams, toBrowserListing } from '@/lib/browse';
+import { browserMetrics } from '@/lib/server/metrics';
 import JsonLd from '@/components/json-ld';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo';
 export function kindMetadata(slug: string) {
@@ -20,16 +21,17 @@ export default async function KindPage({
   searchParams,
 }: {
   slug: string;
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const page = kindBySlug(slug)!;
-  const [params, items, sponsors] = await Promise.all([
+  const [params, items, sponsors, metrics] = await Promise.all([
     searchParams,
     catalog(),
     activeSponsors(),
+    browserMetrics(),
   ]);
   const ofKind = items.filter((i) => i.kind === page.kind);
-  const listings = ofKind.map(toBrowserListing);
+  const listings = ofKind.map((i) => toBrowserListing(i, metrics.get(i.slug)));
   return (
     <>
       <JsonLd
@@ -45,7 +47,7 @@ export default async function KindPage({
         key={JSON.stringify(params)}
         listings={listings}
         lock={{ kind: page.kind }}
-        initial={params}
+        initial={filtersFromParams(params)}
         sponsors={pickSponsors('listing', sponsors)}
         heading={{
           title: page.name + '.',

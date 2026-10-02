@@ -6,7 +6,8 @@ import { catalog } from '@/lib/server/catalog';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsors } from '@/lib/advertising';
 import { categories, categoryBySlug, type Category } from '@/lib/categories';
-import { toBrowserListing } from '@/lib/browse';
+import { filtersFromParams, toBrowserListing } from '@/lib/browse';
+import { browserMetrics } from '@/lib/server/metrics';
 import JsonLd from '@/components/json-ld';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,7 @@ export async function generateMetadata({
       }
     : { title: 'Category not found' };
 }
-type Query = { q?: string; kind?: string };
+type Query = Record<string, string | string[] | undefined>;
 /** The slug is validated before any Suspense boundary is emitted, so an
  *  unknown category is a real 404 while a known one streams a skeleton first. */
 export default async function Page({
@@ -53,13 +54,16 @@ async function CategoryListings({
   category: Category;
   searchParams: Promise<Query>;
 }) {
-  const [query, items, sponsors] = await Promise.all([
+  const [query, items, sponsors, metrics] = await Promise.all([
     searchParams,
     catalog(),
     activeSponsors(),
+    browserMetrics(),
   ]);
   const inCategory = items.filter((i) => i.category === category.name);
-  const listings = inCategory.map(toBrowserListing);
+  const listings = inCategory.map((i) =>
+    toBrowserListing(i, metrics.get(i.slug)),
+  );
   return (
     <>
       <JsonLd
@@ -76,7 +80,7 @@ async function CategoryListings({
         key={JSON.stringify(query)}
         listings={listings}
         lock={{ category: category.name }}
-        initial={query}
+        initial={filtersFromParams(query)}
         sponsors={pickSponsors('listing', sponsors, category.slug)}
         heading={{
           title: category.name + '.',
