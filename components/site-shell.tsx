@@ -26,7 +26,11 @@ const navigation = [
   ['Clients', '/clients'],
   ['AI agents', '/ai-agents'],
   ['Skills', '/skills'],
+  ['Plugins', '/plugins'],
+  ['Rules', '/rules'],
+  ['Evals', '/evals'],
   ['Categories', '/categories'],
+  ['Leaderboards', '/leaderboards'],
   ['Advertise', '/advertise'],
   ['List your project', '/submit'],
 ] as const;
@@ -38,6 +42,10 @@ const actions = [
   ['All clients', '/clients', 'BROWSE'],
   ['All AI agents', '/ai-agents', 'BROWSE'],
   ['All skills', '/skills', 'BROWSE'],
+  ['All plugins & extensions', '/plugins', 'BROWSE'],
+  ['All rules & instructions', '/rules', 'BROWSE'],
+  ['All evals & benchmarks', '/evals', 'BROWSE'],
+  ['Leaderboards by type', '/leaderboards', 'RANKED'],
   ['Browse categories', '/categories', 'BROWSE'],
   ['Compare tools', '/compare', 'SIDE BY SIDE'],
   ['Your dashboard', '/dashboard', 'ACCOUNT'],
@@ -123,6 +131,15 @@ export function SiteHeader({
         </span>
         <span>
           SKILLS <b>{pad(stats.skills)}</b>
+        </span>
+        <span>
+          PLUGINS <b>{pad(stats.plugins)}</b>
+        </span>
+        <span>
+          RULES <b>{pad(stats.rules)}</b>
+        </span>
+        <span>
+          EVALS <b>{pad(stats.evals)}</b>
         </span>
         <span className="telemetry-gap" />
         <UtcClock />

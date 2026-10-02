@@ -162,8 +162,9 @@ export default function DirectoryBrowser({
           <div className="hero-copy">
             <DecodeHeadline />
             <p>
-              MCP servers, clients, AI agents and skills with checked Agentic
-              Protocol files, documentation and connection details.
+              MCP servers, clients, AI agents, skills, plugins, rules and evals
+              with checked Agentic Protocol files, documentation and connection
+              details.
             </p>
             <button
               type="button"

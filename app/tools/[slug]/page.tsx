@@ -18,6 +18,12 @@ import BadgeKit from '@/components/badge-kit';
 import { breadcrumbJsonLd, listingJsonLd } from '@/lib/seo';
 import JsonLd from '@/components/json-ld';
 import { kindByValue } from '@/lib/categories';
+import {
+  fileLabel,
+  isPackaged,
+  packageFormat,
+  packageHeading,
+} from '@/lib/listing';
 import { SponsorTile } from '@/components/sponsor';
 import { activeSponsors } from '@/lib/server/sponsors';
 import { pickSponsor } from '@/lib/advertising';
@@ -81,6 +87,8 @@ export default async function Page({
     item,
     'https://ruagentic.com/tools/' + encodeURIComponent(item.slug),
   );
+  const packaged = isPackaged(item.kind),
+    mainFile = item.fileUrl || item.skillFile || '';
   return (
     <main className="content-page detail-page">
       <JsonLd
@@ -145,18 +153,25 @@ export default async function Page({
               </ul>
             </section>
           )}
-          {item.kind === 'skill' && (
+          {packaged && (
             <section>
-              <h2>Skill package</h2>
+              <h2>{packageHeading[item.kind] ?? 'Package'}</h2>
               <dl className="facts">
                 {[
-                  ['Format', 'Agent Skills (a folder with SKILL.md)'],
+                  ['Format', packageFormat[item.kind] ?? 'Package'],
                   [
                     'Works with',
                     item.platforms.join(', ') ||
                       'Not specified by the publisher',
                   ],
-                  ['Pre-approved tools', item.allowedTools || 'None declared'],
+                  ...(item.kind === 'skill' || item.kind === 'plugin'
+                    ? [
+                        [
+                          'Pre-approved tools',
+                          item.allowedTools || 'None declared',
+                        ],
+                      ]
+                    : []),
                   ['License', item.license || 'Not specified'],
                 ].map(([key, value]) => (
                   <div key={key}>
@@ -165,15 +180,11 @@ export default async function Page({
                   </div>
                 ))}
               </dl>
-              {item.skillFile && (
+              {mainFile && (
                 <div className="resource-links">
-                  <a
-                    href={item.skillFile}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={mainFile} target="_blank" rel="noopener noreferrer">
                     <FileText size={17} />
-                    <span>SKILL.md</span>
+                    <span>{fileLabel[item.kind] ?? 'Main file'}</span>
                     <ArrowUpRight size={15} />
                   </a>
                 </div>
@@ -182,7 +193,11 @@ export default async function Page({
           )}
           <section>
             <h2>
-              {item.kind === 'skill' ? 'How to install' : 'How to connect'}
+              {item.kind === 'eval'
+                ? 'How to use it'
+                : packaged
+                  ? 'How to install'
+                  : 'How to connect'}
             </h2>
             <ConnectGuide item={item} />
             <div className="resource-links">

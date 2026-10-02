@@ -40,7 +40,7 @@ const published: ListingInput = {
   readmeUrl: '',
   agentCard: '',
   agentProtocol: '',
-  skillFile: '',
+  fileUrl: '',
   allowedTools: '',
 };
 const draft: ListingInput = {
@@ -71,7 +71,7 @@ const draft: ListingInput = {
   readmeUrl: '',
   agentCard: '',
   agentProtocol: '',
-  skillFile: '',
+  fileUrl: '',
   allowedTools: '',
 };
 export const demoSessionId = (ownerId: string) =>

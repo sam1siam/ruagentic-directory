@@ -60,7 +60,8 @@ export function NetworkRail({ stats }: { stats: DirectoryStats }) {
       <div>{stats.total.toLocaleString()} listings indexed</div>
       <div>
         {stats.servers} servers · {stats.clients} clients · {stats.products} AI
-        agents · {stats.skills} skills
+        agents · {stats.skills} skills · {stats.plugins} plugins · {stats.rules}{' '}
+        rules · {stats.evals} evals
       </div>
     </aside>
   );

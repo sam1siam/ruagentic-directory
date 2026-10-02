@@ -9,7 +9,7 @@ import { CategoryCardsSkeleton } from '@/components/skeletons';
 export const metadata = {
   title: 'Categories',
   description:
-    'Browse MCP servers, clients, AI agents and skills by category, from developer tools and data to automation and finance.',
+    'Browse MCP servers, clients, AI agents, skills, plugins, rules and evals by category, from developer tools and data to automation and finance.',
   alternates: { canonical: '/categories' },
 };
 /** The skeleton lives inside the page rather than in a loading file so it

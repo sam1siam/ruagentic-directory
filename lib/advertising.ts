@@ -19,7 +19,7 @@ export const placements = [
     name: 'Featured card',
     amount: 49900,
     placement:
-      'A featured card on the category pages you choose, on the server, client, AI agent and skill pages and the home page, plus a tile on listing detail pages in your categories.',
+      'A featured card on the category pages you choose, on the server, client, AI agent, skill, plugin, rules and eval pages and the home page, plus a tile on listing detail pages in your categories.',
     surfaces: ['listing', 'detail'],
     save: '',
   },

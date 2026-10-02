@@ -1,6 +1,7 @@
 import { ogContentType, ogImage, ogSize } from '@/lib/server/og';
 import { directoryStats } from '@/lib/server/stats';
-export const alt = 'RUAGENTIC — MCP servers, clients, AI agents and skills';
+export const alt =
+  'RUAGENTIC — MCP servers, clients, AI agents, skills, plugins, rules and evals';
 export const size = ogSize;
 export const contentType = ogContentType;
 export const revalidate = 3600;
@@ -8,7 +9,7 @@ export default async function Image() {
   const stats = await directoryStats();
   return ogImage({
     eyebrow: 'Official listing directory for the Agentic Protocol',
-    title: 'MCP servers, clients, AI agents and skills.',
+    title: 'MCP servers, clients, AI agents, skills, plugins, rules and evals.',
     description:
       'Checked Agentic Protocol files, documentation and connection details for every listing.',
     chips: [
@@ -17,6 +18,9 @@ export default async function Image() {
       `${stats.clients} clients`,
       `${stats.products} AI agents`,
       `${stats.skills} skills`,
+      `${stats.plugins} plugins`,
+      `${stats.rules} rules`,
+      `${stats.evals} evals`,
     ],
     url: 'ruagentic.com',
   });

@@ -40,9 +40,10 @@ export default async function Page({
       <div className="page-heading">
         <h1>Sponsor the directory.</h1>
         <p className="lead">
-          Reach the people building with MCP servers, clients, AI agents and
-          skills. Pick a placement, submit your creative, and go live once we
-          approve it, within {reviewWindow} of payment.
+          Reach the people building with MCP servers, clients, AI agents,
+          skills, plugins, rules and evals. Pick a placement, submit your
+          creative, and go live once we approve it, within {reviewWindow} of
+          payment.
         </p>
       </div>
       {account && account.orders > 0 && (
@@ -102,11 +103,12 @@ export default async function Page({
             </li>
             <li>
               <strong>Featured card</strong> takes the first card on the
-              category pages you choose, on the server, client, AI agent and
-              skill pages and the home page, plus a tile on listing detail pages
-              in your categories. One category is included; each extra category
-              is {formatUsd(categoryExtraAmount)} a month. The card opens your
-              sponsor page on the directory, which links to your site.
+              category pages you choose, on the server, client, AI agent, skill,
+              plugin, rules and eval pages and the home page, plus a tile on
+              listing detail pages in your categories. One category is included;
+              each extra category is {formatUsd(categoryExtraAmount)} a month.
+              The card opens your sponsor page on the directory, which links to
+              your site.
             </li>
             <li>
               <strong>Top bar + featured card</strong> combines both for less

@@ -4,7 +4,16 @@ export const filterInput = z
   .object({
     query: z.string().max(200).default(''),
     kind: z
-      .enum(['all', 'server', 'client', 'product', 'skill'])
+      .enum([
+        'all',
+        'server',
+        'client',
+        'product',
+        'skill',
+        'plugin',
+        'rules',
+        'eval',
+      ])
       .default('all'),
     category: z
       .enum(['All categories', ...categoryNames])

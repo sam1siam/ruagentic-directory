@@ -5,6 +5,15 @@ import { connectPlan } from '@/lib/connect';
  *  endpoint, package or documentation. */
 export default function ConnectGuide({ item }: { item: PublicListing }) {
   const plan = connectPlan(item);
+  const mainFile = item.fileUrl || item.skillFile || '';
+  const fileLink = mainFile ? (
+    <a href={mainFile} target="_blank" rel="noopener noreferrer">
+      {mainFile.replace(/^https?:\/\//, '')}
+    </a>
+  ) : null;
+  const agentsAnswer = item.platforms.length
+    ? `The publisher lists ${item.platforms.join(', ')}.`
+    : 'The publisher has not listed the agents it was written for.';
   const docs = item.documentation || item.homepage;
   const questions: { q: string; a: React.ReactNode }[] = [];
   const known = (answer: string) =>
@@ -138,20 +147,7 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
           <code>.claude/skills/</code> in the project and{' '}
           <code>~/.claude/skills/</code>; other agents that support the Agent
           Skills format document their own location.
-          {item.skillFile ? (
-            <>
-              {' '}
-              The file itself is at{' '}
-              <a
-                href={item.skillFile}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {item.skillFile.replace(/^https?:\/\//, '')}
-              </a>
-              .
-            </>
-          ) : null}
+          {fileLink ? <> The file itself is at {fileLink}.</> : null}
         </p>
       ),
     });
@@ -159,15 +155,87 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
       q: `Which agents can use ${item.name}?`,
       a: (
         <p>
-          {item.platforms.length
-            ? `The publisher lists ${item.platforms.join(', ')}.`
-            : 'The publisher has not listed the agents it was written for.'}
+          {agentsAnswer}
           {item.allowedTools ? (
             <>
               {' '}
               Tools its SKILL.md pre-approves: <code>{item.allowedTools}</code>.
             </>
           ) : null}
+        </p>
+      ),
+    });
+  } else if (item.kind === 'plugin') {
+    questions.push({
+      q: `How do I install ${item.name}?`,
+      a: (
+        <p>
+          {item.setup ? 'The publisher’s install steps are shown above. ' : ''}
+          Plugins are installed by the agent host. In Claude Code, add the
+          publisher’s marketplace and run{' '}
+          <code>/plugin install name@marketplace</code>; other hosts document
+          their own plugin or extension command.
+          {fileLink ? <> The manifest is at {fileLink}.</> : null}
+        </p>
+      ),
+    });
+    questions.push({
+      q: `Which hosts can use ${item.name}?`,
+      a: (
+        <p>
+          {agentsAnswer}
+          {item.allowedTools ? (
+            <>
+              {' '}
+              Tools it pre-approves: <code>{item.allowedTools}</code>.
+            </>
+          ) : null}
+        </p>
+      ),
+    });
+  } else if (item.kind === 'rules') {
+    questions.push({
+      q: `How do I use ${item.name}?`,
+      a: (
+        <p>
+          {item.setup ? 'The publisher’s steps are shown above. ' : ''}
+          Copy the file into the place your agent reads: <code>
+            CLAUDE.md
+          </code>{' '}
+          or <code>AGENTS.md</code> at the repository root,{' '}
+          <code>.cursorrules</code> or <code>.cursor/rules/</code> for Cursor,{' '}
+          <code>.github/copilot-instructions.md</code> for GitHub Copilot. Then
+          edit it for your project.
+          {fileLink ? <> The file is at {fileLink}.</> : null}
+        </p>
+      ),
+    });
+    questions.push({
+      q: `Which agents read ${item.name}?`,
+      a: <p>{agentsAnswer}</p>,
+    });
+  } else if (item.kind === 'eval') {
+    questions.push({
+      q: `How do I run ${item.name}?`,
+      a: (
+        <p>
+          {item.setup ? 'The publisher’s steps are shown above. ' : ''}
+          Follow the publisher’s{' '}
+          <a href={docs} target="_blank" rel="noopener noreferrer">
+            documentation
+          </a>{' '}
+          to get the data and run the harness against your agent or model.
+          {fileLink ? <> The data or results are at {fileLink}.</> : null}
+        </p>
+      ),
+    });
+    questions.push({
+      q: `What does ${item.name} measure?`,
+      a: (
+        <p>
+          {item.capabilities.length
+            ? item.capabilities.join('; ') + '.'
+            : item.summary}
         </p>
       ),
     });

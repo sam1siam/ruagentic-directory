@@ -1,6 +1,37 @@
 import { z } from 'zod';
 import ipaddr from 'ipaddr.js';
-export const kinds = ['server', 'client', 'product', 'skill'] as const;
+export const kinds = [
+  'server',
+  'client',
+  'product',
+  'skill',
+  'plugin',
+  'rules',
+  'eval',
+] as const;
+/** Kinds that are a published package or file rather than a running service. */
+export const packagedKinds = ['skill', 'plugin', 'rules', 'eval'] as const;
+export const isPackaged = (kind: string) =>
+  (packagedKinds as readonly string[]).includes(kind);
+/** What the main file of each packaged kind is called. */
+export const fileLabel: Record<string, string> = {
+  skill: 'SKILL.md',
+  plugin: 'Plugin manifest',
+  rules: 'Rules file',
+  eval: 'Dataset or results',
+};
+export const packageHeading: Record<string, string> = {
+  skill: 'Skill package',
+  plugin: 'Plugin package',
+  rules: 'Rules file',
+  eval: 'Benchmark',
+};
+export const packageFormat: Record<string, string> = {
+  skill: 'Agent Skills (a folder with SKILL.md)',
+  plugin: 'Plugin or extension for an agent host',
+  rules: 'Instruction file (CLAUDE.md, AGENTS.md, .cursorrules or similar)',
+  eval: 'Evaluation set or harness',
+};
 export const categories = [
   'Developer tools',
   'AI & language models',
@@ -109,9 +140,10 @@ export const listingSchema = z
      *  a client connects to. Optional, AI agents only in practice. */
     agentCard: url.default(''),
     agentProtocol: z.enum(['', 'a2a', 'acp', 'openai', 'custom']).default(''),
-    /** For skills (Agent Skills packages): where SKILL.md lives and the
-     *  tools its frontmatter pre-approves. Optional, skills only in practice. */
-    skillFile: url.default(''),
+    /** For packaged kinds (skills, plugins, rules files, evals): the main
+     *  file, such as SKILL.md, the plugin manifest, the rules file or the
+     *  dataset. Optional, packaged kinds only in practice. */
+    fileUrl: url.default(''),
     allowedTools: z.string().trim().max(500).default(''),
   })
   .strict()
@@ -123,12 +155,11 @@ export const listingSchema = z
         message:
           'Provide a remote endpoint or source repository for an MCP server.',
       });
-    if (value.kind === 'skill' && !value.skillFile && !value.repository)
+    if (isPackaged(value.kind) && !value.fileUrl && !value.repository)
       ctx.addIssue({
         code: 'custom',
-        path: ['skillFile'],
-        message:
-          'Provide the SKILL.md URL or the source repository for a skill.',
+        path: ['fileUrl'],
+        message: 'Provide the main file URL or the source repository.',
       });
   });
 export type ListingInput = z.infer<typeof listingSchema>;
@@ -136,10 +167,12 @@ export type ListingInput = z.infer<typeof listingSchema>;
  *  on the read side; the schema fills them in on write. */
 export type PublicListing = Omit<
   ListingInput,
-  'agentCard' | 'agentProtocol' | 'skillFile' | 'allowedTools'
+  'agentCard' | 'agentProtocol' | 'fileUrl' | 'allowedTools'
 > & {
   agentCard?: string;
   agentProtocol?: ListingInput['agentProtocol'];
+  fileUrl?: string;
+  /** Older skill rows stored the main file under this name. */
   skillFile?: string;
   allowedTools?: string;
   slug: string;
@@ -178,7 +211,7 @@ export const emptyListing: ListingInput = {
   readmeUrl: '',
   agentCard: '',
   agentProtocol: '',
-  skillFile: '',
+  fileUrl: '',
   allowedTools: '',
 };
 export function serviceIdentity(input: Pick<ListingInput, 'homepage'>) {

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'RUAGENTIC',
     short_name: 'RUAGENTIC',
     description:
-      'The Agentic Protocol directory of MCP servers, clients, AI agents and skills.',
+      'The Agentic Protocol directory of MCP servers, clients, AI agents, skills, plugins, rules and evals.',
     start_url: '/',
     display: 'standalone',
     background_color: '#05080c',

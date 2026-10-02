@@ -1,7 +1,7 @@
 /** Structured data for a listing page. Only fields the catalog actually
  *  holds are emitted; there are no ratings or review counts because the
  *  directory does not collect them. */
-import type { PublicListing } from './listing';
+import { fileLabel, type PublicListing } from './listing.ts';
 import type { Package, Remote } from './connect';
 
 export function listingJsonLd(item: PublicListing, canonical: string) {
@@ -45,7 +45,14 @@ export function listingJsonLd(item: PublicListing, canonical: string) {
             : []),
         ]
       : []),
-    ...(item.skillFile ? [property('SKILL.md', item.skillFile)] : []),
+    ...(item.fileUrl || item.skillFile
+      ? [
+          property(
+            fileLabel[item.kind] ?? 'Main file',
+            item.fileUrl || item.skillFile || '',
+          ),
+        ]
+      : []),
     ...(item.allowedTools
       ? [property('Allowed tools', item.allowedTools)]
       : []),
@@ -90,7 +97,7 @@ export function websiteJsonLd() {
     name: 'RUAGENTIC',
     url: site + '/',
     description:
-      'The official Agentic Protocol directory of MCP servers, clients, AI agents and skills.',
+      'The official Agentic Protocol directory of MCP servers, clients, AI agents, skills, plugins, rules and evals.',
     publisher: { '@id': site + '/#organization' },
     potentialAction: {
       '@type': 'SearchAction',

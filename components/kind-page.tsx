@@ -14,7 +14,7 @@ export function kindMetadata(slug: string) {
     alternates: { canonical: '/' + slug },
   };
 }
-/** Shared server component behind /servers, /clients, /ai-agents and /skills. */
+/** Shared server component behind every kind page (/servers, /skills, /plugins and so on). */
 export default async function KindPage({
   slug,
   searchParams,

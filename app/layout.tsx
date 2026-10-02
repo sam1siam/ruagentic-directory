@@ -29,11 +29,11 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://ruagentic.com'),
   applicationName: 'RUAGENTIC',
   title: {
-    default: 'RUAGENTIC — MCP servers, clients, AI agents & skills',
+    default: 'RUAGENTIC — MCP servers, clients, AI agents, skills & more',
     template: '%s · RUAGENTIC',
   },
   description:
-    'Discover MCP servers, clients, AI agents, and skills. Compare capabilities, find connection details, and submit your project with a paid or verified free listing.',
+    'Discover MCP servers, clients, AI agents, skills, plugins, rules, and evals. Compare capabilities, find connection details, and submit your project with a paid or verified free listing.',
   // Titles, descriptions and the generated images are filled in per page;
   // the social image comes from the opengraph-image files.
   openGraph: { type: 'website', siteName: 'RUAGENTIC', locale: 'en_US' },

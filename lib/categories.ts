@@ -147,6 +147,30 @@ export const kinds = [
     description:
       'SKILL.md packages in the open Agent Skills format that teach Claude, Codex, Gemini and other agents how to do a job.',
   },
+  {
+    slug: 'plugins',
+    kind: 'plugin',
+    name: 'Plugins & extensions',
+    singular: 'Plugin',
+    description:
+      'Bundles of skills, commands, hooks and MCP servers for an agent host: Claude Code plugins and marketplaces, desktop extensions, CLI extensions and ChatGPT apps.',
+  },
+  {
+    slug: 'rules',
+    kind: 'rules',
+    name: 'Rules & instructions',
+    singular: 'Rules file',
+    description:
+      'CLAUDE.md, AGENTS.md, .cursorrules, Copilot instructions and other files that tell an agent how to work in a project.',
+  },
+  {
+    slug: 'evals',
+    kind: 'eval',
+    name: 'Evals & benchmarks',
+    singular: 'Eval',
+    description:
+      'Benchmarks, test sets and evaluation harnesses that measure what agents and models can do.',
+  },
 ] as const;
 export type KindPage = (typeof kinds)[number];
 /** Hand-picked leads for the home page sections, by kind. */
@@ -188,6 +212,13 @@ export const featured: Record<KindPage['kind'], string[]> = {
     'anthropic-mcp-builder',
     'anthropic-webapp-testing',
   ],
+  plugin: [
+    'claude-plugins-official',
+    'anthropic-document-skills-plugin',
+    'anthropic-example-skills-plugin',
+  ],
+  rules: ['agents-md', 'awesome-cursorrules', 'awesome-copilot'],
+  eval: ['swe-bench', 'tau-bench', 'agentbench'],
 };
 export const categoryBySlug = (slug: string) =>
   categories.find((c) => c.slug === slug);

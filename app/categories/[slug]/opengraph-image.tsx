@@ -16,7 +16,7 @@ export default async function Image({
       eyebrow: 'RUAGENTIC directory',
       title: 'Category not found.',
       description:
-        'Browse MCP servers, clients, AI agents and skills by category.',
+        'Browse MCP servers, clients, AI agents, skills, plugins, rules and evals by category.',
       url: 'ruagentic.com/categories',
     });
   const count = (await catalog()).filter(

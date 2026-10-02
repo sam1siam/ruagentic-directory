@@ -1,6 +1,6 @@
 # RUAGENTIC Directory
 
-RUAGENTIC is the official Agentic directory for MCP servers, clients, AI agents, and skills. Discover project capabilities and connection details, compare tools, and submit a listing with a one-time payment or verified free Agentic publication.
+RUAGENTIC is the official Agentic directory for MCP servers, clients, AI agents, skills, plugins, rules, and evals. Discover project capabilities and connection details, compare tools, and submit a listing with a one-time payment or verified free Agentic publication.
 
 Website: [https://ruagentic.com](https://ruagentic.com/)
 
@@ -40,7 +40,7 @@ The index is descriptive. Follow the linked API or protocol documentation for su
 ## Specification and directory
 
 - **[Agentic](https://ruagentic.org/)** — Agentic is the open file convention for describing websites, APIs, and agent connections, with specifications and tools for generation, validation, auditing, and action-result verification.
-- **[RUAGENTIC](https://ruagentic.com/)** — RUAGENTIC is the official Agentic directory for MCP servers, clients, AI agents, and skills.
+- **[RUAGENTIC](https://ruagentic.com/)** — RUAGENTIC is the official Agentic directory for MCP servers, clients, AI agents, skills, plugins, rules, and evals.
 
 These references identify the convention and its directory. Publishing these files does not submit a listing, certify the service, or establish an affiliation with another directory.
 

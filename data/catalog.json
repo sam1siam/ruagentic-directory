@@ -63934,7 +63934,6 @@
   "readmeUrl": "",
   "agentCard": "",
   "agentProtocol": "",
-  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md",
   "allowedTools": "",
   "slug": "anthropic-pdf-skill",
   "source": "Publisher repository",
@@ -63967,7 +63966,8 @@
     "url": "https://github.com/anthropics/skills/blob/main/README.md",
     "observedAt": "2026-10-01"
    }
-  ]
+  ],
+  "fileUrl": "https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md"
  },
  {
   "kind": "skill",
@@ -64006,7 +64006,6 @@
   "readmeUrl": "",
   "agentCard": "",
   "agentProtocol": "",
-  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/docx/SKILL.md",
   "allowedTools": "",
   "slug": "anthropic-docx-skill",
   "source": "Publisher repository",
@@ -64039,7 +64038,8 @@
     "url": "https://github.com/anthropics/skills/blob/main/README.md",
     "observedAt": "2026-10-01"
    }
-  ]
+  ],
+  "fileUrl": "https://github.com/anthropics/skills/blob/main/skills/docx/SKILL.md"
  },
  {
   "kind": "skill",
@@ -64078,7 +64078,6 @@
   "readmeUrl": "",
   "agentCard": "",
   "agentProtocol": "",
-  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md",
   "allowedTools": "",
   "slug": "anthropic-skill-creator",
   "source": "Publisher repository",
@@ -64111,7 +64110,8 @@
     "url": "https://github.com/anthropics/skills/blob/main/README.md",
     "observedAt": "2026-10-01"
    }
-  ]
+  ],
+  "fileUrl": "https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md"
  },
  {
   "kind": "skill",
@@ -64149,7 +64149,6 @@
   "readmeUrl": "",
   "agentCard": "",
   "agentProtocol": "",
-  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md",
   "allowedTools": "",
   "slug": "anthropic-mcp-builder",
   "source": "Publisher repository",
@@ -64182,7 +64181,8 @@
     "url": "https://github.com/anthropics/skills/blob/main/README.md",
     "observedAt": "2026-10-01"
    }
-  ]
+  ],
+  "fileUrl": "https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md"
  },
  {
   "kind": "skill",
@@ -64220,7 +64220,6 @@
   "readmeUrl": "",
   "agentCard": "",
   "agentProtocol": "",
-  "skillFile": "https://github.com/anthropics/skills/blob/main/skills/webapp-testing/SKILL.md",
   "allowedTools": "",
   "slug": "anthropic-webapp-testing",
   "source": "Publisher repository",
@@ -64251,6 +64250,506 @@
    {
     "kind": "publisher-page",
     "url": "https://github.com/anthropics/skills/blob/main/README.md",
+    "observedAt": "2026-10-01"
+   }
+  ],
+  "fileUrl": "https://github.com/anthropics/skills/blob/main/skills/webapp-testing/SKILL.md"
+ },
+ {
+  "kind": "plugin",
+  "name": "Claude Plugins Official",
+  "summary": "Anthropic’s official marketplace of Claude Code plugins, with internal and partner plugins installable from Claude Code.",
+  "description": "Official, Anthropic-managed directory of high quality Claude Code Plugins. The repository holds Anthropic-maintained plugins under /plugins and third-party plugins from partners and the community under /external_plugins. Plugins are installed from inside Claude Code with /plugin install {plugin-name}@claude-plugins-official, or found under /plugin > Discover.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/claude-plugins-official",
+  "repository": "https://github.com/anthropics/claude-plugins-official",
+  "documentation": "",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "plugin",
+   "claude-code",
+   "marketplace",
+   "anthropic"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code"
+  ],
+  "license": "Apache-2.0",
+  "setup": "In Claude Code: /plugin install {plugin-name}@claude-plugins-official, or open /plugin > Discover.",
+  "capabilities": [
+   "Anthropic-maintained plugins",
+   "Partner and community plugins",
+   "Install from Claude Code"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "claude-plugins-official",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/claude-plugins-official",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/claude-plugins-official",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "plugin",
+  "name": "Document Skills plugin",
+  "summary": "Anthropic’s plugin bundling the docx, pdf, pptx and xlsx document skills for Claude Code.",
+  "description": "The document-skills plugin from Anthropic’s anthropics/skills marketplace packages the four document skills (docx, pdf, pptx and xlsx) so Claude Code can create, read and edit Word, PDF, PowerPoint and Excel files. The README notes these document skills are source-available rather than open source.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Productivity",
+  "tags": [
+   "plugin",
+   "claude-code",
+   "documents",
+   "anthropic"
+  ],
+  "pricing": "free",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code"
+  ],
+  "license": "Source-available (see LICENSE.txt in each skill)",
+  "setup": "In Claude Code: /plugin marketplace add anthropics/skills, then /plugin install document-skills@anthropic-agent-skills.",
+  "capabilities": [
+   "Word documents (docx)",
+   "PDF files",
+   "PowerPoint decks (pptx)",
+   "Excel spreadsheets (xlsx)"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "anthropic-document-skills-plugin",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "plugin",
+  "name": "Example Skills plugin",
+  "summary": "Anthropic’s plugin bundling its example skills, from skill creation and MCP building to web app testing and design.",
+  "description": "The example-skills plugin from Anthropic’s anthropics/skills marketplace installs the repository’s example skills in Claude Code. The README groups them as creative and design, development and technical, and enterprise and communication skills, and says many are open source under Apache 2.0.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://github.com/anthropics/skills",
+  "repository": "https://github.com/anthropics/skills",
+  "documentation": "https://github.com/anthropics/skills/blob/main/README.md",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "plugin",
+   "claude-code",
+   "skills",
+   "anthropic"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Claude Code"
+  ],
+  "license": "Apache-2.0 for many skills (see each skill)",
+  "setup": "In Claude Code: /plugin marketplace add anthropics/skills, then /plugin install example-skills@anthropic-agent-skills.",
+  "capabilities": [
+   "Creative and design skills",
+   "Development and technical skills",
+   "Enterprise and communication skills"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "anthropic-example-skills-plugin",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/anthropics/skills",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/anthropics/skills",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "rules",
+  "name": "AGENTS.md",
+  "summary": "A README for agents: one predictable file that gives coding agents the build steps, tests and conventions of a project.",
+  "description": "Think of AGENTS.md as a README for agents: a dedicated, predictable place to provide the context and instructions to help AI coding agents work on your project. It complements README files with the detailed context coding agents need, such as build steps, tests and code conventions, that would clutter a README or is not relevant to human contributors. The format is stewarded by the Agentic AI Foundation under the Linux Foundation, and the site lists support from OpenAI Codex, Google Gemini CLI, Cursor, GitHub Copilot Coding Agent, Zed, Warp, VS Code, Devin, Windsurf and many more.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://agents.md/",
+  "repository": "https://github.com/agentsmd/agents.md",
+  "documentation": "",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "rules",
+   "agents-md",
+   "coding-agents",
+   "standard"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "OpenAI Codex",
+   "Google Gemini CLI",
+   "Cursor",
+   "GitHub Copilot",
+   "Zed",
+   "Warp",
+   "VS Code",
+   "Devin",
+   "Windsurf",
+   "Aider",
+   "goose",
+   "opencode"
+  ],
+  "license": "",
+  "setup": "Create an AGENTS.md file at the root of your repository with build steps, test commands and conventions. Supporting agents read it automatically.",
+  "capabilities": [
+   "Project context for coding agents",
+   "Build and test instructions",
+   "Code conventions"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "agents-md",
+  "source": "Publisher repository",
+  "sourceUrl": "https://agents.md/",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/agentsmd/agents.md",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://agents.md/",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "rules",
+  "name": "awesome-cursorrules",
+  "summary": "Hundreds of reusable Cursor rules files, organised by framework, language and task.",
+  "description": "Configuration files that enhance Cursor AI editor experience with custom rules and behaviors. The repository is a collection of Markdown-based .mdc project rules files organised by category: frontend frameworks and libraries, backend and full-stack, mobile development, games and graphics, CSS and styling, state management, database and API, testing, hosting and deployments, build tools, language-specific rules, security and documentation.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://github.com/PatrickJS/awesome-cursorrules",
+  "repository": "https://github.com/PatrickJS/awesome-cursorrules",
+  "documentation": "",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "rules",
+   "cursor",
+   "cursorrules",
+   "collection"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "Cursor"
+  ],
+  "license": "CC0-1.0",
+  "setup": "Copy a rules file from the collection into your project as .cursorrules, or into .cursor/rules/ as a .mdc file, then edit it for your project.",
+  "capabilities": [
+   "Framework-specific rules",
+   "Language-specific rules",
+   "Testing, security and deployment rules"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "awesome-cursorrules",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/PatrickJS/awesome-cursorrules",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/PatrickJS/awesome-cursorrules",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "rules",
+  "name": "Awesome GitHub Copilot",
+  "summary": "GitHub’s community collection of Copilot instructions, agents, skills, hooks, workflows and plugins.",
+  "description": "A community-created collection of custom agents, instructions, skills, hooks, workflows, and plugins to supercharge your GitHub Copilot experience. It includes specialised Copilot agents that integrate with MCP servers, instructions (coding standards applied automatically by file pattern), skills (self-contained folders with instructions and bundled assets), plugins (curated bundles of agents and skills for specific workflows) and a cookbook of copy-paste recipes for the Copilot APIs.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://awesome-copilot.github.com",
+  "repository": "https://github.com/github/awesome-copilot",
+  "documentation": "",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "rules",
+   "copilot",
+   "instructions",
+   "collection"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [
+   "GitHub Copilot"
+  ],
+  "license": "MIT",
+  "setup": "Copy an instructions file into .github/ of your repository (for example .github/copilot-instructions.md), or install the agents, skills and plugins as the repository README describes.",
+  "capabilities": [
+   "Copilot instructions by file pattern",
+   "Custom Copilot agents",
+   "Skills, hooks and plugins",
+   "API cookbook"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "awesome-copilot",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/github/awesome-copilot",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/github/awesome-copilot",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://awesome-copilot.github.com",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "eval",
+  "name": "SWE-bench",
+  "summary": "Benchmark that scores language models on resolving real GitHub issues by producing a working patch.",
+  "description": "SWE-bench is a benchmark for evaluating large language models on real world software issues collected from GitHub. Given a codebase and an issue, a language model is tasked with generating a patch that resolves the described problem. The dataset is published on Hugging Face as princeton-nlp/SWE-bench and the leaderboard lives at swebench.com.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://www.swebench.com",
+  "repository": "https://github.com/SWE-bench/SWE-bench",
+  "documentation": "",
+  "endpoint": "",
+  "category": "Developer tools",
+  "tags": [
+   "eval",
+   "benchmark",
+   "coding-agents",
+   "swe-bench"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [],
+  "license": "MIT",
+  "setup": "",
+  "capabilities": [
+   "Real GitHub issue resolution",
+   "Patch generation and test verification",
+   "Public leaderboard"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench",
+  "allowedTools": "",
+  "slug": "swe-bench",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/SWE-bench/SWE-bench",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/SWE-bench/SWE-bench",
+    "observedAt": "2026-10-01"
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://www.swebench.com",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "eval",
+  "name": "τ-bench",
+  "summary": "Benchmark for tool-agent-user interaction: an agent with API tools and policies serves a simulated user in airline and retail domains.",
+  "description": "Code and Data for Tau-Bench. τ-bench emulates dynamic conversations between a user (simulated by language models) and a language agent provided with domain-specific API tools and policy guidelines, evaluating tool-agent-user interaction across real-world domains such as airline and retail. The repository notes that its tasks are outdated and points to the newer τ³-bench repository for the latest versions. Papers: τ-bench (arXiv:2406.12045) and τ²-Bench (arXiv:2506.07982).\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://github.com/sierra-research/tau-bench",
+  "repository": "https://github.com/sierra-research/tau-bench",
+  "documentation": "https://arxiv.org/abs/2406.12045",
+  "endpoint": "",
+  "category": "AI & language models",
+  "tags": [
+   "eval",
+   "benchmark",
+   "tool-use",
+   "conversational-agents"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [],
+  "license": "MIT",
+  "setup": "",
+  "capabilities": [
+   "Simulated users",
+   "Domain API tools and policies",
+   "Airline and retail tasks"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "tau-bench",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/sierra-research/tau-bench",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/sierra-research/tau-bench",
+    "observedAt": "2026-10-01"
+   }
+  ]
+ },
+ {
+  "kind": "eval",
+  "name": "AgentBench",
+  "summary": "A benchmark that evaluates LLMs as agents across eight environments, from operating systems and databases to web shopping and browsing.",
+  "description": "A Comprehensive Benchmark to Evaluate LLMs as Agents (ICLR’24). AgentBench is the first benchmark designed to evaluate LLM-as-Agent across a diverse spectrum of different environments. It covers eight environments: operating system, database, knowledge graph, digital card game, lateral thinking puzzles, house-holding, web shopping and web browsing. Paper: arXiv:2308.03688.\n\nDetails were read from the publisher’s repository and documentation; nothing was installed or executed.",
+  "homepage": "https://github.com/THUDM/AgentBench",
+  "repository": "https://github.com/THUDM/AgentBench",
+  "documentation": "https://arxiv.org/abs/2308.03688",
+  "endpoint": "",
+  "category": "AI & language models",
+  "tags": [
+   "eval",
+   "benchmark",
+   "llm-agents",
+   "multi-environment"
+  ],
+  "pricing": "open-source",
+  "transport": "not-applicable",
+  "authentication": "not-applicable",
+  "platforms": [],
+  "license": "Apache-2.0",
+  "setup": "",
+  "capabilities": [
+   "Eight agent environments",
+   "LLM-as-Agent evaluation",
+   "Public leaderboard"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "agentbench",
+  "source": "Publisher repository",
+  "sourceUrl": "https://github.com/THUDM/AgentBench",
+  "observedAt": "2026-10-01",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [],
+  "sources": [
+   {
+    "kind": "publisher-repository",
+    "url": "https://github.com/THUDM/AgentBench",
     "observedAt": "2026-10-01"
    }
   ]

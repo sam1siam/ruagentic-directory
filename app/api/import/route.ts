@@ -17,7 +17,15 @@ export async function POST(request: Request) {
     const input = z
       .object({
         url: z.string().max(2048),
-        kind: z.enum(['server', 'client', 'product', 'skill']),
+        kind: z.enum([
+          'server',
+          'client',
+          'product',
+          'skill',
+          'plugin',
+          'rules',
+          'eval',
+        ]),
         sourceType: z.enum(['homepage', 'repository', 'endpoint']),
       })
       .strict()

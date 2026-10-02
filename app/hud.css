@@ -4286,3 +4286,23 @@ legend {
 .dashboard-list .badge-panel > p {
   margin: 0;
 }
+
+/* Leaderboards */
+.leaderboard-section {
+  margin-top: 2.5rem;
+}
+.leaderboard-method {
+  max-width: 70ch;
+}
+.leaderboard-table td small {
+  display: block;
+  max-width: 48ch;
+  opacity: 0.75;
+}
+.leaderboard-table .verified-mark {
+  color: var(--accent, #4ade80);
+  vertical-align: middle;
+}
+.table-scroll {
+  overflow-x: auto;
+}

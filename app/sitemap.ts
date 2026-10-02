@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import type { MetadataRoute } from 'next';
 import { catalog } from '@/lib/server/catalog';
-import { categories } from '@/lib/categories';
+import { categories, kinds } from '@/lib/categories';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...[
@@ -10,6 +10,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       '/clients',
       '/ai-agents',
       '/skills',
+      '/plugins',
+      '/rules',
+      '/evals',
+      '/leaderboards',
+      ...kinds.map((k) => '/leaderboards/' + k.slug),
       '/categories',
       ...categories.map((c) => '/categories/' + c.slug),
       '/advertise',

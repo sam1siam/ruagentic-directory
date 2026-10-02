@@ -22,9 +22,10 @@ export default function Page() {
       </pre>
       <p>
         Optional parameters: <code>q</code> searches names, summaries, and tags;{' '}
-        <code>kind</code> accepts server, client, product (AI agents), or skill;{' '}
-        <code>category</code> matches a displayed category; <code>limit</code>{' '}
-        is 1–100; <code>offset</code> selects a page.
+        <code>kind</code> accepts server, client, product (AI agents), skill,
+        plugin, rules, or eval; <code>category</code> matches a displayed
+        category; <code>limit</code> is 1–100; <code>offset</code> selects a
+        page.
       </p>
       <p>
         The response includes <code>listings</code>, <code>total</code>, and{' '}

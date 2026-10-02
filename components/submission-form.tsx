@@ -17,6 +17,8 @@ import {
   listingSchema,
   type ListingInput,
   agentProtocols,
+  isPackaged,
+  fileLabel,
 } from '@/lib/listing';
 import { kindByValue } from '@/lib/categories';
 import { api } from '@/lib/client-api';
@@ -886,6 +888,9 @@ export default function SubmissionForm({
                           ['client', 'Client'],
                           ['product', 'AI agent'],
                           ['skill', 'Skill'],
+                          ['plugin', 'Plugin'],
+                          ['rules', 'Rules'],
+                          ['eval', 'Eval'],
                         ] as const
                       ).map(([value, label]) => (
                         <button
@@ -1059,19 +1064,23 @@ export default function SubmissionForm({
                       )}
                     </>
                   )}
-                  {listing.kind === 'skill' && (
+                  {isPackaged(listing.kind) && (
                     <>
-                      {textField('skillFile', 'SKILL.md URL', {
-                        full: true,
-                        code: true,
-                        placeholder:
-                          'https://github.com/owner/repo/blob/main/skills/name/SKILL.md',
-                        hint: 'The skill’s SKILL.md file. Required unless the repository is given. List the agents it is written for under Supported platforms.',
-                      })}
+                      {textField(
+                        'fileUrl',
+                        (fileLabel[listing.kind] ?? 'Main file') + ' URL',
+                        {
+                          full: true,
+                          code: true,
+                          placeholder:
+                            'https://github.com/owner/repo/blob/main/…',
+                          hint: 'The main file. Required unless the repository is given. List the agents or hosts it is written for under Supported platforms.',
+                        },
+                      )}
                       {textField('allowedTools', 'Pre-approved tools', {
                         code: true,
                         placeholder: 'Bash(git:*) Read',
-                        hint: 'Optional. The allowed-tools value from the SKILL.md frontmatter.',
+                        hint: 'Optional, for skills and plugins: the allowed-tools value from the manifest.',
                       })}
                     </>
                   )}

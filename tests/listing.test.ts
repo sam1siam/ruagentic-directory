@@ -226,20 +226,35 @@ await test('a skill needs its SKILL.md file or a repository', () => {
     kind: 'skill',
     repository: '',
     endpoint: '',
-    skillFile: 'https://github.com/example/project/blob/main/SKILL.md',
+    fileUrl: 'https://github.com/example/project/blob/main/SKILL.md',
     allowedTools: 'Bash(git:*) Read',
   };
   assert.equal(listingSchema.safeParse(skill).success, true);
   assert.equal(
-    listingSchema.safeParse({ ...skill, skillFile: '' }).success,
+    listingSchema.safeParse({ ...skill, fileUrl: '' }).success,
     false,
   );
   assert.equal(
     listingSchema.safeParse({
       ...skill,
-      skillFile: '',
+      fileUrl: '',
       repository: 'https://github.com/example/project',
     }).success,
     true,
   );
+});
+
+await test('plugins, rules files and evals follow the same main-file rule', () => {
+  for (const kind of ['plugin', 'rules', 'eval']) {
+    const packaged = { ...listing, kind, repository: '', endpoint: '' };
+    assert.equal(listingSchema.safeParse(packaged).success, false, kind);
+    assert.equal(
+      listingSchema.safeParse({
+        ...packaged,
+        fileUrl: 'https://example.com/main-file',
+      }).success,
+      true,
+      kind,
+    );
+  }
 });

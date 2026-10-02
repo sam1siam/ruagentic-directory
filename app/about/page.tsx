@@ -2,7 +2,7 @@ import Link from 'next/link';
 export const metadata = {
   title: 'About',
   description:
-    'The official Agentic Protocol directory for MCP servers, clients, AI agents and skills, and how its listings are sourced and checked.',
+    'The official Agentic Protocol directory for MCP servers, clients, AI agents, skills, plugins, rules and evals, and how its listings are sourced and checked.',
   alternates: { canonical: '/about' },
 };
 export default function Page() {
@@ -11,9 +11,9 @@ export default function Page() {
       <h1>Find the right connection for your agents.</h1>
       <p>
         RUAGENTIC is the official Agentic Protocol directory for agentic AI MCP
-        servers and tools. Discover servers, clients, AI agents, and skills by
-        what they do, compare their published capabilities, and find the
-        documentation you need to get started.
+        servers and tools. Discover servers, clients, AI agents, skills,
+        plugins, rules, and evals by what they do, compare their published
+        capabilities, and find the documentation you need to get started.
       </p>
       <h2>Two sites, one Agentic Protocol project</h2>
       <p>

@@ -196,7 +196,7 @@ export function listingFromCandidate(
     readmeUrl: '',
     agentCard: '',
     agentProtocol: '',
-    skillFile: '',
+    fileUrl: '',
     allowedTools: '',
   };
   const slug = uniqueSlug(item, taken);
