@@ -15,8 +15,18 @@ export async function GET(request: Request) {
         note: 'Apply supabase/migrations/202610010001_listing_metrics.sql',
       };
     const limit = process.env.GITHUB_TOKEN ? 300 : 50;
-    const summary = await refreshMetrics(limit, Date.now() + 280_000);
-    console.info('metrics_run_summary', JSON.stringify(summary));
-    return summary;
+    try {
+      const summary = await refreshMetrics(limit, Date.now() + 280_000);
+      console.info('metrics_run_summary', JSON.stringify(summary));
+      return summary;
+    } catch (error) {
+      // The message names the failing step (read, GitHub, save); it never
+      // carries credentials.
+      console.error(
+        'metrics_run_failed',
+        error instanceof Error ? error.message.slice(0, 200) : 'unknown',
+      );
+      throw error;
+    }
   });
 }
