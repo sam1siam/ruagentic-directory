@@ -4315,13 +4315,46 @@ legend {
 .leaderboard-section {
   margin-top: 2.5rem;
 }
-.leaderboard-method {
-  max-width: 70ch;
+.leaderboard-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 8px 0 20px;
+}
+.leaderboard-bar p {
+  margin: 0;
+}
+.leaderboard-updated {
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+.leaderboard-table {
+  font-size: 16px;
+}
+.leaderboard-table thead th {
+  font-size: 15px;
+}
+.leaderboard-table td {
+  padding: 16px 18px;
+  line-height: 1.5;
+}
+.leaderboard-table td a {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+.leaderboard-table td a:hover {
+  color: var(--cyan);
 }
 .leaderboard-table td small {
   display: block;
-  max-width: 48ch;
-  opacity: 0.75;
+  max-width: 52ch;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--dim);
 }
 .leaderboard-table .verified-mark {
   color: var(--accent, #4ade80);

@@ -73,19 +73,14 @@ export function LeaderboardTable({ items }: { items: RankedListing[] }) {
     </div>
   );
 }
-/** How the ranking works, with the collection date. Shown on every board. */
+/** The ranking signal on the left and when it was last updated on the right. */
 export function LeaderboardMethod({ collected }: { collected: string | null }) {
   return (
-    <p className="muted leaderboard-method">
-      Ranked by public GitHub stars
-      {collected ? `, collected ${day(collected)}` : ''}. Stars measure
-      attention on GitHub, not quality or safety. Stars belong to a repository,
-      so one row stands for every listing that links the same repository.
-      Listings without a public GitHub repository are not ranked, and
-      sponsorship never changes a rank.
-      {!collected
-        ? ' The first collection has not run yet; check back within the hour.'
-        : ''}
-    </p>
+    <div className="leaderboard-bar">
+      <p className="muted">Ranked by public GitHub stars.</p>
+      <span className="status-pill leaderboard-updated">
+        {collected ? `Updated ${day(collected)}` : 'First update pending'}
+      </span>
+    </div>
   );
 }
