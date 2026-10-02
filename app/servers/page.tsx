@@ -1,6 +1,6 @@
 import KindPage, { kindMetadata } from '@/components/kind-page';
 export const dynamic = 'force-dynamic';
-export const metadata = kindMetadata('servers');
+export const generateMetadata = () => kindMetadata('servers');
 export default function Page(props: {
   searchParams: Promise<{ q?: string; category?: string }>;
 }) {

@@ -7,11 +7,14 @@ import { filtersFromParams, toBrowserListing } from '@/lib/browse';
 import { browserMetrics } from '@/lib/server/metrics';
 import JsonLd from '@/components/json-ld';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo';
-export function kindMetadata(slug: string) {
+/** The count goes in the title: it is real, it grows daily, and it is what
+ *  people and answer engines compare directories on. */
+export async function kindMetadata(slug: string) {
   const page = kindBySlug(slug)!;
+  const count = (await catalog()).filter((i) => i.kind === page.kind).length;
   return {
-    title: page.name,
-    description: page.description,
+    title: `${page.name}: ${count}+ listed, updated daily`,
+    description: `${count} ${page.name.toLowerCase()} on RUAGENTIC, updated daily. ${page.description} Filter by launch date, stars, pricing and more.`,
     alternates: { canonical: '/' + slug },
   };
 }

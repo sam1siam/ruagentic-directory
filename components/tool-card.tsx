@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { kindByValue } from '@/lib/categories';
+import { compact } from '@/lib/leaderboard';
 import styles from './tool-card.module.css';
 
 type ToolCardProps = {
@@ -9,6 +10,8 @@ type ToolCardProps = {
   category: string;
   source?: string;
   href?: string;
+  /** Public GitHub stars from the metrics cron; omitted when unknown. */
+  stars?: number | null;
 };
 
 /** Shared by discovery and the submission preview; styles are isolated from legacy cards. */
@@ -19,6 +22,7 @@ export default function ToolCard({
   category,
   source,
   href,
+  stars,
 }: ToolCardProps) {
   const sourceLabel =
     source === 'Official MCP Registry'
@@ -45,6 +49,14 @@ export default function ToolCard({
       <div className={styles.footer}>
         <span title={source}>{sourceLabel || 'YOUR PROJECT'}</span>
         <span title={category}>{category}</span>
+        {typeof stars === 'number' && (
+          <span
+            className={styles.stars}
+            title={stars.toLocaleString('en-US') + ' GitHub stars'}
+          >
+            ★ {compact(stars)}
+          </span>
+        )}
         <span className={styles.action}>{href ? 'VIEW' : 'PREVIEW'}</span>
       </div>
     </>

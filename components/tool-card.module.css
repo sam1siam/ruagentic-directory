@@ -108,6 +108,10 @@
 .footer > span:nth-child(2) {
   text-align: center;
 }
+.footer > .stars {
+  color: var(--kind);
+  flex-shrink: 0;
+}
 .footer > .action {
   color: #5ce1e6;
   flex-shrink: 0;

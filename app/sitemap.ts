@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       '/rules',
       '/evals',
       '/leaderboards',
+      '/new',
       ...kinds.map((k) => '/leaderboards/' + k.slug),
       '/categories',
       ...categories.map((c) => '/categories/' + c.slug),

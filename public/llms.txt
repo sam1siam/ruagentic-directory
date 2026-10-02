@@ -7,6 +7,7 @@
 - [Public API](https://ruagentic.com/developers): Read-only listing search and project details.
 - [MCP servers](https://ruagentic.com/servers), [Clients](https://ruagentic.com/clients), [AI agents](https://ruagentic.com/ai-agents), [Skills](https://ruagentic.com/skills), [Plugins](https://ruagentic.com/plugins), [Rules](https://ruagentic.com/rules), [Evals](https://ruagentic.com/evals): Browse by type with sidebar filters.
 - [Categories](https://ruagentic.com/categories): Twenty categories, from developer tools and AI models to security, e-commerce and travel, each with its own page.
+- [New this week](https://ruagentic.com/new): Listings added in the last 7 days and repositories launched in the last 30, by type.
 - [Leaderboards](https://ruagentic.com/leaderboards): Listings of each type ranked by public GitHub stars, with the collection date shown.
 - [Agentic Protocol JSON](https://ruagentic.com/agentic.json): Machine-readable site profile.
 - [Agentic Protocol TXT](https://ruagentic.com/agentic.txt): Text index of the profile.

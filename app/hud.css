@@ -4546,3 +4546,22 @@ legend {
   line-height: 1.5;
   color: var(--faint);
 }
+
+.new-group {
+  margin: 20px 0 32px;
+}
+.new-group h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+.new-group h3 small {
+  color: var(--faint);
+  font-size: 13px;
+}
+.new-group h3 .text-link {
+  margin-left: auto;
+  font-size: 13px;
+}

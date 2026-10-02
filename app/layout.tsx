@@ -25,20 +25,24 @@ const mono = JetBrains_Mono({
   weight: ['400', '500', '600'],
   display: 'swap',
 });
-export const metadata: Metadata = {
-  metadataBase: new URL('https://ruagentic.com'),
-  applicationName: 'RUAGENTIC',
-  title: {
-    default: 'RUAGENTIC — MCP servers, clients, AI agents, skills & more',
-    template: '%s · RUAGENTIC',
-  },
-  description:
-    'Discover MCP servers, clients, AI agents, skills, plugins, rules, and evals. Compare capabilities, find connection details, and submit your project with a paid or verified free listing.',
-  // Titles, descriptions and the generated images are filled in per page;
-  // the social image comes from the opengraph-image files.
-  openGraph: { type: 'website', siteName: 'RUAGENTIC', locale: 'en_US' },
-  twitter: { card: 'summary_large_image' },
-};
+/** Real counts in the default title and description; the catalog grows
+ *  daily, so the numbers are read at request time. */
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await directoryStats();
+  return {
+    metadataBase: new URL('https://ruagentic.com'),
+    applicationName: 'RUAGENTIC',
+    title: {
+      default: `RUAGENTIC — ${s.total}+ MCP servers, AI agents, skills & plugins, updated daily`,
+      template: '%s · RUAGENTIC',
+    },
+    description: `${s.servers} MCP servers, ${s.clients} clients, ${s.products} AI agents, ${s.skills} skills, ${s.plugins} plugins, ${s.rules} rules files and ${s.evals} evals, updated daily. Compare capabilities, find connection details, and list your project free with verified Agentic Protocol files.`,
+    // Titles, descriptions and the generated images are filled in per page;
+    // the social image comes from the opengraph-image files.
+    openGraph: { type: 'website', siteName: 'RUAGENTIC', locale: 'en_US' },
+    twitter: { card: 'summary_large_image' },
+  };
+}
 export const viewport: Viewport = { themeColor: '#05080c' };
 export default async function RootLayout({
   children,

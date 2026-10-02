@@ -171,6 +171,7 @@ export default function DirectoryBrowser({
           summary={item.summary}
           source={item.source}
           category={item.category}
+          stars={item.stars}
           href={'/tools/' + item.slug}
         />
       ))}

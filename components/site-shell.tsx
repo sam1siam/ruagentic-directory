@@ -29,6 +29,8 @@ const navigation = [
 /** The type pages and categories live under one "Browse" menu so the bar
  *  keeps its width as kinds are added. */
 const browseLinks = [
+  ['New this week', '/new'],
+  ['Fastest since launch', '/leaderboards?by=pace'],
   ['MCP servers', '/servers'],
   ['Clients', '/clients'],
   ['AI agents', '/ai-agents'],
@@ -50,6 +52,7 @@ const actions = [
   ['All rules & instructions', '/rules', 'BROWSE'],
   ['All evals & benchmarks', '/evals', 'BROWSE'],
   ['Leaderboards by type', '/leaderboards', 'RANKED'],
+  ['New this week', '/new', 'FRESH'],
   ['Browse categories', '/categories', 'BROWSE'],
   ['Compare tools', '/compare', 'SIDE BY SIDE'],
   ['Your dashboard', '/dashboard', 'ACCOUNT'],
