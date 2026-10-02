@@ -52,6 +52,11 @@ export function LeaderboardTable({ items }: { items: RankedListing[] }) {
                 )}
                 <br />
                 <small>{item.summary}</small>
+                {item.siblings > 0 && (
+                  <small className="muted">
+                    +{item.siblings} more from this repository
+                  </small>
+                )}
               </td>
               <td>{item.category}</td>
               <td title={item.stars.toLocaleString('en-US')}>
@@ -74,8 +79,10 @@ export function LeaderboardMethod({ collected }: { collected: string | null }) {
     <p className="muted leaderboard-method">
       Ranked by public GitHub stars
       {collected ? `, collected ${day(collected)}` : ''}. Stars measure
-      attention on GitHub, not quality or safety. Listings without a public
-      GitHub repository are not ranked, and sponsorship never changes a rank.
+      attention on GitHub, not quality or safety. Stars belong to a repository,
+      so one row stands for every listing that links the same repository.
+      Listings without a public GitHub repository are not ranked, and
+      sponsorship never changes a rank.
       {!collected
         ? ' The first collection has not run yet; check back within the hour.'
         : ''}

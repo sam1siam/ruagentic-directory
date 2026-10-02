@@ -102,3 +102,20 @@ void test('Counts are shown compactly', () => {
   assert.equal(compact(12000), '12k');
   assert.equal(compact(2_300_000), '2.3M');
 });
+
+void test('Listings that share a repository collapse into one row', () => {
+  const listings = [
+    listing('ecs', 'server', 'https://github.com/aws/mcp'),
+    listing('eks', 'server', 'https://github.com/aws/mcp'),
+    listing('solo', 'server', 'https://github.com/x/solo'),
+  ];
+  const metrics = [metric('ecs', 100), metric('eks', 100), metric('solo', 50)];
+  const rows = rankListings(listings, metrics, 'server');
+  assert.deepEqual(
+    rows.map((r) => [r.rank, r.slug, r.siblings]),
+    [
+      [1, 'ecs', 1],
+      [2, 'solo', 0],
+    ],
+  );
+});
