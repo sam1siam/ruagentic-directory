@@ -1,0 +1,135 @@
+import 'server-only';
+import { unstable_cache, revalidateTag } from 'next/cache';
+import { adminClient, configured } from '../supabase/server';
+import { catalog } from './catalog';
+import { apiJson } from '../discovery/http';
+import { object } from '../discovery/contracts';
+import { providerHold } from '../discovery/http';
+import {
+  rankListings,
+  refreshOrder,
+  type ListingMetrics,
+  type RankedListing,
+} from '../leaderboard';
+
+const tag = 'listing-metrics';
+const columns =
+  'slug,repository,stars,forks,watchers,open_issues,pushed_at,fetched_at,error';
+
+/** Every collected row. Missing table (migration not applied) reads as none. */
+async function readMetrics(_project: string): Promise<ListingMetrics[]> {
+  const rows: ListingMetrics[] = [];
+  for (let offset = 0; offset < 20000; offset += 1000) {
+    const { data, error } = await adminClient()
+      .from('listing_metrics')
+      .select(columns)
+      .order('slug')
+      .range(offset, offset + 999);
+    if (error) {
+      if (error.code === '42P01') return [];
+      throw new Error('Listing metrics could not be read.');
+    }
+    rows.push(...((data ?? []) as ListingMetrics[]));
+    if (!data || data.length < 1000) break;
+  }
+  return rows;
+}
+const cachedMetrics = unstable_cache(readMetrics, ['listing-metrics-v1'], {
+  tags: [tag],
+  revalidate: 600,
+});
+export async function listingMetrics(): Promise<ListingMetrics[]> {
+  if (!configured()) return [];
+  return cachedMetrics(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '');
+}
+export async function metricsReady() {
+  if (!configured()) return false;
+  const { error } = await adminClient()
+    .from('listing_metrics')
+    .select('slug')
+    .limit(1);
+  return !error;
+}
+/** When the newest row was collected, or null before the first run. */
+export async function metricsCollectedAt() {
+  const rows = await listingMetrics();
+  return (
+    rows
+      .map((r) => r.fetched_at)
+      .sort()
+      .at(-1) ?? null
+  );
+}
+export async function leaderboard(
+  kind?: string,
+  limit = 100,
+): Promise<RankedListing[]> {
+  const [items, metrics] = await Promise.all([catalog(), listingMetrics()]);
+  return rankListings(items, metrics, kind, limit);
+}
+/** Refreshes the oldest metrics first through GitHub's repository API,
+ *  paced by the shared provider pacer. Stops on a rate limit and leaves
+ *  the rest for the next hour. Reads public data only. */
+export async function refreshMetrics(limit: number, deadline: number) {
+  const [items, metrics] = await Promise.all([catalog(), listingMetrics()]);
+  const queue = refreshOrder(items, metrics, limit);
+  const summary = { candidates: queue.length, updated: 0, missing: 0, held: 0 };
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(process.env.GITHUB_TOKEN
+      ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+      : {}),
+  };
+  const now = () => new Date().toISOString();
+  const rows: Partial<ListingMetrics>[] = [];
+  for (const item of queue) {
+    if (Date.now() > deadline - 15_000) break;
+    try {
+      const repo = object(
+        await apiJson(
+          'https://api.github.com/repos/' + item.repo,
+          { headers },
+          deadline,
+        ),
+      );
+      rows.push({
+        slug: item.slug,
+        repository: item.repository,
+        stars: Number(repo.stargazers_count) || 0,
+        forks: Number(repo.forks_count) || 0,
+        watchers: Number(repo.subscribers_count) || 0,
+        open_issues: Number(repo.open_issues_count) || 0,
+        pushed_at: typeof repo.pushed_at === 'string' ? repo.pushed_at : null,
+        fetched_at: now(),
+        error: null,
+      });
+      summary.updated++;
+    } catch (error) {
+      if (providerHold(error)) {
+        summary.held = queue.length - summary.updated - summary.missing;
+        break;
+      }
+      // A repository that is gone or private is recorded so it is not
+      // retried every hour; it never ranks.
+      rows.push({
+        slug: item.slug,
+        repository: item.repository,
+        fetched_at: now(),
+        error: (error instanceof Error ? error.message : 'unavailable').slice(
+          0,
+          160,
+        ),
+      });
+      summary.missing++;
+    }
+  }
+  if (rows.length) {
+    const { error } = await adminClient()
+      .from('listing_metrics')
+      .upsert(rows, { onConflict: 'slug' });
+    if (error) throw new Error('Listing metrics could not be saved.');
+    revalidateTag(tag, { expire: 0 });
+  }
+  return summary;
+}
