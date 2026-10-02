@@ -52,6 +52,36 @@ void test('Listing kind comes from the source or the project’s own words, neve
     listingKind({ ...candidate, kind: undefined, description: 'A photo app' }),
     undefined,
   );
+  for (const kind of ['skill', 'plugin', 'rules', 'eval'] as const)
+    assert.equal(listingKind({ ...candidate, kind }), kind);
+});
+void test('A skill found on GitHub is listed from its repository', () => {
+  const row = listingFromCandidate(
+    {
+      ...candidate,
+      id: 'maker/pdf-skill',
+      name: 'pdf-skill',
+      kind: 'skill',
+      homepage: undefined,
+      repository: 'https://github.com/maker/pdf-skill',
+      sourceUrl: 'https://github.com/maker/pdf-skill',
+      description: 'Fill and merge PDF forms.',
+    },
+    now,
+    new Set(),
+  );
+  assert.equal(row.data.kind, 'skill');
+  assert.equal(row.data.homepage, 'https://github.com/maker/pdf-skill');
+  assert.deepEqual(row.data.tags, ['skill']);
+  assert.equal(row.data.transport, 'not-applicable');
+  assert.equal(
+    listingFromCandidate(
+      { ...candidate, kind: 'eval', description: 'Tiny' },
+      now,
+      new Set(),
+    ).data.summary,
+    'Acme Tool is an eval first seen on GitHub.',
+  );
 });
 void test('Category suggestions and slugs are deterministic', () => {
   assert.equal(

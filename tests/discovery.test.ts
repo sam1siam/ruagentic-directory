@@ -876,21 +876,30 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
             repo('old/one', { created_at: '2025-01-01T00:00:00Z' }),
           ],
         }
-      : {
-          total_count: 3,
-          incomplete_results: false,
-          items: [
-            repo('acme/tool'),
-            repo('fork/copy', { fork: true }),
-            repo('new/client', {
-              topics: ['mcp-client'],
-              homepage: 'https://client.example',
-            }),
-            // No website: nothing to contact, so it never enters the queue.
-            repo('hobby/server'),
-            repo('pages/only', { homepage: 'https://pages.github.io/x' }),
-          ],
-        };
+      : topic === 'topic:agent-skills'
+        ? {
+            total_count: 1,
+            incomplete_results: false,
+            // A skill lives in its repository: no website needed.
+            items: [repo('maker/pdf-skill')],
+          }
+        : topic !== 'topic:model-context-protocol'
+          ? { total_count: 0, incomplete_results: false, items: [] }
+          : {
+              total_count: 3,
+              incomplete_results: false,
+              items: [
+                repo('acme/tool'),
+                repo('fork/copy', { fork: true }),
+                repo('new/client', {
+                  topics: ['mcp-client'],
+                  homepage: 'https://client.example',
+                }),
+                // No website: nothing to contact, so it never enters the queue.
+                repo('hobby/server'),
+                repo('pages/only', { homepage: 'https://pages.github.io/x' }),
+              ],
+            };
   };
   const snap = await githubSnapshot(
     Date.now() + 60_000,
@@ -899,9 +908,14 @@ void test('GitHub topic search yields new, non-fork repositories once each', asy
     api,
   );
   assert.equal(snap.complete, true);
-  assert.deepEqual(
-    snap.items.map((i) => i.id),
-    ['acme/tool', 'new/client'],
+  assert.deepEqual(snap.items.map((i) => i.id).sort(), [
+    'acme/tool',
+    'maker/pdf-skill',
+    'new/client',
+  ]);
+  assert.equal(
+    snap.items.find((i) => i.id === 'maker/pdf-skill')?.kind,
+    'skill',
   );
   assert.equal(snap.items[0]!.kind, 'mcp-server');
   assert.equal(snap.items[0]!.homepage, 'https://acme.dev');

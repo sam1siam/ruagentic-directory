@@ -4,6 +4,7 @@ import {
   companyDomain,
   CUTOFF,
   dayKey,
+  packagedCandidate,
   qualify,
   SOURCES,
   type Candidate,
@@ -255,7 +256,13 @@ export async function runDiscovery(
           item = await resolveHomepage(item, deadline);
           const decision = qualify(item),
             domain = companyDomain(item.homepage);
-          if (!decision.eligible || !domain || duplicate(item, known)) {
+          // Servers, clients and agents need their own website; a skill,
+          // plugin, rules file or eval is listed from its repository.
+          if (
+            !decision.eligible ||
+            (!domain && !packagedCandidate(item)) ||
+            duplicate(item, known)
+          ) {
             await store.update(row.id, {
               status: 'skipped',
               reason: !decision.eligible

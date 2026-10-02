@@ -4,6 +4,7 @@ import { CUTOFF, digest } from '../lib/discovery/policy.ts';
 import {
   fetchSnapshot,
   githubSnapshot,
+  GITHUB_TOPICS,
   parseGithubSearch,
 } from '../lib/discovery/sources.ts';
 import { DiscoveryStore } from '../lib/discovery/store.ts';
@@ -53,7 +54,7 @@ void test('GitHub discovery accepts only explicitly public repository metadata',
     },
   );
   assert.equal(snapshot.complete, true);
-  assert.equal(queries.length, 2);
+  assert.equal(queries.length, Object.keys(GITHUB_TOPICS).length);
   assert.deepEqual(
     snapshot.items.map((item) => item.id),
     ['example/public', 'example/public-without-visibility'],

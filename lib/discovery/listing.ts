@@ -3,12 +3,34 @@ import { cleanUrl, type ListingInput, type PublicListing } from '../listing.ts';
 import { digest, type Candidate } from './policy.ts';
 import { sourceName } from './sources.ts';
 
-export type ListingKind = 'server' | 'client' | 'product';
+export type ListingKind =
+  | 'server'
+  | 'client'
+  | 'product'
+  | 'skill'
+  | 'plugin'
+  | 'rules'
+  | 'eval';
 const singular: Record<ListingKind, string> = {
-  server: 'MCP server',
-  client: 'MCP client',
-  product: 'AI agent',
+  server: 'an MCP server',
+  client: 'an MCP client',
+  product: 'an AI agent',
+  skill: 'a skill',
+  plugin: 'a plugin',
+  rules: 'a rules file',
+  eval: 'an eval',
 };
+const tagsFor: Record<ListingKind, string[]> = {
+  server: ['mcp'],
+  client: ['mcp'],
+  product: ['ai-agent'],
+  skill: ['skill'],
+  plugin: ['plugin'],
+  rules: ['rules'],
+  eval: ['eval', 'benchmark'],
+};
+const packaged = (kind: ListingKind) =>
+  kind === 'skill' || kind === 'plugin' || kind === 'rules' || kind === 'eval';
 const clean = (s: string) =>
   s
     .replace(/<[^>]*>/g, ' ')
@@ -22,6 +44,7 @@ export function listingKind(item: Candidate): ListingKind | undefined {
   if (item.kind === 'mcp-server') return 'server';
   if (item.kind === 'mcp-client') return 'client';
   if (item.kind === 'ai-agent') return 'product';
+  if (item.kind) return item.kind;
   const text = `${item.name} ${item.description}`;
   if (/\bMCP clients?\b/i.test(text)) return 'client';
   if (/\bMCP\b|model context protocol/i.test(text)) return 'server';
@@ -149,10 +172,7 @@ function summaryOf(
     summary = summary.replace(/[\s,;:(-]+$/, '') + '…';
   }
   if (summary.length >= 20) return summary;
-  return `${name} is an ${singular[kind]} first seen on ${source}.`.slice(
-    0,
-    240,
-  );
+  return `${name} is ${singular[kind]} first seen on ${source}.`.slice(0, 240);
 }
 /** A directory listing from a qualified candidate. Every field is the
  *  source's data or a plain statement of where it came from; the kind and
@@ -179,12 +199,14 @@ export function listingFromCandidate(
     name,
     summary: summaryOf(text, name, kind, source),
     description: text ? `${text}\n\n${provenance}` : provenance,
-    homepage: safeUrl(item.homepage),
+    homepage:
+      safeUrl(item.homepage) ||
+      (packaged(kind) ? safeUrl(item.repository) : ''),
     repository: safeUrl(item.repository),
     documentation: '',
     endpoint: safeUrl(item.endpoint),
     category: suggestCategory(`${name} ${text}`) as ListingInput['category'],
-    tags: kind === 'product' ? ['ai-agent'] : ['mcp'],
+    tags: tagsFor[kind],
     pricing: 'unknown',
     transport: kind === 'server' ? 'unknown' : 'not-applicable',
     authentication: kind === 'server' ? 'unknown' : 'not-applicable',

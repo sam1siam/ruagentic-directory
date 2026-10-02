@@ -4,6 +4,7 @@ import {
   CUTOFF,
   companyDomain,
   digest,
+  packagedCandidate,
   publicUrl,
   type Candidate,
   type Snapshot,
@@ -608,39 +609,55 @@ export async function hackerNewsSnapshot(
       }
     : { items, complete: true };
 }
-const GITHUB_TOPICS = ['mcp-server', 'model-context-protocol'] as const;
+/** GitHub topics searched daily and the kind each topic establishes. A
+ *  topic without a kind relies on the repository's own words and topics. */
+export const GITHUB_TOPICS: Record<string, Candidate['kind']> = {
+  'mcp-server': 'mcp-server',
+  'model-context-protocol': undefined,
+  'agent-skills': 'skill',
+  'claude-skills': 'skill',
+  'claude-code-plugin': 'plugin',
+  'claude-code-plugins': 'plugin',
+  cursorrules: 'rules',
+  'agents-md': 'rules',
+  'agent-benchmark': 'eval',
+  'llm-benchmark': 'eval',
+};
 /** New public, non-fork, non-archived repositories from one search results page,
  *  dated by their creation time. */
 export function parseGithubSearch(value: unknown, topic: string): Candidate[] {
-  return githubSearch
-    .parse(value)
-    .items.filter(
-      (repo) =>
-        repo.private === false &&
-        (repo.visibility === undefined || repo.visibility === 'public') &&
-        !repo.fork &&
-        !repo.archived &&
-        Date.parse(repo.created_at) >= Date.parse(CUTOFF) &&
-        // The search result already carries the repository's homepage field;
-        // without a company website there is nothing to contact, so the
-        // repository never takes a place in the queue.
-        Boolean(companyDomain(repo.homepage)),
-    )
-    .map((repo) => ({
-      source: 'github',
-      id: repo.full_name.toLowerCase(),
-      name: bounded(repo.name, 200),
-      description: bounded(repo.description ?? ''),
-      kind:
-        topic === 'mcp-server' || repo.topics?.includes('mcp-server')
-          ? 'mcp-server'
-          : undefined,
-      sourceUrl: repo.html_url,
-      repository: optional(repo.html_url),
-      homepage: optional(repo.homepage),
-      publishedAt: repo.created_at,
-      dateEvidence: 'GitHub repository creation time',
-    }));
+  return (
+    githubSearch
+      .parse(value)
+      .items.filter(
+        (repo) =>
+          repo.private === false &&
+          (repo.visibility === undefined || repo.visibility === 'public') &&
+          !repo.fork &&
+          !repo.archived &&
+          Date.parse(repo.created_at) >= Date.parse(CUTOFF),
+      )
+      .map(
+        (repo): Candidate => ({
+          source: 'github',
+          id: repo.full_name.toLowerCase(),
+          name: bounded(repo.name, 200),
+          description: bounded(repo.description ?? ''),
+          kind:
+            GITHUB_TOPICS[topic] ??
+            (repo.topics?.includes('mcp-server') ? 'mcp-server' : undefined),
+          sourceUrl: repo.html_url,
+          repository: optional(repo.html_url),
+          homepage: optional(repo.homepage),
+          publishedAt: repo.created_at,
+          dateEvidence: 'GitHub repository creation time',
+        }),
+      )
+      // A server, client or agent needs its own website (the search result
+      // already carries the repository's homepage field); a skill, plugin,
+      // rules file or eval lives in its repository.
+      .filter((item) => packagedCandidate(item) || companyDomain(item.homepage))
+  );
 }
 type GithubApi = (
   url: string,
@@ -667,7 +684,7 @@ export async function githubSnapshot(
       : {}),
   };
   try {
-    for (const topic of GITHUB_TOPICS) {
+    for (const topic of Object.keys(GITHUB_TOPICS)) {
       for (let page = 1; page <= 10; page++) {
         const u = new URL(SOURCE_URLS.github);
         u.searchParams.set(

@@ -25,7 +25,14 @@ export type Candidate = {
   homepage?: string;
   repository?: string;
   endpoint?: string;
-  kind?: 'mcp-server' | 'mcp-client' | 'ai-agent';
+  kind?:
+    | 'mcp-server'
+    | 'mcp-client'
+    | 'ai-agent'
+    | 'skill'
+    | 'plugin'
+    | 'rules'
+    | 'eval';
   publishedAt?: string;
   dateEvidence?: string;
   needsDetail?: boolean;
@@ -106,9 +113,17 @@ export function companyDomain(value: unknown): string | undefined {
  *  be enriched right away (0); one that only names a repository, package,
  *  registry entry or endpoint may still resolve to a website (1); a GitHub
  *  search result without a website never will, so it goes last (2). */
+/** Kinds that are a published package or file: their repository is their
+ *  home, so no separate website is needed to list them. */
+export const packagedCandidate = (item: Pick<Candidate, 'kind'>) =>
+  item.kind === 'skill' ||
+  item.kind === 'plugin' ||
+  item.kind === 'rules' ||
+  item.kind === 'eval';
 export function candidateRank(item: Candidate | undefined): 0 | 1 | 2 {
   if (!item) return 2;
   if (companyDomain(item.homepage)) return 0;
+  if (packagedCandidate(item) && item.repository) return 1;
   if (item.source === 'github') return 2;
   return item.repository || item.npmPackage || item.registryUrl || item.endpoint
     ? 1
