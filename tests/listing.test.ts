@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  withoutAutoNote,
   cleanUrl,
   emptyListing,
   listingSchema,
@@ -8,6 +9,7 @@ import {
   publicationEligible,
   safeNext,
   serviceIdentity,
+  type PublicListing,
 } from '../lib/listing.ts';
 
 await test('public listing URLs normalize HTTPS without retaining secrets or unsafe destinations', () => {
@@ -257,4 +259,27 @@ await test('plugins, rules files and evals follow the same main-file rule', () =
       kind,
     );
   }
+});
+
+await test('The old automatic-listing note is dropped when a listing is read', () => {
+  const note =
+    "\n\nFound on Official MCP Registry on 2026-09-10. This listing was created automatically from public source data and has not been reviewed by the project's owner; claim it to correct or complete the details.";
+  const item = {
+    ...listing,
+    description: 'A real description from the source.' + note,
+    slug: 'x',
+    source: 'Official MCP Registry',
+    sourceUrl: 'https://example.com',
+    observedAt: '2026-10-02',
+    publishedAt: '',
+  } as PublicListing;
+  assert.equal(
+    withoutAutoNote(item).description,
+    'A real description from the source.',
+  );
+  assert.equal(
+    withoutAutoNote({ ...item, description: note.trim() }).description,
+    item.summary,
+  );
+  assert.equal(withoutAutoNote(listing as PublicListing), listing);
 });

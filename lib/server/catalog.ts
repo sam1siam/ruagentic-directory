@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import seed from '@/data/catalog.json';
-import type { PublicListing } from '../listing';
+import { withoutAutoNote, type PublicListing } from '../listing';
 import { configured, adminClient } from '../supabase/server';
 import { catalogCacheSeconds, catalogCacheTag } from './catalog-cache';
 
@@ -89,7 +89,7 @@ async function loadCatalog(fresh: boolean): Promise<PublicListing[]> {
   }
   const known = new Set(data.map((row) => row.slug));
   return [
-    ...data.flatMap((row) => (row.data ? [row.data] : [])),
+    ...data.flatMap((row) => (row.data ? [withoutAutoNote(row.data)] : [])),
     ...bundled.filter((item) => !known.has(item.slug)),
   ].filter((item) => !hidden.has(item.slug));
 }

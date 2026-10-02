@@ -226,6 +226,16 @@ export function listingInputFrom(item: PublicListing): ListingInput {
     input.fileUrl = source.skillFile;
   return listingSchema.parse(input);
 }
+/** Early auto-discovered listings ended their description with a note
+ *  about being created automatically; the page offers a Claim button now,
+ *  so the note is dropped wherever a listing is read. */
+const AUTO_NOTE =
+  /\s*Found on [^\n]*? on \d{4}-\d{2}-\d{2}\. This listing was created automatically from public source data and has not been reviewed by the project's owner; claim it to correct or complete the details\.\s*$/;
+export function withoutAutoNote(item: PublicListing): PublicListing {
+  if (!AUTO_NOTE.test(item.description)) return item;
+  const description = item.description.replace(AUTO_NOTE, '').trim();
+  return { ...item, description: description || item.summary };
+}
 export function serviceIdentity(input: Pick<ListingInput, 'homepage'>) {
   const u = new URL(cleanUrl(input.homepage));
   return u.hostname === 'github.com'
