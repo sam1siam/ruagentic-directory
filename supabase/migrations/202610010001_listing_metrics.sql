@@ -14,3 +14,5 @@ create table if not exists public.listing_metrics (
 create index if not exists listing_metrics_fetched on public.listing_metrics(fetched_at);
 create index if not exists listing_metrics_stars on public.listing_metrics(stars desc);
 alter table public.listing_metrics enable row level security;
+revoke all on public.listing_metrics from anon, authenticated;
+grant all on public.listing_metrics to service_role;
