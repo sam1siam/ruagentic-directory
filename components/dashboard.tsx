@@ -20,6 +20,8 @@ type Row = {
   agenticCheckedAt?: string;
   /** Page views from the listing's beacon, when the table is in place. */
   views?: ViewTotals;
+  /** CLI installs (npx ruagentic add), when counted. */
+  installs?: { month: number; total: number };
   /** Public GitHub stars from the metrics cron, when collected. */
   stars?: number | null;
 };
@@ -94,6 +96,9 @@ export default function Dashboard({
                         {row.views
                           ? `${row.views.week.toLocaleString()} views this week · ${row.views.month.toLocaleString()} in 30 days · ${row.views.total.toLocaleString()} all time`
                           : 'Views start counting from today'}
+                        {row.installs?.total
+                          ? ` · ${row.installs.total.toLocaleString()} CLI install${row.installs.total === 1 ? '' : 's'} (${row.installs.month.toLocaleString()} in 30 days)`
+                          : ''}
                       </small>
                     )}
                 </div>

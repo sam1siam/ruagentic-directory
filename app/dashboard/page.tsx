@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import Dashboard from '@/components/dashboard';
-import { viewsFor } from '@/lib/server/views';
+import { installsFor, viewsFor } from '@/lib/server/views';
 import { browserMetrics } from '@/lib/server/metrics';
 import Link from 'next/link';
 import { configured, userClient, adminClient } from '@/lib/supabase/server';
@@ -57,8 +57,9 @@ export default async function Page() {
   const publishedSlugs = (submissions.data ?? [])
     .filter((s) => s.slug && s.state === 'published')
     .map((s) => s.slug as string);
-  const [views, metrics] = await Promise.all([
+  const [views, installs, metrics] = await Promise.all([
     viewsFor(publishedSlugs),
+    installsFor(publishedSlugs),
     browserMetrics(),
   ]);
   const checkedAt = new Map(
@@ -120,6 +121,7 @@ export default async function Page() {
           ),
           agenticCheckedAt: checkedAt.get(s.id) || undefined,
           views: s.slug ? views.get(s.slug) : undefined,
+          installs: s.slug ? installs.get(s.slug) : undefined,
           stars: s.slug ? (metrics.get(s.slug)?.stars ?? null) : null,
         }))}
         saved={(bookmarks.data ?? []).flatMap((r) =>

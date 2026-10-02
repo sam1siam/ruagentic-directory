@@ -92,11 +92,23 @@ export default function ConnectGuide({ item }: { item: PublicListing }) {
         ),
       });
     if (plan.snippets.length) {
+      // The one-command path appears once the npm package is published.
+      const snippets =
+        process.env.CLI_PUBLISHED === 'true'
+          ? [
+              {
+                label: 'One command, any client (npm)',
+                language: 'bash' as const,
+                code: `npx ruagentic add ${item.slug}`,
+              },
+              ...plan.snippets,
+            ]
+          : plan.snippets;
       questions.push({
         q: `How do I add ${item.name} to Claude Code, Cursor or Claude Desktop?`,
         a: (
           <div className="snippet-list">
-            {plan.snippets.map((s) => (
+            {snippets.map((s) => (
               <div className="snippet" key={s.label}>
                 <span className="label">{s.label}</span>
                 <pre>
