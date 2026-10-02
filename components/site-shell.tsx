@@ -177,6 +177,13 @@ export function SiteHeader({
                   key={href}
                   href={href}
                   aria-current={current(href) ? 'page' : undefined}
+                  // The sponsor bar and the header button already offer these;
+                  // mid-size screens drop them from the strip, the menu keeps them.
+                  className={
+                    href === '/advertise' || href === '/submit'
+                      ? 'nav-dup'
+                      : undefined
+                  }
                 >
                   {label}
                 </Link>

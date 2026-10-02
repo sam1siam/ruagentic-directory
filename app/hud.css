@@ -27,6 +27,8 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
+  /* Nothing may scroll the whole page sideways; wide tables scroll inside. */
+  overflow-x: clip;
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -1187,6 +1189,17 @@ select optgroup {
   margin-left: 16px;
   font-size: 13px;
   font-weight: 500;
+  /* The strip scrolls on its own instead of widening the page. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.site-nav::-webkit-scrollbar {
+  display: none;
+}
+.site-nav a {
+  flex: none;
 }
 .site-nav a {
   display: inline-flex;
@@ -1212,6 +1225,12 @@ select optgroup {
   align-items: center;
   gap: 14px;
   margin-left: auto;
+  flex: none;
+}
+@media (max-width: 1480px) {
+  .site-nav a.nav-dup {
+    display: none;
+  }
 }
 .header-search {
   display: inline-flex;
@@ -3771,7 +3790,12 @@ select optgroup {
     -webkit-backdrop-filter: blur(24px);
     gap: 2px;
   }
-  .site-nav.mobile-open a {
+  .site-nav.mobile-open {
+    overflow: visible;
+  }
+  .site-nav.mobile-open a,
+  .site-nav.mobile-open a.nav-dup {
+    display: flex;
     padding: 12px 14px;
     border-bottom: 0;
     border-left: 2px solid transparent;
