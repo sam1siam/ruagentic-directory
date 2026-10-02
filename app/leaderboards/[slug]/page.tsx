@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { kindBySlug, kinds } from '@/lib/categories';
 import { leaderboard, metricsCollectedAt } from '@/lib/server/metrics';
+import { parseRankBy } from '@/lib/leaderboard';
 import {
   LeaderboardMethod,
   LeaderboardTable,
@@ -10,7 +11,7 @@ import {
 import JsonLd from '@/components/json-ld';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo';
 import type { Metadata } from 'next';
-export const revalidate = 600;
+export const dynamic = 'force-dynamic';
 export const dynamicParams = false;
 export function generateStaticParams() {
   return kinds.map((k) => ({ slug: k.slug }));
@@ -24,20 +25,23 @@ export async function generateMetadata({
   if (!page) return {};
   return {
     title: `${page.name} leaderboard`,
-    description: `The 100 most-starred ${page.name.toLowerCase()} on RUAGENTIC, ranked by public GitHub stars with the collection date shown.`,
+    description: `The 100 most-starred ${page.name.toLowerCase()} on RUAGENTIC, ranked by public GitHub stars or by stars per day since launch, with the update date shown.`,
     alternates: { canonical: '/leaderboards/' + page.slug },
   };
 }
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ by?: string }>;
 }) {
   const page = kindBySlug((await params).slug);
   if (!page) notFound();
+  const by = parseRankBy((await searchParams).by);
   const [collected, items] = await Promise.all([
     metricsCollectedAt(),
-    leaderboard(page.kind, 100),
+    leaderboard(page.kind, 100, by),
   ]);
   return (
     <main className="content-page">
@@ -62,8 +66,12 @@ export default async function Page({
           <Link href={'/' + page.slug}>/{page.slug}</Link>.
         </p>
       </div>
-      <LeaderboardMethod collected={collected} />
-      <LeaderboardTable items={items} />
+      <LeaderboardMethod
+        collected={collected}
+        base={'/leaderboards/' + page.slug}
+        by={by}
+      />
+      <LeaderboardTable items={items} by={by} />
     </main>
   );
 }

@@ -4394,6 +4394,26 @@ legend {
 }
 .leaderboard-bar p {
   margin: 0;
+  flex: 1 1 320px;
+}
+.leaderboard-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--glass-border);
+}
+.leaderboard-tabs a {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dim);
+}
+.leaderboard-tabs a:hover {
+  color: var(--text);
+}
+.leaderboard-tabs a[aria-current='page'] {
+  color: var(--cyan);
+  background: rgba(92, 225, 230, 0.08);
 }
 .leaderboard-updated {
   margin-left: auto;

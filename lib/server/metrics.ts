@@ -9,6 +9,7 @@ import {
   rankListings,
   refreshOrder,
   type ListingMetrics,
+  type RankBy,
   type RankedListing,
 } from '../leaderboard';
 
@@ -17,8 +18,8 @@ const missingTable = (error: { code?: string; message?: string }) =>
   error.code === '42P01' ||
   error.code === 'PGRST205' ||
   /schema cache|does not exist/i.test(error.message ?? '');
-const columns =
-  'slug,repository,stars,forks,watchers,open_issues,pushed_at,fetched_at,error';
+// `*` so the read works before and after the created_at column migration.
+const columns = '*';
 
 /** Every collected row. Missing table (migration not applied) reads as none. */
 async function readMetrics(_project: string): Promise<ListingMetrics[]> {
@@ -74,9 +75,10 @@ export async function metricsCollectedAt() {
 export async function leaderboard(
   kind?: string,
   limit = 100,
+  by: RankBy = 'stars',
 ): Promise<RankedListing[]> {
   const [items, metrics] = await Promise.all([catalog(), listingMetrics()]);
-  return rankListings(items, metrics, kind, limit);
+  return rankListings(items, metrics, kind, limit, by);
 }
 /** Refreshes the oldest metrics first through GitHub's repository API,
  *  paced by the shared provider pacer. Stops on a rate limit and leaves
@@ -93,6 +95,11 @@ export async function refreshMetrics(limit: number, deadline: number) {
       : {}),
   };
   const now = () => new Date().toISOString();
+  // The creation-time column arrived in a later migration; write it only
+  // once the table has it, so a pending migration cannot stall refreshes.
+  const hasCreated = !(
+    await adminClient().from('listing_metrics').select('created_at').limit(1)
+  ).error;
   const rows: Partial<ListingMetrics>[] = [];
   for (const item of queue) {
     if (Date.now() > deadline - 15_000) break;
@@ -112,6 +119,12 @@ export async function refreshMetrics(limit: number, deadline: number) {
         watchers: Number(repo.subscribers_count) || 0,
         open_issues: Number(repo.open_issues_count) || 0,
         pushed_at: typeof repo.pushed_at === 'string' ? repo.pushed_at : null,
+        ...(hasCreated
+          ? {
+              created_at:
+                typeof repo.created_at === 'string' ? repo.created_at : null,
+            }
+          : {}),
         fetched_at: now(),
         error: null,
       });

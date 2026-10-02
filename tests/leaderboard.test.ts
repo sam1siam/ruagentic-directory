@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {
   compact,
   githubRepo,
+  pace,
   rankListings,
   refreshOrder,
+  starsPerDay,
   type ListingMetrics,
 } from '../lib/leaderboard.ts';
 import { emptyListing, type PublicListing } from '../lib/listing.ts';
@@ -118,4 +120,52 @@ void test('Listings that share a repository collapse into one row', () => {
       [2, 'solo', 0],
     ],
   );
+});
+
+void test('The pace board ranks stars per day since creation and skips young or tiny repositories', () => {
+  const listings = [
+    listing('old', 'server', 'https://github.com/x/old'),
+    listing('new', 'server', 'https://github.com/x/new'),
+    listing('baby', 'server', 'https://github.com/x/baby'),
+    listing('tiny', 'server', 'https://github.com/x/tiny'),
+    listing('nodate', 'server', 'https://github.com/x/nodate'),
+  ];
+  const fetched = '2026-10-02T00:00:00Z';
+  const metrics = [
+    // 1000 stars over 1000 days: 1 a day.
+    metric('old', 1000, {
+      fetched_at: fetched,
+      created_at: '2024-01-06T00:00:00Z',
+    }),
+    // 600 stars over 30 days: 20 a day.
+    metric('new', 600, {
+      fetched_at: fetched,
+      created_at: '2026-09-02T00:00:00Z',
+    }),
+    // 100 stars in 5 days: too young to rank.
+    metric('baby', 100, {
+      fetched_at: fetched,
+      created_at: '2026-09-27T00:00:00Z',
+    }),
+    // 5 stars: too few to rank.
+    metric('tiny', 5, {
+      fetched_at: fetched,
+      created_at: '2026-01-01T00:00:00Z',
+    }),
+    metric('nodate', 50, { fetched_at: fetched }),
+  ];
+  const rows = rankListings(listings, metrics, 'server', 100, 'pace');
+  assert.deepEqual(
+    rows.map((r) => [r.rank, r.slug, Math.round(r.starsPerDay ?? 0)]),
+    [
+      [1, 'new', 20],
+      [2, 'old', 1],
+    ],
+  );
+  assert.equal(starsPerDay(metrics[4]!), null);
+  assert.equal(pace(0.44), '0.4');
+  assert.equal(pace(23.6), '24');
+  assert.equal(pace(null), '—');
+  // The stars board still lists everyone with metrics.
+  assert.equal(rankListings(listings, metrics, 'server').length, 5);
 });
