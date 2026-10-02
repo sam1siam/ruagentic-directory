@@ -6,7 +6,7 @@ import BrandMark from '@/components/brand-mark';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
-import { Menu, Search, X } from 'lucide-react';
+import { ChevronDown, Menu, Search, X } from 'lucide-react';
 import { browserClient } from '@/lib/supabase/browser';
 import { categories, categoryHref, kinds } from '@/lib/categories';
 import type { DirectoryStats } from '@/lib/server/stats';
@@ -22,17 +22,21 @@ import {
 
 const navigation = [
   ['Discover', '/'],
-  ['Servers', '/servers'],
-  ['Clients', '/clients'],
-  ['AI agents', '/ai-agents'],
-  ['Skills', '/skills'],
-  ['Plugins', '/plugins'],
-  ['Rules', '/rules'],
-  ['Evals', '/evals'],
-  ['Categories', '/categories'],
   ['Leaderboards', '/leaderboards'],
   ['Advertise', '/advertise'],
   ['List your project', '/submit'],
+] as const;
+/** The type pages and categories live under one "Browse" menu so the bar
+ *  keeps its width as kinds are added. */
+const browseLinks = [
+  ['MCP servers', '/servers'],
+  ['Clients', '/clients'],
+  ['AI agents', '/ai-agents'],
+  ['Skills', '/skills'],
+  ['Plugins & extensions', '/plugins'],
+  ['Rules & instructions', '/rules'],
+  ['Evals & benchmarks', '/evals'],
+  ['Categories', '/categories'],
 ] as const;
 const actions = [
   ['List your project', '/submit', 'PUBLISH'],
@@ -81,6 +85,25 @@ export function SiteHeader({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [browseOpen, setBrowseOpen] = useState(false);
+  const browseRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!browseOpen) return;
+    const close = (event: MouseEvent | KeyboardEvent) => {
+      if (
+        event instanceof KeyboardEvent
+          ? event.key === 'Escape'
+          : !browseRef.current?.contains(event.target as Node)
+      )
+        setBrowseOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, [browseOpen]);
   const signedIn = useAccountState();
   const shortcut = useShortcutLabel();
   const submit = useSubmitState();
@@ -172,18 +195,52 @@ export function SiteHeader({
               aria-label="Main navigation"
               className={'site-nav' + (menu ? ' mobile-open' : '')}
             >
-              {navigation.map(([label, href]) => (
+              {navigation.slice(0, 1).map(([label, href]) => (
                 <Link
                   key={href}
                   href={href}
                   aria-current={current(href) ? 'page' : undefined}
-                  // The sponsor bar and the header button already offer these;
-                  // mid-size screens drop them from the strip, the menu keeps them.
-                  className={
-                    href === '/advertise' || href === '/submit'
-                      ? 'nav-dup'
+                >
+                  {label}
+                </Link>
+              ))}
+              <div
+                className={'nav-group' + (browseOpen ? ' open' : '')}
+                ref={browseRef}
+              >
+                <button
+                  type="button"
+                  className="nav-group-toggle"
+                  aria-expanded={browseOpen}
+                  aria-controls="browse-menu"
+                  aria-current={
+                    browseLinks.some(([, href]) => current(href))
+                      ? 'page'
                       : undefined
                   }
+                  onClick={() => setBrowseOpen((value) => !value)}
+                >
+                  Browse
+                  <ChevronDown size={14} aria-hidden="true" />
+                </button>
+                <div id="browse-menu" className="nav-menu">
+                  {browseLinks.map(([label, href]) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      aria-current={current(href) ? 'page' : undefined}
+                      onClick={() => setBrowseOpen(false)}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              {navigation.slice(1).map(([label, href]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={current(href) ? 'page' : undefined}
                 >
                   {label}
                 </Link>

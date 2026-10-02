@@ -1185,18 +1185,11 @@ select optgroup {
 }
 .site-nav {
   display: flex;
+  align-items: center;
   gap: 2px;
   margin-left: 16px;
   font-size: 13px;
   font-weight: 500;
-  /* The strip scrolls on its own instead of widening the page. */
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.site-nav::-webkit-scrollbar {
-  display: none;
 }
 .site-nav a {
   flex: none;
@@ -1227,10 +1220,71 @@ select optgroup {
   margin-left: auto;
   flex: none;
 }
-@media (max-width: 1480px) {
-  .site-nav a.nav-dup {
-    display: none;
-  }
+/* Browse menu */
+.nav-group {
+  position: relative;
+  display: inline-flex;
+}
+.nav-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--dim);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.nav-group-toggle svg {
+  transition: transform 0.2s;
+}
+.nav-group-toggle:hover,
+.nav-group.open .nav-group-toggle,
+.nav-group:hover .nav-group-toggle {
+  color: #e6f1f7;
+  border-bottom-color: rgba(92, 225, 230, 0.4);
+}
+.nav-group.open .nav-group-toggle svg,
+.nav-group:hover .nav-group-toggle svg {
+  transform: rotate(180deg);
+}
+.nav-group-toggle[aria-current='page'] {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+}
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: none;
+  flex-direction: column;
+  min-width: 240px;
+  padding: 8px;
+  background: #070c12;
+  border: 1px solid rgba(92, 225, 230, 0.3);
+  box-shadow: var(--glass-shadow);
+}
+.nav-group.open .nav-menu,
+.nav-group:hover .nav-menu,
+.nav-group:focus-within .nav-menu {
+  display: flex;
+}
+.site-nav .nav-menu a {
+  padding: 10px 12px;
+  border-bottom: 0;
+  border-left: 2px solid transparent;
+  white-space: nowrap;
+}
+.site-nav .nav-menu a[aria-current='page'] {
+  color: var(--cyan);
+  border-left-color: var(--cyan);
+  background: rgba(92, 225, 230, 0.06);
 }
 .header-search {
   display: inline-flex;
@@ -3793,8 +3847,23 @@ select optgroup {
   .site-nav.mobile-open {
     overflow: visible;
   }
-  .site-nav.mobile-open a,
-  .site-nav.mobile-open a.nav-dup {
+  .site-nav.mobile-open .nav-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .site-nav.mobile-open .nav-group-toggle {
+    display: none;
+  }
+  .site-nav.mobile-open .nav-menu {
+    position: static;
+    display: flex;
+    min-width: 0;
+    padding: 0 0 0 12px;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .site-nav.mobile-open a {
     display: flex;
     padding: 12px 14px;
     border-bottom: 0;
