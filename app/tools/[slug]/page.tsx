@@ -111,7 +111,7 @@ export default async function Page({
       <div className="detail-hero">
         <span className="project-monogram large">{item.name.slice(0, 2)}</span>
         <div>
-          <span className="type-label">
+          <span className="type-label" data-kind={item.kind}>
             {kindByValue(item.kind)?.singular.toUpperCase() ?? 'LISTING'}
           </span>
           <h1>{item.name}</h1>

@@ -395,7 +395,7 @@
 .filter-title {
   display: block;
   font:
-    10.5px var(--font-code),
+    11px var(--font-code),
     monospace;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -436,7 +436,7 @@ fieldset.filter-block > .filter-title {
   padding: 7px 10px;
   border-left: 2px solid transparent;
   text-align: left;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--dim);
   transition:
     color 0.15s,
@@ -529,7 +529,7 @@ fieldset.filter-block > .filter-title {
 }
 .section-head p {
   grid-column: 1;
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--dim);
 }
 .section-head > a,

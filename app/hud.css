@@ -34,7 +34,7 @@ body {
   background: var(--bg);
   color: var(--body);
   font:
-    400 14px/1.65 var(--font-ui),
+    400 15px/1.6 var(--font-ui),
     'Instrument Sans',
     system-ui,
     sans-serif;
@@ -472,7 +472,7 @@ kbd {
 }
 .muted {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
 }
 
@@ -1105,7 +1105,7 @@ select optgroup {
   background: rgba(5, 8, 12, 0.8);
   border-bottom: 1px solid var(--hair-strong);
   font:
-    10.5px var(--font-code),
+    11px var(--font-code),
     monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2033,7 +2033,7 @@ select optgroup {
 .content-page > p,
 .lead {
   color: var(--dim);
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.6;
   max-width: 120ch;
 }
@@ -3272,7 +3272,7 @@ select optgroup {
 .type-label {
   display: inline-block;
   font:
-    9.5px var(--font-code),
+    10.5px var(--font-code),
     monospace;
   letter-spacing: 0.16em;
   color: var(--amber);
@@ -3285,7 +3285,7 @@ select optgroup {
   margin-bottom: 12px;
 }
 .detail-hero > div > p {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--dim);
   margin: 0 0 18px;
   max-width: 120ch;
@@ -3489,7 +3489,7 @@ select optgroup {
 }
 .facts dt {
   font:
-    10px var(--font-code),
+    11px var(--font-code),
     monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3498,7 +3498,7 @@ select optgroup {
 }
 .facts dd {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--body);
   overflow-wrap: anywhere;
 }
@@ -4456,4 +4456,31 @@ legend {
 }
 ::-webkit-scrollbar-corner {
   background: rgba(5, 8, 12, 0.85);
+}
+
+/* One colour per listing type, so cards and labels read at a glance. */
+[data-kind='server'] {
+  --kind: #5ce1e6;
+}
+[data-kind='client'] {
+  --kind: #b18cff;
+}
+[data-kind='product'] {
+  --kind: #ffb020;
+}
+[data-kind='skill'] {
+  --kind: #4ade80;
+}
+[data-kind='plugin'] {
+  --kind: #ff7eb6;
+}
+[data-kind='rules'] {
+  --kind: #7aa2ff;
+}
+[data-kind='eval'] {
+  --kind: #ff9f43;
+}
+.type-label[data-kind] {
+  color: var(--kind);
+  border-color: color-mix(in srgb, var(--kind) 40%, transparent);
 }

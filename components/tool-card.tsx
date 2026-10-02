@@ -53,12 +53,15 @@ export default function ToolCard({
     <Link
       href={href}
       className={styles.card}
+      data-kind={kind}
       data-cursor-glow=""
       aria-label={name}
     >
       {content}
     </Link>
   ) : (
-    <article className={styles.card}>{content}</article>
+    <article className={styles.card} data-kind={kind}>
+      {content}
+    </article>
   );
 }
