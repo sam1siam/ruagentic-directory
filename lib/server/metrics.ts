@@ -136,9 +136,16 @@ export async function refreshMetrics(limit: number, deadline: number) {
       }
       // A repository that is gone or private is recorded so it is not
       // retried every hour; it never ranks.
+      // Every row carries the same keys: a bulk upsert refuses mixed shapes.
       rows.push({
         slug: item.slug,
         repository: item.repository,
+        stars: 0,
+        forks: 0,
+        watchers: 0,
+        open_issues: 0,
+        pushed_at: null,
+        ...(hasCreated ? { created_at: null } : {}),
         fetched_at: now(),
         error: (error instanceof Error ? error.message : 'unavailable').slice(
           0,
@@ -152,7 +159,10 @@ export async function refreshMetrics(limit: number, deadline: number) {
     const { error } = await adminClient()
       .from('listing_metrics')
       .upsert(rows, { onConflict: 'slug' });
-    if (error) throw new Error('Listing metrics could not be saved.');
+    if (error) {
+      console.error('listing_metrics save failed', error.code, error.message);
+      throw new Error('Listing metrics could not be saved.');
+    }
     revalidateTag(tag, { expire: 0 });
   }
   return summary;
