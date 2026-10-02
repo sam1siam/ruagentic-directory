@@ -378,6 +378,7 @@
   max-height: calc(100dvh - 32px);
   overflow: auto;
   scrollbar-width: thin;
+  scrollbar-color: rgba(92, 225, 230, 0.32) transparent;
   padding: 20px 18px;
   border: 1px solid var(--glass-border);
   background: rgba(5, 8, 12, 0.55);
@@ -399,7 +400,13 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--cyan);
-  margin-bottom: 2px;
+  margin-bottom: 6px;
+}
+/* A legend sits outside the fieldset's flex gap, so it carries the whole
+   distance to the first (possibly highlighted) row itself. */
+fieldset.filter-block > .filter-title {
+  margin-bottom: 14px;
+  padding: 0;
 }
 .filter-search {
   padding: 0 12px;

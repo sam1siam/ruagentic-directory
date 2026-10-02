@@ -4363,3 +4363,28 @@ legend {
 .table-scroll {
   overflow-x: auto;
 }
+
+/* Scrollbars: thin, dark track, cyan thumb, everywhere. Elements that hide
+   their scrollbar (the nav strip, tab rows) keep their own rule. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(92, 225, 230, 0.32) rgba(5, 8, 12, 0.85);
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(5, 8, 12, 0.85);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(92, 225, 230, 0.32);
+  border: 2px solid rgba(5, 8, 12, 0.85);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(92, 225, 230, 0.55);
+}
+::-webkit-scrollbar-corner {
+  background: rgba(5, 8, 12, 0.85);
+}
