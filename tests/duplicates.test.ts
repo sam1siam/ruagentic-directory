@@ -4,6 +4,9 @@ import {
   duplicateGroups,
   claimMergeable,
   findDuplicates,
+  githubMembershipUrl,
+  githubRepoOwner,
+  sameRepository,
   pairKey,
   projectKeys,
   repositoryKey,
@@ -131,5 +134,45 @@ await test('A verified publication only absorbs imports that point at the verifi
   assert.equal(
     claimMergeable(verified, { homepage: 'https://acme.dev', submitted: true }),
     false,
+  );
+});
+
+await test('Repository proof needs the same repository and reads GitHub ownership from the URL', () => {
+  assert.deepEqual(githubRepoOwner('https://github.com/Acme/Mcp.git'), {
+    owner: 'acme',
+    repo: 'mcp',
+  });
+  assert.equal(githubRepoOwner('https://gitlab.com/acme/mcp'), null);
+  assert.equal(githubRepoOwner('https://github.com/acme'), null);
+  assert.equal(
+    sameRepository(
+      {
+        homepage: 'https://acme.dev',
+        repository: 'https://github.com/acme/mcp',
+      },
+      { homepage: 'https://github.com/Acme/mcp' },
+    ),
+    true,
+  );
+  assert.equal(
+    sameRepository(
+      {
+        homepage: 'https://acme.dev',
+        repository: 'https://github.com/acme/mcp',
+      },
+      { homepage: 'https://github.com/other/mcp' },
+    ),
+    false,
+  );
+  assert.equal(
+    sameRepository(
+      { homepage: 'https://acme.dev' },
+      { homepage: 'https://acme.dev' },
+    ),
+    false,
+  );
+  assert.equal(
+    githubMembershipUrl('acme', 'sam'),
+    'https://api.github.com/orgs/acme/public_members/sam',
   );
 });

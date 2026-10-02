@@ -706,10 +706,10 @@ export default function SubmissionForm({
             <p className="notice">
               You are claiming <b>{claim.name}</b>. The details below come from
               the imported listing; correct anything, then publish free through
-              the checker or with a one-time listing. If the imported listing
-              points at the website you verify, it merges into yours and its
-              address redirects here; otherwise the pair goes to a quick review
-              first.
+              the checker or with a one-time listing. The imported listing
+              merges into yours automatically when you verify its website with
+              the checker, or when you are signed in with GitHub as the owner
+              (or a public org member) of its repository.
             </p>
           )}
           {duplicates.length > 0 && step >= 2 && !published && (

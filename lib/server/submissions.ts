@@ -9,7 +9,8 @@ import {
   type ListingInput,
 } from '../listing';
 import { HttpError } from './http';
-import { claimMergeable } from '../duplicates';
+import { claimMergeable, sameRepository } from '../duplicates';
+import { controlsRepository, githubLoginFor } from './github-proof';
 import { duplicatesFor, mergeListing } from './duplicates';
 import {
   Client,
@@ -187,22 +188,35 @@ export async function publishSubmission(owner: string, input: unknown) {
   if (error) databaseError(error);
   const merged: string[] = [];
   invalidateCatalog();
-  if (parsed.method === 'agentic')
-    // A verified publication replaces imported entries that point at the
-    // site it just proved control of; repository-only matches and listings
-    // other people paid for stay and go to the review queue.
-    for (const m of matches.filter((x) => claimMergeable(s.payload, x)))
-      try {
-        await mergeListing(
-          m.slug,
-          data.slug,
-          'system',
-          'Replaced by the verified listing ' + data.slug,
-        );
-        merged.push(m.slug);
-      } catch {
-        /* the admin queue still shows the pair */
-      }
+  // An imported entry is replaced only with proof of control, checked by
+  // code: the checker verified the site the import points at (free path),
+  // or the publisher signed in with GitHub as the owner, or a public member
+  // of the organisation, of the repository the import is about (any path).
+  // Without proof both listings stay, and nothing waits for a person.
+  const login = await githubLoginFor(owner);
+  for (const m of matches) {
+    if (m.submitted) continue;
+    const bySite = parsed.method === 'agentic' && claimMergeable(s.payload, m);
+    const byRepo =
+      !bySite &&
+      Boolean(login) &&
+      sameRepository(s.payload, m) &&
+      (await controlsRepository(login!, m.repository || m.homepage));
+    if (!bySite && !byRepo) continue;
+    try {
+      await mergeListing(
+        m.slug,
+        data.slug,
+        'system',
+        (bySite
+          ? 'Replaced by the verified listing '
+          : "Replaced by the repository owner's listing ") + data.slug,
+      );
+      merged.push(m.slug);
+    } catch {
+      /* the admin queue still shows the pair */
+    }
+  }
   return {
     slug: data.slug,
     url: 'https://ruagentic.com/tools/' + data.slug,

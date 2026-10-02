@@ -23,6 +23,7 @@ export type DuplicateMatch = {
   slug: string;
   name: string;
   homepage: string;
+  repository?: string;
   source: string;
   verified: boolean;
   submitted: boolean;
@@ -79,6 +80,7 @@ export function findDuplicates(
         slug: item.slug,
         name: item.name,
         homepage: item.homepage,
+        repository: item.repository,
         source: item.source,
         verified: Boolean(item.agenticCheckedAt),
         submitted: Boolean(item.submitted),
@@ -143,3 +145,37 @@ export function claimMergeable(
     return false;
   }
 }
+
+/** The owner and name of a GitHub repository URL, lower-cased, or null. */
+export function githubRepoOwner(url: string | undefined) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname !== 'github.com' && u.hostname !== 'www.github.com')
+      return null;
+    const [owner, repo] = u.pathname.split('/').filter(Boolean);
+    if (!owner || !repo) return null;
+    return {
+      owner: owner.toLowerCase(),
+      repo: repo.replace(/\.git$/, '').toLowerCase(),
+    };
+  } catch {
+    return null;
+  }
+}
+/** The repository a listing is about: its repository link, or its homepage
+ *  when that is a GitHub repository. */
+export function repositoryOf(input: IdentityInput) {
+  return (
+    repositoryKey(input.repository) ??
+    (githubRepoOwner(input.homepage) ? repositoryKey(input.homepage) : null)
+  );
+}
+export function sameRepository(a: IdentityInput, b: IdentityInput) {
+  const x = repositoryOf(a),
+    y = repositoryOf(b);
+  return Boolean(x && y && x === y);
+}
+/** GitHub's public-membership check: 204 when the login is a public member. */
+export const githubMembershipUrl = (org: string, login: string) =>
+  `https://api.github.com/orgs/${encodeURIComponent(org)}/public_members/${encodeURIComponent(login)}`;
