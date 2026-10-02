@@ -207,6 +207,8 @@ export function SiteHeader({
               <div
                 className={'nav-group' + (browseOpen ? ' open' : '')}
                 ref={browseRef}
+                onMouseEnter={() => setBrowseOpen(true)}
+                onMouseLeave={() => setBrowseOpen(false)}
               >
                 <button
                   type="button"
@@ -229,7 +231,11 @@ export function SiteHeader({
                       key={href}
                       href={href}
                       aria-current={current(href) ? 'page' : undefined}
-                      onClick={() => setBrowseOpen(false)}
+                      onClick={(event) => {
+                        // Close at once; the choice is already on its way.
+                        setBrowseOpen(false);
+                        event.currentTarget.blur();
+                      }}
                     >
                       {label}
                     </Link>

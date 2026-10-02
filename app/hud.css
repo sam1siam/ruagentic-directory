@@ -1244,13 +1244,11 @@ select optgroup {
   transition: transform 0.2s;
 }
 .nav-group-toggle:hover,
-.nav-group.open .nav-group-toggle,
-.nav-group:hover .nav-group-toggle {
+.nav-group.open .nav-group-toggle {
   color: #e6f1f7;
   border-bottom-color: rgba(92, 225, 230, 0.4);
 }
-.nav-group.open .nav-group-toggle svg,
-.nav-group:hover .nav-group-toggle svg {
+.nav-group.open .nav-group-toggle svg {
   transform: rotate(180deg);
 }
 .nav-group-toggle[aria-current='page'] {
@@ -1270,9 +1268,7 @@ select optgroup {
   border: 1px solid rgba(92, 225, 230, 0.3);
   box-shadow: var(--glass-shadow);
 }
-.nav-group.open .nav-menu,
-.nav-group:hover .nav-menu,
-.nav-group:focus-within .nav-menu {
+.nav-group.open .nav-menu {
   display: flex;
 }
 .site-nav .nav-menu a {
