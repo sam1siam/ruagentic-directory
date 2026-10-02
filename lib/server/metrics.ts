@@ -33,8 +33,10 @@ async function readMetrics(_project: string): Promise<ListingMetrics[]> {
       // No table yet (migration pending) or an API schema cache that has not
       // seen it: the boards simply show that nothing was collected.
       if (missingTable(error)) return [];
+      // Any other read problem (for example missing grants) is logged and
+      // shows as nothing collected rather than a failed page.
       console.error('listing_metrics read failed', error.code, error.message);
-      throw new Error('Listing metrics could not be read.');
+      return [];
     }
     rows.push(...((data ?? []) as ListingMetrics[]));
     if (!data || data.length < 1000) break;
