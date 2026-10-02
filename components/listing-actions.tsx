@@ -1,10 +1,24 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Bookmark, Copy, Flag, Check, GitCompareArrows } from 'lucide-react';
+import {
+  Bookmark,
+  Copy,
+  Flag,
+  Check,
+  GitCompareArrows,
+  BadgeCheck,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/client-api';
-export default function ListingActions({ slug }: { slug: string }) {
+export default function ListingActions({
+  slug,
+  claimable = false,
+}: {
+  slug: string;
+  /** An imported listing nobody has claimed yet. */
+  claimable?: boolean;
+}) {
   const [saved, setSaved] = useState(false),
     [message, setMessage] = useState(''),
     [report, setReport] = useState(false),
@@ -77,6 +91,16 @@ export default function ListingActions({ slug }: { slug: string }) {
           <Flag size={15} />
           Report
         </Button>
+        {claimable && (
+          <Link
+            href={'/submit?claim=' + encodeURIComponent(slug)}
+            className="button claim-button"
+            title="Your project? Claim this listing to correct and complete it."
+          >
+            <BadgeCheck size={16} />
+            Claim this listing
+          </Link>
+        )}
       </div>
       {message && (
         <output className="notice">

@@ -138,7 +138,10 @@ export default async function Page({
         </a>
       </div>
       <ViewBeacon slug={item.slug} />
-      <ListingActions slug={item.slug} />
+      <ListingActions
+        slug={item.slug}
+        claimable={Boolean(item.imported && !item.submitted)}
+      />
       <div className="detail-layout">
         <div className="detail-body">
           <section>

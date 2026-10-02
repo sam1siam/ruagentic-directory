@@ -193,12 +193,16 @@ export function listingFromCandidate(
     name = clean(item.name).slice(0, 100),
     text = clean(item.description).slice(0, 5000),
     seen = item.publishedAt ? item.publishedAt.slice(0, 10) : now.slice(0, 10);
-  const provenance = `Found on ${source} on ${seen}. This listing was created automatically from public source data and has not been reviewed by the project's owner; claim it to correct or complete the details.`;
+  // The description is the source's own text; where it is too short for the
+  // schema, a plain statement of what and where it is stands in. Provenance
+  // lives in `sources`, and the page offers a Claim button instead.
+  const fallback = `${name} is ${singular[kind]} first seen on ${source} on ${seen}. See its website and repository for details.`;
   const input: ListingInput = {
     kind,
     name,
     summary: summaryOf(text, name, kind, source),
-    description: text ? `${text}\n\n${provenance}` : provenance,
+    description:
+      text.length >= 60 ? text : [text, fallback].filter(Boolean).join(' '),
     homepage:
       safeUrl(item.homepage) ||
       (packaged(kind) ? safeUrl(item.repository) : ''),

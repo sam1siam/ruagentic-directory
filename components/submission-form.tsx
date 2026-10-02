@@ -118,19 +118,24 @@ export default function SubmissionForm({
   id,
   email,
   initialPlan = 'agentic',
+  claim,
 }: {
   id?: string;
   email: string;
   initialPlan?: 'agentic' | 'payment';
+  /** An imported listing being claimed: the form starts with its details. */
+  claim?: { slug: string; name: string; input: ListingInput };
 }) {
   const [step, setStep] = useState(1),
-    [listing, setListing] = useState<ListingInput>({ ...emptyListing }),
+    [listing, setListing] = useState<ListingInput>(() =>
+      claim ? { ...claim.input } : { ...emptyListing },
+    ),
     [saved, setSaved] = useState<Saved | null>(null),
     [savedAt, setSavedAt] = useState(''),
     [sourceType, setSourceType] = useState<
       'homepage' | 'repository' | 'endpoint'
     >('homepage'),
-    [url, setUrl] = useState(''),
+    [url, setUrl] = useState(claim?.input.homepage ?? ''),
     [path, setPath] = useState<'agentic' | 'payment'>(initialPlan),
     [audit, setAudit] = useState<Audit | null>(null),
     [paid, setPaid] = useState<string | null>(null),
@@ -697,6 +702,14 @@ export default function SubmissionForm({
             </div>
           )}
           {notice && <output className="notice success">{notice}</output>}
+          {claim && !published && (
+            <p className="notice">
+              You are claiming <b>{claim.name}</b>. The details below come from
+              the imported listing; correct anything, then publish free through
+              the checker or with a one-time listing. Your listing replaces the
+              imported one and its address redirects here.
+            </p>
+          )}
           {duplicates.length > 0 && step >= 2 && !published && (
             <output className="notice warning">
               <AlertCircle size={16} />

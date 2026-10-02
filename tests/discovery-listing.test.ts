@@ -112,8 +112,10 @@ void test('A candidate becomes a valid imported listing with its provenance', ()
   assert.equal(data.name, 'Acme Tool');
   assert.equal(data.summary, 'An MCP server for the Acme billing API.');
   assert.match(data.description, /^An MCP server for the Acme billing API\./);
-  assert.match(data.description, /Found on GitHub on 2026-09-20\./);
-  assert.match(data.description, /not been reviewed by the project's owner/);
+  assert.equal(
+    data.description,
+    'An MCP server for the Acme billing API. It exposes invoices and customers as tools.',
+  );
   assert.equal(data.homepage, 'https://acme.dev/');
   assert.equal(data.repository, 'https://github.com/acme/tool');
   assert.equal(data.category, 'Finance');
@@ -158,6 +160,10 @@ void test('A candidate becomes a valid imported listing with its provenance', ()
     'Acme Tool is an MCP server first seen on GitHub.',
   );
   assert.ok(short.data.description.length >= 60);
+  assert.match(
+    short.data.description,
+    /^Tiny Acme Tool is an MCP server first seen on GitHub on 2026-09-20\./,
+  );
   // Nothing is published when the kind cannot be told.
   assert.throws(
     () =>

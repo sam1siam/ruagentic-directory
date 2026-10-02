@@ -214,6 +214,18 @@ export const emptyListing: ListingInput = {
   fileUrl: '',
   allowedTools: '',
 };
+/** The editable fields of a public listing, for claiming an imported entry:
+ *  provenance keys are dropped and optional fields get their defaults. */
+export function listingInputFrom(item: PublicListing): ListingInput {
+  const source = item as unknown as Record<string, unknown>;
+  const input = { ...emptyListing } as Record<string, unknown>;
+  for (const key of Object.keys(emptyListing))
+    if (source[key] !== undefined && source[key] !== null)
+      input[key] = source[key];
+  if (!input.fileUrl && typeof source.skillFile === 'string')
+    input.fileUrl = source.skillFile;
+  return listingSchema.parse(input);
+}
 export function serviceIdentity(input: Pick<ListingInput, 'homepage'>) {
   const u = new URL(cleanUrl(input.homepage));
   return u.hostname === 'github.com'
