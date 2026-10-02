@@ -15,6 +15,8 @@ const paths = [
   '/evals',
   '/leaderboards',
   '/new',
+  '/best',
+  '/best/servers/developer-tools',
   '/leaderboards/servers',
   '/categories',
   '/categories/developer-tools',

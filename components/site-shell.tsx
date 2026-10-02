@@ -31,6 +31,7 @@ const navigation = [
 const browseLinks = [
   ['New this week', '/new'],
   ['Fastest since launch', '/leaderboards?by=pace'],
+  ['Best of, by category', '/best'],
   ['MCP servers', '/servers'],
   ['Clients', '/clients'],
   ['AI agents', '/ai-agents'],
@@ -53,6 +54,7 @@ const actions = [
   ['All evals & benchmarks', '/evals', 'BROWSE'],
   ['Leaderboards by type', '/leaderboards', 'RANKED'],
   ['New this week', '/new', 'FRESH'],
+  ['Best of, by type and category', '/best', 'RANKED'],
   ['Browse categories', '/categories', 'BROWSE'],
   ['Compare tools', '/compare', 'SIDE BY SIDE'],
   ['Your dashboard', '/dashboard', 'ACCOUNT'],

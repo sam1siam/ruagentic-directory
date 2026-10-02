@@ -16,6 +16,7 @@ import ListingActions from '@/components/listing-actions';
 import ConnectGuide from '@/components/connect-guide';
 import BadgeKit from '@/components/badge-kit';
 import { breadcrumbJsonLd, listingJsonLd } from '@/lib/seo';
+import { faqJsonLd, listingFaq } from '@/lib/faq';
 import JsonLd from '@/components/json-ld';
 import { kindByValue } from '@/lib/categories';
 import {
@@ -88,12 +89,14 @@ export default async function Page({
     'https://ruagentic.com/tools/' + encodeURIComponent(item.slug),
   );
   const packaged = isPackaged(item.kind),
-    mainFile = item.fileUrl || item.skillFile || '';
+    mainFile = item.fileUrl || item.skillFile || '',
+    faq = listingFaq(item);
   return (
     <main className="content-page detail-page">
       <JsonLd
         data={[
           jsonLd,
+          faqJsonLd(faq),
           breadcrumbJsonLd([
             { name: 'RUAGENTIC', path: '/' },
             {
@@ -270,6 +273,15 @@ export default async function Page({
                 ))}
               </details>
             )}
+          </section>
+          <section className="faq-section">
+            <h2>Questions and answers</h2>
+            {faq.map((f) => (
+              <details key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
           </section>
           <section className="source-panel">
             <h2>Sources and checks</h2>

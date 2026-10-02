@@ -4565,3 +4565,58 @@ legend {
   margin-left: auto;
   font-size: 13px;
 }
+
+/* Questions and answers */
+.faq-section details {
+  border-top: 1px solid var(--glass-divider);
+  padding: 12px 0;
+}
+.faq-section details:last-of-type {
+  border-bottom: 1px solid var(--glass-divider);
+}
+.faq-section summary {
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.faq-section summary::-webkit-details-marker {
+  display: none;
+}
+.faq-section summary::after {
+  content: '+';
+  color: var(--cyan);
+  flex: none;
+}
+.faq-section details[open] summary::after {
+  content: '−';
+}
+.faq-section details p {
+  margin: 10px 0 0;
+  color: var(--body);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.best-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px 24px;
+}
+.best-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--glass-divider);
+  font-size: 15px;
+}
+.best-list small {
+  color: var(--faint);
+}
