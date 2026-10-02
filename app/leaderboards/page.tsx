@@ -3,7 +3,9 @@ import { ArrowUpRight } from 'lucide-react';
 import { kinds } from '@/lib/categories';
 import { leaderboard, metricsCollectedAt } from '@/lib/server/metrics';
 import { parseRankBy } from '@/lib/leaderboard';
+import { filtersFromParams, paramsFromFilters } from '@/lib/browse';
 import {
+  LeaderboardFilters,
   LeaderboardMethod,
   LeaderboardTable,
 } from '@/components/leaderboard-table';
@@ -19,19 +21,27 @@ export const metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ by?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const by = parseRankBy((await searchParams).by);
+  const query = await searchParams;
+  const by = parseRankBy(query.by);
+  const filters = filtersFromParams(query);
   const [collected, boards] = await Promise.all([
     metricsCollectedAt(),
     Promise.all(
       kinds.map(async (page) => ({
         page,
-        items: await leaderboard(page.kind, 10, by),
+        items: await leaderboard(page.kind, 10, by, filters),
       })),
     ),
   ]);
-  const suffix = by === 'pace' ? '?by=pace' : '';
+  // Section links carry the tab and the filters to the full board.
+  const carried = paramsFromFilters(filters);
+  carried.delete('kind');
+  carried.delete('q');
+  carried.delete('sort');
+  if (by === 'pace') carried.set('by', 'pace');
+  const suffix = carried.toString() ? '?' + carried.toString() : '';
   return (
     <main className="content-page">
       <JsonLd
@@ -48,7 +58,13 @@ export default async function Page({
             : 'The most-starred listings of each type, from the public GitHub repositories the directory links to.'}
         </p>
       </div>
-      <LeaderboardMethod collected={collected} base="/leaderboards" by={by} />
+      <LeaderboardMethod
+        collected={collected}
+        base="/leaderboards"
+        by={by}
+        filters={filters}
+      />
+      <LeaderboardFilters base="/leaderboards" by={by} filters={filters} />
       {boards.map(({ page, items }) => (
         <section className="leaderboard-section" key={page.slug}>
           <div className="admin-section-head">
