@@ -15,6 +15,8 @@ export async function GET(request: Request) {
         note: 'Apply supabase/migrations/202610010001_listing_metrics.sql',
       };
     const limit = process.env.GITHUB_TOKEN ? 300 : 50;
-    return refreshMetrics(limit, Date.now() + 280_000);
+    const summary = await refreshMetrics(limit, Date.now() + 280_000);
+    console.info('metrics_run_summary', JSON.stringify(summary));
+    return summary;
   });
 }
