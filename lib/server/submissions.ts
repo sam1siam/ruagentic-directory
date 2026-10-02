@@ -9,6 +9,7 @@ import {
   type ListingInput,
 } from '../listing';
 import { HttpError } from './http';
+import { claimMergeable } from '../duplicates';
 import { duplicatesFor, mergeListing } from './duplicates';
 import {
   Client,
@@ -187,9 +188,10 @@ export async function publishSubmission(owner: string, input: unknown) {
   const merged: string[] = [];
   invalidateCatalog();
   if (parsed.method === 'agentic')
-    // A verified publication replaces imported entries for the same project;
-    // listings other people paid for stay and go to the review queue.
-    for (const m of matches.filter((x) => !x.submitted))
+    // A verified publication replaces imported entries that point at the
+    // site it just proved control of; repository-only matches and listings
+    // other people paid for stay and go to the review queue.
+    for (const m of matches.filter((x) => claimMergeable(s.payload, x)))
       try {
         await mergeListing(
           m.slug,

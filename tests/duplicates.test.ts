@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   duplicateGroups,
+  claimMergeable,
   findDuplicates,
   pairKey,
   projectKeys,
@@ -72,10 +73,17 @@ await test('a submission matches an import through its homepage or repository', 
   assert.equal(byRepo[0]!.verified, true);
   assert.equal(byRepo[0]!.submitted, true);
   assert.deepEqual(
-    findDuplicates({ homepage: 'https://acme.dev' }, [verifiedOwner], 'acme-mcp-abc123'),
+    findDuplicates(
+      { homepage: 'https://acme.dev' },
+      [verifiedOwner],
+      'acme-mcp-abc123',
+    ),
     [],
   );
-  assert.deepEqual(findDuplicates({ homepage: 'https://nobody.example' }, [imported]), []);
+  assert.deepEqual(
+    findDuplicates({ homepage: 'https://nobody.example' }, [imported]),
+    [],
+  );
 });
 
 await test('groups collect every listing sharing a key, once', () => {
@@ -89,9 +97,39 @@ await test('groups collect every listing sharing a key, once', () => {
   };
   const groups = duplicateGroups([imported, twin, verifiedOwner, unrelated]);
   assert.equal(groups.length, 1);
-  assert.deepEqual(
-    groups[0]!.items.map((i) => i.slug).sort(),
-    ['github-mcp', 'github-mcp-server-paid'],
-  );
+  assert.deepEqual(groups[0]!.items.map((i) => i.slug).sort(), [
+    'github-mcp',
+    'github-mcp-server-paid',
+  ]);
   assert.equal(pairKey('b', 'a'), 'a|b');
+});
+
+await test('A verified publication only absorbs imports that point at the verified site', () => {
+  const verified = { homepage: 'https://acme.dev' };
+  assert.equal(
+    claimMergeable(verified, {
+      homepage: 'https://www.acme.dev/',
+      submitted: false,
+    }),
+    true,
+  );
+  // Same repository, different website: the checker proved nothing about this one.
+  assert.equal(
+    claimMergeable(verified, {
+      homepage: 'https://github.com/acme/mcp',
+      submitted: false,
+    }),
+    false,
+  );
+  assert.equal(
+    claimMergeable(verified, {
+      homepage: 'https://other.example',
+      submitted: false,
+    }),
+    false,
+  );
+  assert.equal(
+    claimMergeable(verified, { homepage: 'https://acme.dev', submitted: true }),
+    false,
+  );
 });

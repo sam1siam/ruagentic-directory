@@ -22,6 +22,7 @@ export type DuplicateCandidate = {
 export type DuplicateMatch = {
   slug: string;
   name: string;
+  homepage: string;
   source: string;
   verified: boolean;
   submitted: boolean;
@@ -77,6 +78,7 @@ export function findDuplicates(
       matches.push({
         slug: item.slug,
         name: item.name,
+        homepage: item.homepage,
         source: item.source,
         verified: Boolean(item.agenticCheckedAt),
         submitted: Boolean(item.submitted),
@@ -122,3 +124,22 @@ export function duplicateGroups(
 
 /** Stable key for a pair of slugs, used for dismissals. */
 export const pairKey = (a: string, b: string) => [a, b].sort().join('|');
+
+/** Whether a verified publication may absorb an imported duplicate on its
+ *  own: only when the imported listing points at the very site the checker
+ *  verified. A match by repository alone proves nothing about who controls
+ *  the project, so it stays for a person to review. */
+export function claimMergeable(
+  verified: Pick<IdentityInput, 'homepage'>,
+  match: Pick<DuplicateMatch, 'homepage' | 'submitted'>,
+) {
+  if (match.submitted) return false;
+  try {
+    return (
+      stripWww(serviceIdentity(verified)) ===
+      stripWww(serviceIdentity({ homepage: match.homepage }))
+    );
+  } catch {
+    return false;
+  }
+}
