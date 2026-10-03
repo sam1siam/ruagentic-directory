@@ -74,20 +74,63 @@ export type Sponsor = {
   /** Hidden by an admin without cancelling the subscription. */
   hidden?: boolean;
 };
-/** The house sponsor shown in every slot no paid sponsor covers. The
- *  description is AstroFabric's own product wording. */
-export const houseSponsor: Sponsor = {
-  name: 'AstroFabric',
-  tagline: 'Agentic AI for Business Intelligence',
-  description:
-    'Autonomous data infrastructure that turns strategic objectives into verified datasets and live intelligence streams.',
-  cta: 'Explore AstroFabric',
-  url: 'https://astrofabric.ai',
-  page: '/tools/astrofabric',
-  placement: 'both',
-  categories: [],
-  house: true,
+/** The house sponsors fill every slot no paid sponsor covers; the bar and
+ *  the detail tile rotate through them and the first home section shows
+ *  their cards. Taglines and descriptions are each company's own wording.
+ *  A house sponsor's `page` may be '' to mean "the listing whose homepage
+ *  is on this sponsor's domain, if the directory has one, else the site". */
+export const houseSponsors: Sponsor[] = [
+  {
+    name: 'AstroFabric',
+    tagline: 'Agentic AI for Business Intelligence',
+    description:
+      'Autonomous data infrastructure that turns strategic objectives into verified datasets and live intelligence streams.',
+    cta: 'Explore AstroFabric',
+    url: 'https://astrofabric.ai',
+    page: '/tools/astrofabric',
+    placement: 'both',
+    categories: [],
+    house: true,
+  },
+  {
+    name: 'EQ Funding',
+    tagline: 'Business financing marketplace',
+    description:
+      'EQ Funding is where businesses get funded fast — and on the best terms. One application, 50 specialized lenders competing to fund you, real side-by-side offers — funded in hours, not months.',
+    cta: 'Apply at EQ Funding',
+    url: 'https://eqfunding.com',
+    page: '',
+    placement: 'both',
+    categories: [],
+    house: true,
+  },
+];
+/** The first house sponsor, for places that need exactly one. */
+export const houseSponsor: Sponsor = houseSponsors[0]!;
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
 };
+/** Fills a house sponsor's empty `page` from the directory: the first
+ *  listing whose homepage is on the sponsor's domain, else the sponsor's own
+ *  site (opened outbound). Pure, so it is unit-tested. */
+export function resolveHousePage(
+  sponsor: Sponsor,
+  listings: { slug: string; homepage: string }[],
+): Sponsor {
+  if (sponsor.page) return sponsor;
+  const host = hostOf(sponsor.url);
+  const own = host
+    ? listings.find((l) => hostOf(l.homepage) === host)
+    : undefined;
+  return {
+    ...sponsor,
+    page: own ? '/tools/' + own.slug : sponsorHref(sponsor.url),
+  };
+}
 const httpsUrl = z
   .string()
   .trim()

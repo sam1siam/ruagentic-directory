@@ -5,6 +5,8 @@ import {
   creativeMetadata,
   creativeSchema,
   houseSponsor,
+  houseSponsors,
+  resolveHousePage,
   isAdMetadata,
   parseCategories,
   pickSponsor,
@@ -324,4 +326,29 @@ await test('sponsor lists follow manual order, then newest, skip hidden, and fal
     ['AstroFabric'],
   );
   assert.deepEqual(pickSponsors('bar', [paid('Card', 'card')]), []);
+});
+
+await test('house sponsors rotate together and resolve their pages from the catalog', () => {
+  assert.equal(houseSponsors.length, 2);
+  assert.deepEqual(
+    pickSponsors('bar', houseSponsors).map((s) => s.name),
+    ['AstroFabric', 'EQ Funding'],
+  );
+  assert.equal(pickSponsor('detail', houseSponsors, 0)?.name, 'AstroFabric');
+  assert.equal(
+    pickSponsor('detail', houseSponsors, 600000)?.name,
+    'EQ Funding',
+  );
+  const eq = houseSponsors[1]!;
+  assert.equal(
+    resolveHousePage(eq, [
+      { slug: 'eq-funding-mcp', homepage: 'https://www.eqfunding.com/' },
+    ]).page,
+    '/tools/eq-funding-mcp',
+  );
+  assert.equal(
+    resolveHousePage(eq, []).page,
+    'https://eqfunding.com/?ref=ruagentic.com',
+  );
+  assert.equal(resolveHousePage(houseSponsor, []).page, '/tools/astrofabric');
 });

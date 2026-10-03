@@ -9,9 +9,14 @@ function hostname(url: string) {
 }
 /** Card-shaped slot inside listing grids; opens the sponsor's page on the
  *  directory like any other card. */
+const external = (page: string) => /^https?:\/\//.test(page);
 export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
+  const Wrap = external(sponsor.page) ? 'a' : Link;
+  const props = external(sponsor.page)
+    ? { target: '_blank', rel: 'noopener sponsored' }
+    : {};
   return (
-    <Link href={sponsor.page} className="sponsor-card">
+    <Wrap href={sponsor.page} className="sponsor-card" {...props}>
       <div className="sponsor-card-head">
         <span className="sponsor-monogram" aria-hidden="true">
           {sponsor.name.slice(0, 2).toUpperCase()}
@@ -24,18 +29,22 @@ export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
         <span>{hostname(sponsor.url)}</span>
         <span>{sponsor.cta || 'Learn more'} →</span>
       </div>
-    </Link>
+    </Wrap>
   );
 }
 /** Sidebar tile on listing detail pages. */
 export function SponsorTile({ sponsor }: { sponsor: Sponsor }) {
+  const Wrap = external(sponsor.page) ? 'a' : Link;
+  const props = external(sponsor.page)
+    ? { target: '_blank', rel: 'noopener sponsored' }
+    : {};
   return (
-    <Link href={sponsor.page} className="sponsor-tile glass">
+    <Wrap href={sponsor.page} className="sponsor-tile glass" {...props}>
       <span className="sponsor-tag">Sponsored</span>
       <strong>{sponsor.name}</strong>
       <p>{sponsor.description || sponsor.tagline}</p>
       <span className="sponsor-tile-link">{sponsor.cta || 'Learn more'} →</span>
-    </Link>
+    </Wrap>
   );
 }
 /** Outbound button used on sponsor and listing pages. */

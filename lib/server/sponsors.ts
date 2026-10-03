@@ -1,17 +1,30 @@
 import { cache } from 'react';
 import {
-  houseSponsor,
+  houseSponsors,
   parseCategories,
+  resolveHousePage,
   type PlacementId,
   type Sponsor,
 } from '../advertising';
 import { adminClient, configured } from '../supabase/server';
+import { catalog } from './catalog';
+
+/** House sponsors with their pages resolved against the current catalog. */
+async function house(): Promise<Sponsor[]> {
+  let listings: { slug: string; homepage: string }[] = [];
+  try {
+    listings = await catalog();
+  } catch {
+    /* no catalog: house pages fall back to the sponsors' own sites */
+  }
+  return houseSponsors.map((s) => resolveHousePage(s, listings));
+}
 /** Approved, active paid sponsors followed by the house sponsor, which fills
  *  any slot no paid sponsor covers. Orders wait for a reviewer's approval
  *  before they render, and an admin can hide or reorder them. Any storage
  *  problem degrades to the house sponsor rather than an error page. */
 export const activeSponsors = cache(async (): Promise<Sponsor[]> => {
-  if (!configured()) return [houseSponsor];
+  if (!configured()) return house();
   try {
     const { data, error } = await adminClient()
       .from('ad_orders')
@@ -38,9 +51,9 @@ export const activeSponsors = cache(async (): Promise<Sponsor[]> => {
         typeof row.position === 'number' ? (row.position as number) : null,
       hidden: Boolean(row.hidden),
     }));
-    return [...paid, houseSponsor];
+    return [...paid, ...(await house())];
   } catch {
-    return [houseSponsor];
+    return house();
   }
 });
 /** One sponsor by its page slug; the house sponsor has a listing page instead. */

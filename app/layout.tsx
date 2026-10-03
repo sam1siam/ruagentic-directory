@@ -8,7 +8,7 @@ import {
 } from '@/components/design-interactions';
 import { directoryStats } from '@/lib/server/stats';
 import { activeSponsors, sponsorBarSettings } from '@/lib/server/sponsors';
-import { houseSponsor, pickSponsors } from '@/lib/advertising';
+import { pickSponsors } from '@/lib/advertising';
 import { gtmNoscriptSrc, gtmScript } from '@/lib/analytics';
 import './globals.css';
 import './hud.css';
@@ -57,7 +57,9 @@ export default async function RootLayout({
     sponsorBarSettings(),
   ]);
   const bars = pickSponsors('bar', sponsors);
-  const barSponsors = bars.length ? bars : [houseSponsor];
+  // pickSponsors already falls back to the house sponsors; only an empty
+  // sponsor list (storage trouble) leaves nothing to show.
+  const barSponsors = bars.length ? bars : sponsors.filter((s) => s.house);
   return (
     <html lang="en" className="dark">
       <head>
