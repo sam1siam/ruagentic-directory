@@ -292,6 +292,8 @@ export const mcp = createMcpHandler(
             starsPerDay: r.starsPerDay,
             createdAt: r.createdAt,
             verified: r.verified,
+            // Stars belong to a repository; this many other listings share it.
+            sharedWith: r.siblings,
           })),
         };
         return ok(
@@ -300,7 +302,7 @@ export const mcp = createMcpHandler(
                 rows
                   .map(
                     (r) =>
-                      `${r.rank}. ${r.name} — ★ ${r.stars.toLocaleString('en-US')}${r.starsPerDay !== null && by === 'pace' ? ` (${r.starsPerDay.toFixed(1)}/day)` : ''} ${SITE}/tools/${r.slug}`,
+                      `${r.rank}. ${r.name} — ★ ${r.stars.toLocaleString('en-US')}${r.starsPerDay !== null && by === 'pace' ? ` (${r.starsPerDay.toFixed(1)}/day)` : ''}${r.siblings ? ` (stars shared with ${r.siblings} more listing${r.siblings === 1 ? '' : 's'} from the same repository)` : ''} ${SITE}/tools/${r.slug}`,
                   )
                   .join('\n')
             : 'No ranked listings yet for that selection.',
