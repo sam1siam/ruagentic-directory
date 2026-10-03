@@ -47,6 +47,17 @@ export default function Page() {
         We retain its report to explain the result and establish listing
         eligibility.
       </p>
+      <h2>Assistant integrations and the public API</h2>
+      <p>
+        ChatGPT, Claude, Cursor and other assistants can read the directory
+        through our MCP server and public API. These read only public listing
+        information; no account is needed and the requests contain no personal
+        data beyond what your assistant sends to perform the search. We keep
+        standard server logs (request path, time, status) for operation and
+        abuse prevention and do not store the content of searches. Listing pages
+        record page views as daily counts per listing, without identifying
+        visitors.
+      </p>
       <h2>Service providers</h2>
       <p>
         The directory uses Vercel for hosting, Supabase for accounts and data,
