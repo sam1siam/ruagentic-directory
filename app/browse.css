@@ -43,8 +43,8 @@
 }
 .sponsor-chip {
   padding: 4px 11px;
-  background: var(--cyan);
-  color: var(--on-cyan);
+  background: var(--sponsor, var(--cyan));
+  color: var(--sponsor-ink, var(--on-cyan));
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.02em;
@@ -1048,7 +1048,7 @@ fieldset.filter-block > .filter-title {
   background: rgba(255, 255, 255, 0.2);
 }
 .sponsor-dots i[data-on='true'] {
-  background: var(--cyan);
+  background: var(--sponsor, var(--cyan));
 }
 .sponsor-bar-link {
   animation: sponsor-fade 0.4s ease-out;

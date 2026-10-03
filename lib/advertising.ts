@@ -73,7 +73,29 @@ export type Sponsor = {
   position?: number | null;
   /** Hidden by an admin without cancelling the subscription. */
   hidden?: boolean;
+  /** The sponsor's own brand colour (hex) for the bar chip; the directory
+   *  cyan when unset. */
+  color?: string;
 };
+/** Black or white text for a hex background, by relative luminance. */
+export function inkFor(hex: string | undefined): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex ?? '');
+  if (!m) return '#05080c';
+  const [r, g, b] = [0, 2, 4].map(
+    (i) => parseInt(m[1]!.slice(i, i + 2), 16) / 255,
+  );
+  const lin = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  const luminance = 0.2126 * lin(r!) + 0.7152 * lin(g!) + 0.0722 * lin(b!);
+  return luminance > 0.4 ? '#05080c' : '#ffffff';
+}
+/** The same list starting at `offset`, so each page load can begin on a
+ *  different sponsor while the rotation order stays the same. */
+export function rotateFrom<T>(list: T[], offset: number): T[] {
+  if (list.length < 2) return list;
+  const start = ((offset % list.length) + list.length) % list.length;
+  return [...list.slice(start), ...list.slice(0, start)];
+}
 /** The house sponsors fill every slot no paid sponsor covers; the bar and
  *  the detail tile rotate through them and the first home section shows
  *  their cards. Taglines and descriptions are each company's own wording.
@@ -91,6 +113,8 @@ export const houseSponsors: Sponsor[] = [
     placement: 'both',
     categories: [],
     house: true,
+    // AstroFabric's accent (astrofabric.ai brand palette).
+    color: '#bfd9f2',
   },
   {
     name: 'EQ Funding',
@@ -103,6 +127,8 @@ export const houseSponsors: Sponsor[] = [
     placement: 'both',
     categories: [],
     house: true,
+    // eqfunding.com's own accent variable (--acc) on its dark theme.
+    color: '#b7dc52',
   },
 ];
 /** The first house sponsor, for places that need exactly one. */

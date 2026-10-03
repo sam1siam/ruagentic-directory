@@ -90,3 +90,8 @@ export const sponsorBarSettings = cache(
     }
   },
 );
+
+/** A per-request starting point for the bar rotation. Lives here, outside
+ *  any component, so the clock-free randomness happens in data loading. */
+export const randomOffset = (count: number) =>
+  Math.floor(Math.random() * Math.max(count, 1));

@@ -6,7 +6,9 @@ import {
   creativeSchema,
   houseSponsor,
   houseSponsors,
+  inkFor,
   resolveHousePage,
+  rotateFrom,
   isAdMetadata,
   parseCategories,
   pickSponsor,
@@ -351,4 +353,16 @@ await test('house sponsors rotate together and resolve their pages from the cata
     'https://eqfunding.com/?ref=ruagentic.com',
   );
   assert.equal(resolveHousePage(houseSponsor, []).page, '/tools/astrofabric');
+});
+
+await test('bar chips pick readable ink for a brand colour and the start sponsor rotates', () => {
+  assert.equal(inkFor('#b7dc52'), '#05080c');
+  assert.equal(inkFor('#bfd9f2'), '#05080c');
+  assert.equal(inkFor('#1f4810'), '#ffffff');
+  assert.equal(inkFor('nope'), '#05080c');
+  assert.ok(houseSponsors.every((s) => /^#[0-9a-f]{6}$/i.test(s.color ?? '')));
+  assert.deepEqual(rotateFrom(['a', 'b', 'c'], 0), ['a', 'b', 'c']);
+  assert.deepEqual(rotateFrom(['a', 'b', 'c'], 1), ['b', 'c', 'a']);
+  assert.deepEqual(rotateFrom(['a', 'b', 'c'], 5), ['c', 'a', 'b']);
+  assert.deepEqual(rotateFrom(['a'], 7), ['a']);
 });

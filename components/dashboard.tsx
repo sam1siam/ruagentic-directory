@@ -40,6 +40,7 @@ export default function Dashboard({
   const [rows, setRows] = useState(submissions),
     [error, setError] = useState(''),
     [confirm, setConfirm] = useState<string | null>(null),
+    [discard, setDiscard] = useState<string | null>(null),
     [kit, setKit] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
   return (
@@ -129,7 +130,48 @@ export default function Dashboard({
                       Unpublish
                     </Button>
                   )}
+                  {(row.state === 'editing' || row.state === 'withdrawn') && (
+                    <Button variant="ghost" onClick={() => setDiscard(row.id)}>
+                      Discard
+                    </Button>
+                  )}
                 </div>
+                {discard === row.id && (
+                  <div className="withdraw-confirm">
+                    <p>
+                      Discard <b>{row.payload.name}</b> for good? Its saved
+                      details, checker runs and badge links are deleted and
+                      cannot be recovered. A listing it replaced comes back.
+                    </p>
+                    <div className="actions">
+                      <Button
+                        disabled={busy}
+                        variant="destructive"
+                        onClick={async () => {
+                          setBusy(true);
+                          try {
+                            await api(
+                              '/api/submissions/' + row.id + '/discard',
+                              {},
+                              'POST',
+                            );
+                            setRows(rows.filter((r) => r.id !== row.id));
+                            setDiscard(null);
+                          } catch (e) {
+                            setError((e as Error).message);
+                          } finally {
+                            setBusy(false);
+                          }
+                        }}
+                      >
+                        Discard listing
+                      </Button>
+                      <Button variant="ghost" onClick={() => setDiscard(null)}>
+                        Keep it
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {kit === row.id && row.slug && (
                   <div className="badge-panel">
                     <p>

@@ -44,6 +44,10 @@ export function databaseError(error: { message: string; code?: string }) {
     submission_suspended: 'This listing is unavailable. Contact support.',
     submission_unavailable: 'This listing is unavailable.',
     confirmed_email_required: 'Confirm your email before publishing.',
+    submission_not_discardable:
+      'Unpublish this listing first, then discard it.',
+    submission_has_payment:
+      'This listing has a payment on record, so it is kept. Unpublish it instead.',
   };
   if (error.code === '23505')
     throw new HttpError(

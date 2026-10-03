@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { sponsorHref, type Sponsor } from '@/lib/advertising';
+import { inkFor, sponsorHref, type Sponsor } from '@/lib/advertising';
 /** Site-wide bar above the telemetry strip. Rotates through the ordered
  *  sponsors on the admin-set interval, pausing while hovered. The bar is the
  *  one placement that links straight out, carrying the directory referrer. */
@@ -31,6 +31,14 @@ export default function SponsorBar({
       className="sponsor-bar"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      style={
+        {
+          '--sponsor': sponsor.color || 'var(--cyan)',
+          '--sponsor-ink': sponsor.color
+            ? inkFor(sponsor.color)
+            : 'var(--on-cyan)',
+        } as React.CSSProperties
+      }
     >
       <a
         key={sponsor.name + index}

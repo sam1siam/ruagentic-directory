@@ -7,8 +7,12 @@ import {
   LightField,
 } from '@/components/design-interactions';
 import { directoryStats } from '@/lib/server/stats';
-import { activeSponsors, sponsorBarSettings } from '@/lib/server/sponsors';
-import { pickSponsors } from '@/lib/advertising';
+import {
+  activeSponsors,
+  randomOffset,
+  sponsorBarSettings,
+} from '@/lib/server/sponsors';
+import { pickSponsors, rotateFrom } from '@/lib/advertising';
 import { gtmNoscriptSrc, gtmScript } from '@/lib/analytics';
 import './globals.css';
 import './hud.css';
@@ -59,7 +63,10 @@ export default async function RootLayout({
   const bars = pickSponsors('bar', sponsors);
   // pickSponsors already falls back to the house sponsors; only an empty
   // sponsor list (storage trouble) leaves nothing to show.
-  const barSponsors = bars.length ? bars : sponsors.filter((s) => s.house);
+  // Each page load starts the bar on a different sponsor, so no sponsor
+  // owns the first impression; the rotation order itself stays fixed.
+  const pool = bars.length ? bars : sponsors.filter((s) => s.house);
+  const barSponsors = rotateFrom(pool, randomOffset(pool.length));
   return (
     <html lang="en" className="dark">
       <head>

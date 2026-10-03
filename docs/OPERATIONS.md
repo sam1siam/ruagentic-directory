@@ -226,3 +226,9 @@ Growth pages: `/new` (added in 7 days, launched in 30), `/best` and `/best/<kind
 ## CLI (`npx ruagentic add`)
 
 The `ruagentic` npm package is the Agentic Protocol CLI from the org repository (`sam1siam/agentic`, `packages/cli`, bin `agentic`). Since 1.4.0 it also carries `add`, `search` and `show` (`packages/cli/directory.ts` there): `npx ruagentic add <slug> --client <claude-code|cursor|claude-desktop|codex|windsurf>` reads this site's public endpoint `GET /api/v1/listings/<slug>/connect` (the listing's published remote or package, required headers and variables, snippets) and writes the matching entry after confirmation; it never downloads or runs the server. Each confirmed add posts an anonymous ping to `POST /api/v1/installs` (`202610020003_listing_installs.sql`), shown on the maker's dashboard. Publishing is manual from the org repo (`cd packages/cli && npm publish`, npm account `astrofabric`); then set `CLI_PUBLISHED=true` in Vercel so listing pages show the one-command snippet.
+
+## Discarding listings and the sponsor bar
+
+Owners can discard a draft or an unpublished listing from the dashboard (`POST /api/submissions/<id>/discard` → `discard_submission`, `202610020004_discard_submission.sql`): the submission and its revisions, checker runs, checkout rows and directory entry are deleted, imports that had been merged into it become visible again, and their redirects and overrides are removed. A published listing must be unpublished first; one with a paid checkout on record is refused so payment history stays.
+
+The sponsor bar chip takes the sponsor's `color` (hex) when set, with black or white text chosen by luminance (`inkFor`); house sponsors carry their own brand accent, paid sponsors fall back to the directory cyan until a colour field is added to orders. Each request starts the bar on a random sponsor (`rotateFrom` in the layout) while keeping the rotation order.
