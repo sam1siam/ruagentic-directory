@@ -28,7 +28,8 @@ export default function ToolCard({
     source === 'Official MCP Registry'
       ? 'MCP REGISTRY'
       : source === 'Publisher documentation' ||
-          source === 'Publisher repository'
+          source === 'Publisher repository' ||
+          source === 'Publisher endpoint'
         ? 'PUBLISHER'
         : source === 'User submission'
           ? 'SUBMITTED'

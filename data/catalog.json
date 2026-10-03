@@ -64753,5 +64753,81 @@
     "observedAt": "2026-10-01"
    }
   ]
+ },
+ {
+  "kind": "server",
+  "name": "EQ Funding MCP",
+  "summary": "Matches a US or Canadian business with lenders in EQ Funding’s network that fit its profile and returns one link that opens the EQ Funding application pre-filled.",
+  "description": "EQ Funding’s hosted MCP server for its business-financing marketplace in the United States and Canada. It exposes four tools: match_lenders (which lenders in EQ Funding’s network fit a business’s purpose, location, amount, time in business, revenue, credit range and industry, returned as a count and a pre-filled application link), list_funding_products (the eight funding products with typical ranges and their pages), document_checklist (the paperwork lenders commonly ask for by financing type) and estimate_loan_payment (monthly payment, total cost and total interest for a fixed-rate loan at a rate the user assumes). The server’s own instructions state that EQ Funding is not a lender, does not approve, fund or quote rates, and never names which lenders matched. Remote Streamable HTTP server; no authentication is required. Details were read from the endpoint’s initialize and tools/list responses and the publisher’s website; no tool was called.",
+  "homepage": "https://www.eqfunding.com/",
+  "repository": "",
+  "documentation": "",
+  "endpoint": "https://www.eqfunding.com/api/mcp",
+  "category": "Finance",
+  "tags": [
+   "mcp",
+   "finance",
+   "business loans",
+   "lending"
+  ],
+  "pricing": "unknown",
+  "transport": "streamable-http",
+  "authentication": "none",
+  "platforms": [],
+  "license": "",
+  "setup": "Add https://www.eqfunding.com/api/mcp to your MCP client as a Streamable HTTP server. No key is needed. Tools: match_lenders, list_funding_products, document_checklist, estimate_loan_payment.",
+  "capabilities": [
+   "Lender matching for US and Canadian businesses",
+   "Pre-filled EQ Funding application link",
+   "Funding product overview with typical ranges",
+   "Document checklist by financing type",
+   "Fixed-rate loan payment estimate"
+  ],
+  "profileUrl": "",
+  "readmeUrl": "",
+  "agentCard": "",
+  "agentProtocol": "",
+  "fileUrl": "",
+  "allowedTools": "",
+  "slug": "eq-funding-mcp",
+  "source": "Publisher endpoint",
+  "sourceUrl": "https://www.eqfunding.com/api/mcp",
+  "observedAt": "2026-10-02",
+  "publishedAt": "",
+  "ownershipVerified": false,
+  "imported": true,
+  "submitted": false,
+  "packages": [],
+  "remotes": [
+   {
+    "type": "streamable-http",
+    "url": "https://www.eqfunding.com/api/mcp"
+   }
+  ],
+  "sources": [
+   {
+    "kind": "publisher-endpoint",
+    "url": "https://www.eqfunding.com/api/mcp",
+    "observedAt": "2026-10-02",
+    "fields": [
+     "serverInfo",
+     "instructions",
+     "tools"
+    ],
+    "note": "initialize and tools/list responses read on 2026-10-02 (server eq-funding 1.0.0, protocol 2025-06-18); no tool was called."
+   },
+   {
+    "kind": "publisher-page",
+    "url": "https://www.eqfunding.com/",
+    "observedAt": "2026-10-02"
+   },
+   {
+    "kind": "editorial-normalization",
+    "observedAt": "2026-10-02",
+    "notes": [
+     "EQ Funding is also a house sponsor of the directory; sponsorship does not change this listing’s source label or checks."
+    ]
+   }
+  ]
  }
 ]
