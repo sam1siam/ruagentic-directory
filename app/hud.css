@@ -4627,8 +4627,10 @@ legend {
   color: var(--dim);
 }
 .confirmation-badge {
-  margin-top: 24px;
-  padding: 24px;
+  /* Same width and centring as the confirmation card above it. */
+  max-width: 760px;
+  margin: 24px auto 0;
+  padding: 24px 32px;
 }
 .confirmation-badge h2 {
   margin: 0 0 8px;
