@@ -6,6 +6,7 @@ import {
   CUTOFF,
   dayKey,
   digest,
+  interleaveByKind,
   isNew,
   publicUrl,
   qualify,
@@ -476,6 +477,8 @@ void test('Work order puts found contacts first and caps cooled-down retries ahe
   );
   assert.deepEqual(
     work.map((r) => r.id),
+    // None of these rows names a kind, so they share one turn and keep
+    // the promise order: website first, repository-only last.
     ['ready', 'retry-1', 'retry-2', 'new-site', 'new-registry'],
   );
   assert.ok(filters.includes('attempts<3'));
@@ -968,4 +971,27 @@ void test('GitHub limits pace searches and hold candidates without stopping outr
   await assert.rejects(pacer.wait(search, now + 60_000), ProviderCooldown);
   assert.equal(pacer.snapshot()['github:search']?.remaining, 0);
   assert.equal(providerHold(new ProviderError('api.github.com', 403)), true);
+});
+
+void test('Kinds take turns in the queue so one kind cannot use the whole day', () => {
+  const row = (id: string, kind?: Candidate['kind']) => ({
+    id,
+    data: { ...item, id, kind },
+  });
+  const rows = [
+    row('s1', 'mcp-server'),
+    row('s2', 'mcp-server'),
+    row('s3', 'mcp-server'),
+    row('s4', 'mcp-server'),
+    row('k1', 'skill'),
+    row('p1', 'plugin'),
+    row('r1', 'rules'),
+    row('e1', 'eval'),
+    row('u1', undefined),
+  ];
+  assert.deepEqual(
+    interleaveByKind(rows).map((r) => r.id),
+    ['s1', 'k1', 'p1', 'r1', 'e1', 'u1', 's2', 's3', 's4'],
+  );
+  assert.deepEqual(interleaveByKind([]), []);
 });

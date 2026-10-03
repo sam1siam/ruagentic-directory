@@ -4,6 +4,7 @@ import {
   CUTOFF,
   candidateRank,
   digest,
+  interleaveByKind,
   isNew,
   type Candidate,
   type Snapshot,
@@ -192,8 +193,9 @@ export class DiscoveryStore {
         .limit(5),
       // New candidates are taken by promise rather than age: those with their
       // own website first, repository-only ones last, oldest first within a
-      // rank. The queue is read deep enough that a promising newcomer is not
-      // stuck behind hundreds of older repository-only entries.
+      // rank; then the kinds take turns so one kind cannot use up the whole
+      // day. The queue is read deep enough that a newcomer is not stuck
+      // behind hundreds of older entries.
       table()
         .in('status', ['pending', 'no_verified_contact'])
         .order('first_seen_at')
@@ -201,10 +203,12 @@ export class DiscoveryStore {
     ]);
     if (ready.error || retries.error || fresh.error)
       throw new Error('Could not load candidates');
-    const ranked = ((fresh.data || []) as CandidateRow[])
-      .map((row, index) => ({ row, index, rank: candidateRank(row.data) }))
-      .sort((a, b) => a.rank - b.rank || a.index - b.index)
-      .map((r) => r.row);
+    const ranked = interleaveByKind(
+      ((fresh.data || []) as CandidateRow[])
+        .map((row, index) => ({ row, index, rank: candidateRank(row.data) }))
+        .sort((a, b) => a.rank - b.rank || a.index - b.index)
+        .map((r) => r.row),
+    );
     return [...(ready.data || []), ...(retries.data || []), ...ranked].slice(
       0,
       limit,

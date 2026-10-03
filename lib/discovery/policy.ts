@@ -120,6 +120,46 @@ export const packagedCandidate = (item: Pick<Candidate, 'kind'>) =>
   item.kind === 'plugin' ||
   item.kind === 'rules' ||
   item.kind === 'eval';
+/** The order kinds take turns in; candidates whose kind is not yet known
+ *  come last and are sorted out when their detail page is read. */
+export const KIND_TURNS = [
+  'mcp-server',
+  'mcp-client',
+  'ai-agent',
+  'skill',
+  'plugin',
+  'rules',
+  'eval',
+  'unknown',
+] as const;
+/** Spreads the daily limit across kinds: candidates are grouped by kind,
+ *  each group keeps its own promise order (website first, oldest first),
+ *  and the groups take turns one candidate at a time. A kind with hundreds
+ *  of old candidates can no longer starve a kind with a few new ones. */
+export function interleaveByKind<T extends { data?: Candidate }>(
+  rows: T[],
+): T[] {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const kind = row.data?.kind ?? 'unknown';
+    const group = groups.get(kind) ?? [];
+    group.push(row);
+    groups.set(kind, group);
+  }
+  const order = [
+    ...KIND_TURNS.filter((k) => groups.has(k)),
+    ...[...groups.keys()].filter(
+      (k) => !(KIND_TURNS as readonly string[]).includes(k),
+    ),
+  ];
+  const out: T[] = [];
+  for (let i = 0; out.length < rows.length; i++)
+    for (const kind of order) {
+      const row = groups.get(kind)![i];
+      if (row) out.push(row);
+    }
+  return out;
+}
 export function candidateRank(item: Candidate | undefined): 0 | 1 | 2 {
   if (!item) return 2;
   if (companyDomain(item.homepage)) return 0;

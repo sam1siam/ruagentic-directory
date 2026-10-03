@@ -45,7 +45,7 @@ Each queued candidate goes through these steps (`lib/discovery/run.ts`):
 
 Data the listing schema rejects is held as `needs_review`, never published. A GitHub rate limit holds the candidate unchanged (`deferred`); any other failure counts an attempt, and a third failed attempt moves the candidate to `needs_review`.
 
-Work order each run: candidates whose contact lookup had already finished (legacy `contact_ready`), then at most five failed candidates last tried 20 or more hours ago, then new candidates by promise: projects with their own website first, then those that only name a repository, package, registry entry or endpoint (which may still resolve to a website), then GitHub search results without a website; oldest first within each group. Candidates left as `no_verified_contact` by the retired outreach stage are queued again automatically.
+Work order each run: candidates whose contact lookup had already finished (legacy `contact_ready`), then at most five failed candidates last tried 20 or more hours ago, then new candidates by promise: projects with their own website first, then those that only name a repository, package, registry entry or endpoint (which may still resolve to a website), then GitHub search results without a website; oldest first within each group. The kinds then take turns one candidate at a time (`interleaveByKind`: MCP servers, clients, AI agents, skills, plugins, rules files, evals, then candidates whose kind is not known yet), so a backlog of one kind cannot use up the daily limit. Candidates left as `no_verified_contact` by the retired outreach stage are queued again automatically.
 
 ## Deployment and controls
 
