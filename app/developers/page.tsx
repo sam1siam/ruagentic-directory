@@ -52,12 +52,45 @@ export default function Page() {
         published through the publication checker; otherwise it reads “Listed on
         RUAGENTIC”. Images cache for a day.
       </p>
-      <h2>Connect through MCP</h2>
+      <h2>Use RUAGENTIC inside ChatGPT, Claude and Cursor</h2>
       <p>
-        Add <code>https://ruagentic.com/mcp</code> as a Streamable HTTP MCP
-        server in your client. It provides <code>search_directory</code> and{' '}
-        <code>get_listing</code>. These tools read public directory information
-        and do not require an API key.
+        The directory is an MCP server at <code>https://ruagentic.com/mcp</code>{' '}
+        (Streamable HTTP, no API key). Add it to an assistant and ask for an MCP
+        server, client, AI agent, skill, plugin, rules file or eval for a task;
+        it searches, ranks by public GitHub stars, compares, and hands back the
+        exact client config.
+      </p>
+      <ul className="plain-list">
+        <li>
+          <strong>ChatGPT:</strong> Settings → Apps &amp; Connectors → Advanced
+          settings → turn on Developer mode → Create → paste the URL above, no
+          authentication. Then mention RUAGENTIC in a chat.
+        </li>
+        <li>
+          <strong>Claude (web and desktop):</strong> Settings → Connectors → Add
+          custom connector → paste the URL above.
+        </li>
+        <li>
+          <strong>Claude Code:</strong>{' '}
+          <code>
+            claude mcp add --transport http ruagentic https://ruagentic.com/mcp
+          </code>
+        </li>
+        <li>
+          <strong>Cursor, Windsurf, Codex:</strong> add{' '}
+          <code>{'{ "url": "https://ruagentic.com/mcp" }'}</code> as an MCP
+          server named <code>ruagentic</code> in the client’s MCP config.
+        </li>
+      </ul>
+      <p>
+        Tools: <code>search_directory</code> (words plus kind, category, stars,
+        launch window, verified, platform), <code>get_listing</code> (facts,
+        connect snippets, Q&amp;A), <code>connect_instructions</code> (config
+        for Claude Code, Cursor, Claude Desktop, Codex or Windsurf),{' '}
+        <code>top_listings</code> (leaderboards), <code>new_listings</code>,{' '}
+        <code>compare_listings</code> and <code>directory_overview</code>. All
+        are read-only and return only published listing data; star counts
+        measure attention, not quality, and sponsorship never changes results.
       </p>
       <h2>Sources and checks</h2>
       <p>
