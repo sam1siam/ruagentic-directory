@@ -1,4 +1,5 @@
 import { catalog } from '@/lib/server/catalog';
+import { problemResponse } from '@/lib/agent-responses';
 export const dynamic = 'force-dynamic';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +23,13 @@ export async function GET(request: Request) {
     0,
     Math.min(5000, Math.floor(Number(p.get('offset'))) || 0),
   );
-  const rows = (await catalog())
+  const items = await catalog().catch(() => null);
+  if (!items)
+    return problemResponse(
+      'directory_unavailable',
+      'The directory could not be read.',
+    );
+  const rows = items
     .filter(
       (r) =>
         (!kind || r.kind === kind) &&

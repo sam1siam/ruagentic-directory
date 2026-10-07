@@ -1,14 +1,16 @@
 import Link from 'next/link';
 export const metadata = {
-  title: 'Developer documentation',
+  title: {
+    absolute: 'RUAGENTIC developer docs: public API, MCP server and CLI',
+  },
   description:
-    'Read public listings through the JSON API or MCP, search by capability, and link to full listing pages, badges and embed cards.',
+    'Read RUAGENTIC listings through the JSON API, the MCP server or the ruagentic CLI, search by capability, and link to full listing pages, badges and embed cards.',
   alternates: { canonical: '/developers' },
 };
 export default function Page() {
   return (
     <main className="content-page prose-page">
-      <h1>Public discovery API.</h1>
+      <h1>RUAGENTIC public API.</h1>
       <p>
         Read public listings, search for a capability, and link people to the
         full project page. The API returns the same published information shown
@@ -39,6 +41,15 @@ export default function Page() {
       <p>
         Use the slug returned by search. A missing or unpublished listing
         returns HTTP 404.
+      </p>
+      <h2>Get connection config</h2>
+      <pre className="setup-code">
+        {'GET https://ruagentic.com/api/v1/listings/{slug}/connect'}
+      </pre>
+      <p>
+        Returns the published remote or package, required headers and
+        environment variables, and the same client snippets the listing page
+        shows, from stored data only.
       </p>
       <h2>Badges and embed cards</h2>
       <pre className="setup-code">
@@ -92,6 +103,21 @@ export default function Page() {
         are read-only and return only published listing data; star counts
         measure attention, not quality, and sponsorship never changes results.
       </p>
+      <h2>Command-line tool</h2>
+      <p>
+        The <a href="https://www.npmjs.com/package/ruagentic">ruagentic</a>{' '}
+        package on npm searches the directory and adds a listed MCP server to a
+        client from the terminal. It reads the same public API.
+      </p>
+      <pre className="setup-code">
+        {
+          'npx ruagentic search postgres\nnpx ruagentic show github-mcp\nnpx ruagentic add github-mcp --client claude-code'
+        }
+      </pre>
+      <p>
+        <code>--client</code> accepts claude-code, cursor, claude-desktop, codex
+        or windsurf.
+      </p>
       <h2>Sources and checks</h2>
       <p>
         Each entry includes a source URL and collection date. Imported entries
@@ -107,9 +133,50 @@ export default function Page() {
         back to the original listing. Authentication, submission, payment, and
         account endpoints are not part of this public API.
       </p>
+      <h2 id="errors">Errors</h2>
+      <p>
+        Errors are{' '}
+        <a href="https://www.rfc-editor.org/rfc/rfc9457">
+          RFC 9457 problem details
+        </a>{' '}
+        sent as <code>application/problem+json</code>: <code>type</code>,{' '}
+        <code>title</code>, <code>status</code>, <code>detail</code>, a
+        machine-readable <code>code</code> and a <code>hint</code>. The older{' '}
+        <code>error</code> field repeats the detail.
+      </p>
+      <ul className="plain-list">
+        <li id="error-listing-not-found">
+          <code>listing_not_found</code> (404): no published listing has this
+          slug. Search first and use a slug from the results.
+        </li>
+        <li id="error-endpoint-not-found">
+          <code>endpoint_not_found</code> (404): there is no API endpoint at
+          this path. The endpoints are listed in the{' '}
+          <Link href="/openapi.json">OpenAPI description</Link>.
+        </li>
+        <li id="error-directory-unavailable">
+          <code>directory_unavailable</code> (503): the listing data could not
+          be read. Retry the same request with backoff.
+        </li>
+      </ul>
+      <h2 id="versioning">Versions and deprecation</h2>
+      <p>
+        The major version is in the path (<code>/api/v1</code>). Changes that
+        would break existing clients ship under a new path such as{' '}
+        <code>/api/v2</code>. New fields can appear in v1 at any time, so ignore
+        fields you do not know.
+      </p>
+      <p>
+        Before a version is retired, its responses carry a{' '}
+        <code>Deprecation</code> header (RFC 9745) and a <code>Sunset</code>{' '}
+        header (RFC 8594) with the shutdown date, at least 90 days ahead. The
+        change is also announced on this page and in{' '}
+        <Link href="/llms.txt">llms.txt</Link>. No version is deprecated today.
+      </p>
       <h2>Machine-readable documentation</h2>
       <p>
         Start with <Link href="/llms.txt">llms.txt</Link>, the{' '}
+        <Link href="/openapi.json">OpenAPI description</Link>, the{' '}
         <Link href="/agentic.json">Agentic Protocol JSON profile</Link>, or its{' '}
         <Link href="/agentic.txt">text index</Link>. The file convention and
         free generation tools are documented at{' '}

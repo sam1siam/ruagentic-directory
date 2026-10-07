@@ -110,16 +110,27 @@ export function websiteJsonLd() {
   };
 }
 
-/** The organisation behind the directory; only public, verifiable links. */
-export function organizationJsonLd() {
+/** The organisation behind the directory; only public, verifiable links.
+ *  The contact point is the contact page, plus the support address when
+ *  one is configured; no postal address is published. */
+export function organizationJsonLd(supportEmail?: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     '@id': site + '/#organization',
     name: 'RUAGENTIC',
     url: site + '/',
+    description:
+      'RUAGENTIC runs an independent directory of MCP servers, clients, AI agents, skills, plugins, rules files and evals, with a public API, an MCP server and a CLI for finding and connecting them.',
     logo: site + '/icon-512.png',
     sameAs: ['https://github.com/ruagentic', 'https://ruagentic.org/'],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      url: site + '/contact',
+      availableLanguage: 'English',
+      ...(supportEmail ? { email: supportEmail } : {}),
+    },
   };
 }
 

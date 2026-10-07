@@ -1,9 +1,30 @@
 import type { NextConfig } from 'next';
 
+/** Requests whose Accept header names text/markdown get Markdown. Next
+ *  anchors the pattern with ^…$; browsers never send text/markdown. */
+const wantsMarkdown = [
+  { type: 'header' as const, key: 'accept', value: '.*text/markdown.*' },
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: '/', has: wantsMarkdown, destination: '/index.md' },
+      ],
+      afterFiles: [],
+      // Fallback rewrites run only when no page or route matched, so this
+      // turns the HTML 404 into a Markdown 404 for Markdown readers.
+      fallback: [
+        { source: '/:path*', has: wantsMarkdown, destination: '/missing.md' },
+      ],
+    };
+  },
   async redirects() {
     return [
+      { source: '/docs', destination: '/developers', permanent: false },
+      { source: '/api', destination: '/developers', permanent: false },
       { source: '/collections', destination: '/categories', permanent: true },
       { source: '/products', destination: '/ai-agents', permanent: true },
       {

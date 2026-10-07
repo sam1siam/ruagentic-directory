@@ -41,6 +41,24 @@ export default function Page() {
           <Link href="/">Find the listing ↗</Link>
         </div>
         <div>
+          <h2>Claim your project</h2>
+          <p>
+            If an imported listing is your project, open it and choose Claim
+            this listing. This starts a submission filled with its details, so
+            you can correct and complete them before publication.
+          </p>
+          <Link href="/submit">Start a submission ↗</Link>
+        </div>
+        <div>
+          <h2>Sponsorship</h2>
+          <p>
+            Monthly Platinum, Gold and Silver placements are labelled as
+            sponsored. They never change rankings, search results or file
+            checks.
+          </p>
+          <Link href="/advertise">See sponsor placements ↗</Link>
+        </div>
+        <div>
           <h2>Agentic Protocol files</h2>
           <p>
             Generate your project files and use the auditor’s report to fix

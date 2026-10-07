@@ -36,7 +36,9 @@ export default async function Home({
     sectionSponsors[c.slug] = pickSponsors('listing', paid, c.slug);
   return (
     <>
-      <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
+      <JsonLd
+        data={[websiteJsonLd(), organizationJsonLd(process.env.SUPPORT_EMAIL)]}
+      />
       <DirectoryBrowser
         key={JSON.stringify(params)}
         mode="home"

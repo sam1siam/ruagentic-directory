@@ -2,14 +2,15 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RUAGENTIC Directory API",
-    "version": "1.0.0",
-    "description": "Read-only public discovery for MCP servers, clients, AI agents (kind product), skills (kind skill, a SKILL.md package in the Agent Skills format), plugins (kind plugin, a plugin or extension for an agent host), rules (kind rules, a rules/instruction file such as CLAUDE.md or AGENTS.md), and evals (kind eval, a benchmark or evaluation set)."
+    "version": "1.1.0",
+    "description": "Read-only public discovery for MCP servers, clients, AI agents (kind product), skills (kind skill, a SKILL.md package in the Agent Skills format), plugins (kind plugin, a plugin or extension for an agent host), rules (kind rules, a rules/instruction file such as CLAUDE.md or AGENTS.md), and evals (kind eval, a benchmark or evaluation set). Errors are RFC 9457 problem details (application/problem+json) with a machine-readable code, a hint and a link to the documentation. Versioning: the major version is in the path (/api/v1). Changes that would break existing clients ship under a new path such as /api/v2; additive fields can appear in v1 at any time, so ignore fields you do not know. Deprecation: before a version is retired, its responses carry a Deprecation header (RFC 9745) and a Sunset header (RFC 8594) with the shutdown date at least 90 days ahead, and the change is announced on https://ruagentic.com/developers#versioning and in https://ruagentic.com/llms.txt."
   },
   "servers": [
     {
       "url": "https://ruagentic.com"
     }
   ],
+  "security": [],
   "paths": {
     "/api/v1/listings": {
       "get": {
@@ -101,6 +102,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
           }
         }
       }
@@ -140,7 +144,10 @@
             }
           },
           "404": {
-            "description": "Listing not found"
+            "$ref": "#/components/responses/ListingNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
           }
         }
       }
@@ -197,7 +204,77 @@
             "format": "date-time"
           }
         }
+      },
+      "Problem": {
+        "type": "object",
+        "description": "RFC 9457 problem details. `error` repeats `detail` for clients written before problem details were introduced.",
+        "required": ["type", "title", "status", "detail", "code"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "description": "Links to the error on the developer page."
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "listing_not_found",
+              "endpoint_not_found",
+              "directory_unavailable"
+            ],
+            "description": "Machine-readable error code."
+          },
+          "hint": {
+            "type": "string",
+            "description": "What to do next."
+          },
+          "docs": {
+            "type": "string",
+            "format": "uri"
+          },
+          "error": {
+            "type": "string",
+            "deprecated": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "ListingNotFound": {
+        "description": "No published listing has this slug (code listing_not_found).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "The listing data could not be read; retry with backoff (code directory_unavailable).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       }
     }
+  },
+  "externalDocs": {
+    "description": "Developer documentation",
+    "url": "https://ruagentic.com/developers"
   }
 }

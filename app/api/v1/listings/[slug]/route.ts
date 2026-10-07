@@ -1,4 +1,5 @@
 import { listingByAnySlug } from '@/lib/server/catalog';
+import { problemResponse } from '@/lib/agent-responses';
 export const dynamic = 'force-dynamic';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,9 +14,16 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const item = (await listingByAnySlug((await params).slug))?.item;
-  if (!item)
-    return Response.json({ error: 'Listing not found.' }, { status: 404 });
+  const found = await listingByAnySlug((await params).slug).catch(
+    () => 'unavailable' as const,
+  );
+  if (found === 'unavailable')
+    return problemResponse(
+      'directory_unavailable',
+      'The directory could not be read.',
+    );
+  const item = found?.item;
+  if (!item) return problemResponse('listing_not_found', 'Listing not found.');
   const { sources: _sources, ...listing } = item;
   return Response.json(
     {
