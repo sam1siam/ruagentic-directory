@@ -4,13 +4,20 @@ import seed from '@/data/catalog.json';
 import { withoutAutoNote, type PublicListing } from '../listing';
 import { configured, adminClient } from '../supabase/server';
 import { catalogCacheSeconds, catalogCacheTag } from './catalog-cache';
+import { createBreaker, newestFirst } from '../db-resilience.ts';
 
 const cacheOptions = {
   tags: [catalogCacheTag],
   revalidate: catalogCacheSeconds,
 };
-const batchSize = 100;
-type CatalogRow = { slug: string; data: PublicListing | null };
+// About 2 KB a row, so a batch stays well under the 2 MB cache entry limit
+// while a full read takes a handful of requests instead of dozens.
+const batchSize = 400;
+type CatalogRow = {
+  slug: string;
+  updatedAt: string;
+  data: PublicListing | null;
+};
 
 async function readCatalogBatch(
   _project: string,
@@ -18,8 +25,9 @@ async function readCatalogBatch(
 ): Promise<CatalogRow[]> {
   const { data, error } = await adminClient()
     .from('directory_entries')
-    .select('slug,data,visible')
-    .order('updated_at', { ascending: false })
+    .select('slug,data,visible,updated_at')
+    // The primary key keeps pages stable and needs no sort of the table;
+    // the newest-first order is applied after reading.
     .order('slug')
     .range(offset, offset + batchSize - 1);
   if (error) throw new Error('The directory could not be loaded.');
@@ -27,6 +35,7 @@ async function readCatalogBatch(
   // The shared cache stores no hidden listing payloads or account data.
   return (data ?? []).map((row) => ({
     slug: row.slug as string,
+    updatedAt: String(row.updated_at ?? ''),
     data: row.visible ? (row.data as PublicListing) : null,
   }));
 }
@@ -34,7 +43,7 @@ async function readCatalogBatch(
 // Project identity is an argument so different databases cannot share entries.
 const cachedCatalogBatch = unstable_cache(
   readCatalogBatch,
-  ['catalog-batch-v1'],
+  ['catalog-batch-v2'],
   cacheOptions,
 );
 
@@ -82,19 +91,39 @@ async function loadCatalog(fresh: boolean): Promise<PublicListing[]> {
     await (fresh ? readHiddenSlugs : cachedHiddenSlugs)(project),
   );
   const data: CatalogRow[] = [];
-  for (let offset = 0; offset < 5000; offset += batchSize) {
+  for (let offset = 0; offset < 20000; offset += batchSize) {
     const batch = await readBatch(project, offset);
     data.push(...batch);
     if (batch.length < batchSize) break;
   }
+  data.sort(newestFirst);
   const known = new Set(data.map((row) => row.slug));
   return [
     ...data.flatMap((row) => (row.data ? [withoutAutoNote(row.data)] : [])),
     ...bundled.filter((item) => !known.has(item.slug)),
   ].filter((item) => !hidden.has(item.slug));
 }
+// When the database fails, public pages show the last catalog this instance
+// read (or the bundled entries) and skip the database for half a minute,
+// instead of every request waiting on it.
+const breaker = createBreaker(30_000);
+let lastGood: PublicListing[] | null = null;
+async function publicCatalog(): Promise<PublicListing[]> {
+  if (configured() && !breaker.isOpen())
+    try {
+      lastGood = await loadCatalog(false);
+      return lastGood;
+    } catch (error) {
+      breaker.trip();
+      console.error(
+        'catalog_read_failed',
+        error instanceof Error ? error.message : 'unknown',
+      );
+    }
+  return lastGood ?? (await bundledCatalog());
+}
 /** Public reads share the five-minute data cache across requests. */
-export const catalog = cache(() => loadCatalog(false));
+export const catalog = cache(publicCatalog);
 /** Publication decisions and admin review must never depend on stale data. */
 export const freshCatalog = () => loadCatalog(true);
 export async function listingBySlug(slug: string) {

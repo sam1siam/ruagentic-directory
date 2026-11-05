@@ -2,6 +2,7 @@ import 'server-only';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { timedFetch } from '../db-resilience.ts';
 export function configured() {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -41,5 +42,8 @@ export function adminClient() {
   if (!url || !key) throw new Error('Directory storage is unavailable.');
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
+    // A request a healthy database answers in well under a second; past
+    // this the database is in trouble and waiting only adds to the load.
+    global: { fetch: timedFetch(10_000) },
   });
 }
